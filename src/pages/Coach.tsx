@@ -39,7 +39,7 @@ function getCoachResponse(question: string): string {
     return 'Probeer uw gewichtstoename tussen dialyse sessies onder de 2 kg te houden. Tips:\n\n• Verdeel uw vochtinname over de dag\n• Vermijd zoute snacks\n• Gebruik het vochtschema op het dashboard';
   }
 
-  return `Bedankt voor uw vraag! Als dialyse coach kan ik u helpen met:\n\n• Voedingsadvies (kalium, fosfaat, natrium)\n• Tips tegen dorst\n• Informatie over symptomen\n• Wat u kunt eten\n\nUw dagelijkse status:\n• Kalium: ${totals.potassium}/${limits.potassium} mg\n• Fosfaat: ${totals.phosphate}/${limits.phosphate} mg\n• Vocht: ${totals.fluid}/${limits.fluid} ml\n\nStel gerust een specifieke vraag!`;
+  return `Bedankt voor uw vraag! Als dialyse coach kan ik u helpen met:\n\n• Voedingsadvies (kalium, fosfaat, natrium, eiwit)\n• Tips tegen dorst\n• Informatie over symptomen\n• Wat u kunt eten\n\nUw dagelijkse status:\n• Kalium: ${totals.potassium}/${limits.potassium} mg\n• Fosfaat: ${totals.phosphate}/${limits.phosphate} mg\n• Eiwit: ${totals.protein}/${limits.protein} g\n• Vocht: ${totals.fluid}/${limits.fluid} ml\n\nStel gerust een specifieke vraag!`;
 }
 
 export default function Coach() {

@@ -7,6 +7,7 @@ export interface FoodEntry {
   potassium: number; // mg
   phosphate: number; // mg
   sodium: number; // mg
+  protein: number; // g
   fluid: number; // ml
 }
 
@@ -50,6 +51,7 @@ export interface DailyLimits {
   potassium: number; // mg - typically 2000-3000
   phosphate: number; // mg - typically 800-1200
   sodium: number; // mg - typically 1500-2300
+  protein: number; // g - typically 60-80
   fluid: number; // ml - typically 500-1500
 }
 
@@ -57,6 +59,7 @@ const DEFAULT_LIMITS: DailyLimits = {
   potassium: 2500,
   phosphate: 1000,
   sodium: 2000,
+  protein: 70,
   fluid: 1000,
 };
 
@@ -157,6 +160,7 @@ export function getTodayTotals() {
     potassium: foods.reduce((sum, f) => sum + f.potassium, 0),
     phosphate: foods.reduce((sum, f) => sum + f.phosphate, 0),
     sodium: foods.reduce((sum, f) => sum + f.sodium, 0),
+    protein: foods.reduce((sum, f) => sum + f.protein, 0),
     fluid: foodFluid + drinkFluid,
   };
 }
@@ -226,31 +230,32 @@ export interface FoodItem {
   potassium: number;
   phosphate: number;
   sodium: number;
+  protein: number;
   fluid: number;
   portion: string;
 }
 
 export const COMMON_FOODS: FoodItem[] = [
-  { name: 'Witte boterham', potassium: 50, phosphate: 40, sodium: 200, fluid: 10, portion: '1 snee' },
-  { name: 'Bruine boterham', potassium: 80, phosphate: 70, sodium: 210, fluid: 10, portion: '1 snee' },
-  { name: 'Ei (gekookt)', potassium: 65, phosphate: 100, sodium: 70, fluid: 30, portion: '1 stuk' },
-  { name: 'Kaas (jong)', potassium: 25, phosphate: 130, sodium: 250, fluid: 5, portion: '1 plak' },
-  { name: 'Kipfilet', potassium: 250, phosphate: 200, sodium: 65, fluid: 50, portion: '100g' },
-  { name: 'Rijst (gekookt)', potassium: 35, phosphate: 40, sodium: 1, fluid: 60, portion: '100g' },
-  { name: 'Aardappelen (gekookt)', potassium: 330, phosphate: 40, sodium: 5, fluid: 75, portion: '100g' },
-  { name: 'Broccoli', potassium: 310, phosphate: 65, sodium: 30, fluid: 85, portion: '100g' },
-  { name: 'Appel', potassium: 110, phosphate: 10, sodium: 1, fluid: 85, portion: '1 stuk' },
-  { name: 'Banaan', potassium: 360, phosphate: 25, sodium: 1, fluid: 75, portion: '1 stuk' },
-  { name: 'Sinaasappel', potassium: 180, phosphate: 15, sodium: 0, fluid: 85, portion: '1 stuk' },
-  { name: 'Tomaat', potassium: 240, phosphate: 25, sodium: 5, fluid: 90, portion: '1 stuk' },
-  { name: 'Melk (halfvol)', potassium: 150, phosphate: 95, sodium: 45, fluid: 200, portion: '1 glas' },
-  { name: 'Yoghurt', potassium: 190, phosphate: 120, sodium: 55, fluid: 150, portion: '1 bakje' },
-  { name: 'Koffie (zwart)', potassium: 50, phosphate: 5, sodium: 2, fluid: 150, portion: '1 kopje' },
-  { name: 'Thee', potassium: 20, phosphate: 2, sodium: 1, fluid: 200, portion: '1 kopje' },
-  { name: 'Water', potassium: 0, phosphate: 0, sodium: 0, fluid: 200, portion: '1 glas' },
-  { name: 'Chocolade', potassium: 400, phosphate: 200, sodium: 25, fluid: 2, portion: '1 reep' },
-  { name: 'Noten (gemengd)', potassium: 650, phosphate: 450, sodium: 5, fluid: 3, portion: '50g' },
-  { name: 'Witvis', potassium: 300, phosphate: 180, sodium: 80, fluid: 60, portion: '100g' },
+  { name: 'Witte boterham', potassium: 50, phosphate: 40, sodium: 200, protein: 3, fluid: 10, portion: '1 snee' },
+  { name: 'Bruine boterham', potassium: 80, phosphate: 70, sodium: 210, protein: 4, fluid: 10, portion: '1 snee' },
+  { name: 'Ei (gekookt)', potassium: 65, phosphate: 100, sodium: 70, protein: 7, fluid: 30, portion: '1 stuk' },
+  { name: 'Kaas (jong)', potassium: 25, phosphate: 130, sodium: 250, protein: 7, fluid: 5, portion: '1 plak' },
+  { name: 'Kipfilet', potassium: 250, phosphate: 200, sodium: 65, protein: 31, fluid: 50, portion: '100g' },
+  { name: 'Rijst (gekookt)', potassium: 35, phosphate: 40, sodium: 1, protein: 3, fluid: 60, portion: '100g' },
+  { name: 'Aardappelen (gekookt)', potassium: 330, phosphate: 40, sodium: 5, protein: 2, fluid: 75, portion: '100g' },
+  { name: 'Broccoli', potassium: 310, phosphate: 65, sodium: 30, protein: 3, fluid: 85, portion: '100g' },
+  { name: 'Appel', potassium: 110, phosphate: 10, sodium: 1, protein: 0, fluid: 85, portion: '1 stuk' },
+  { name: 'Banaan', potassium: 360, phosphate: 25, sodium: 1, protein: 1, fluid: 75, portion: '1 stuk' },
+  { name: 'Sinaasappel', potassium: 180, phosphate: 15, sodium: 0, protein: 1, fluid: 85, portion: '1 stuk' },
+  { name: 'Tomaat', potassium: 240, phosphate: 25, sodium: 5, protein: 1, fluid: 90, portion: '1 stuk' },
+  { name: 'Melk (halfvol)', potassium: 150, phosphate: 95, sodium: 45, protein: 7, fluid: 200, portion: '1 glas' },
+  { name: 'Yoghurt', potassium: 190, phosphate: 120, sodium: 55, protein: 5, fluid: 150, portion: '1 bakje' },
+  { name: 'Koffie (zwart)', potassium: 50, phosphate: 5, sodium: 2, protein: 0, fluid: 150, portion: '1 kopje' },
+  { name: 'Thee', potassium: 20, phosphate: 2, sodium: 1, protein: 0, fluid: 200, portion: '1 kopje' },
+  { name: 'Water', potassium: 0, phosphate: 0, sodium: 0, protein: 0, fluid: 200, portion: '1 glas' },
+  { name: 'Chocolade', potassium: 400, phosphate: 200, sodium: 25, protein: 5, fluid: 2, portion: '1 reep' },
+  { name: 'Noten (gemengd)', potassium: 650, phosphate: 450, sodium: 5, protein: 10, fluid: 3, portion: '50g' },
+  { name: 'Witvis', potassium: 300, phosphate: 180, sodium: 80, protein: 20, fluid: 60, portion: '100g' },
 ];
 
 // Recipes
@@ -263,6 +268,7 @@ export interface Recipe {
   potassium: number;
   phosphate: number;
   sodium: number;
+  protein: number;
   servings: number;
 }
 
@@ -276,6 +282,7 @@ export const RECIPES: Recipe[] = [
     potassium: 380,
     phosphate: 270,
     sodium: 120,
+    protein: 35,
     servings: 1,
   },
   {
@@ -287,6 +294,7 @@ export const RECIPES: Recipe[] = [
     potassium: 290,
     phosphate: 180,
     sodium: 200,
+    protein: 12,
     servings: 1,
   },
   {
@@ -298,6 +306,7 @@ export const RECIPES: Recipe[] = [
     potassium: 200,
     phosphate: 250,
     sodium: 450,
+    protein: 18,
     servings: 1,
   },
   {
@@ -309,6 +318,7 @@ export const RECIPES: Recipe[] = [
     potassium: 320,
     phosphate: 60,
     sodium: 100,
+    protein: 3,
     servings: 2,
   },
   {
@@ -320,6 +330,7 @@ export const RECIPES: Recipe[] = [
     potassium: 150,
     phosphate: 140,
     sodium: 300,
+    protein: 8,
     servings: 2,
   },
 ];

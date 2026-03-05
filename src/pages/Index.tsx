@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beaker, Droplets, Flame, Waves, Plus } from 'lucide-react';
+import { Beaker, Droplets, Flame, Waves, Plus, Egg } from 'lucide-react';
 import NutrientCard from '@/components/NutrientCard';
 import RiskAlerts from '@/components/RiskAlerts';
 import PageHeader from '@/components/PageHeader';
@@ -78,6 +78,13 @@ export default function Index() {
               limit={limits.sodium}
               unit="mg"
               icon={<Waves className="h-5 w-5" />}
+            />
+            <NutrientCard
+              label="Eiwit"
+              current={totals.protein}
+              limit={limits.protein}
+              unit="g"
+              icon={<Egg className="h-5 w-5" />}
             />
             <NutrientCard
               label="Vocht"
