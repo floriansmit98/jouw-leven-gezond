@@ -29,6 +29,7 @@ export default function FoodTracker() {
       potassium: Math.round(selectedFood.potassium * p),
       phosphate: Math.round(selectedFood.phosphate * p),
       sodium: Math.round(selectedFood.sodium * p),
+      protein: Math.round(selectedFood.protein * p),
       fluid: Math.round(selectedFood.fluid * p),
     });
     toast.success(`${selectedFood.name} toegevoegd!`);
@@ -69,7 +70,7 @@ export default function FoodTracker() {
                 >
                   <div>
                     <p className="font-semibold text-foreground">{food.name}</p>
-                    <p className="text-xs text-muted-foreground">{food.portion} · K: {food.potassium}mg · F: {food.phosphate}mg</p>
+                    <p className="text-xs text-muted-foreground">{food.portion} · K: {food.potassium}mg · F: {food.phosphate}mg · E: {food.protein}g</p>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </button>
@@ -93,6 +94,10 @@ export default function FoodTracker() {
                       <p className="text-lg font-bold">{Math.round(food.sodium * (parseFloat(portions) || 1))} mg</p>
                     </div>
                     <div className="rounded-lg bg-muted p-3">
+                      <p className="text-muted-foreground">Eiwit</p>
+                      <p className="text-lg font-bold">{Math.round(food.protein * (parseFloat(portions) || 1))} g</p>
+                    </div>
+                    <div className="rounded-lg bg-muted p-3 col-span-2">
                       <p className="text-muted-foreground">Vocht</p>
                       <p className="text-lg font-bold">{Math.round(food.fluid * (parseFloat(portions) || 1))} ml</p>
                     </div>
@@ -127,7 +132,7 @@ export default function FoodTracker() {
                 <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
                   <p className="font-medium text-foreground">{entry.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    K: {entry.potassium}mg · F: {entry.phosphate}mg · Na: {entry.sodium}mg · Vocht: {entry.fluid}ml
+                    K: {entry.potassium}mg · F: {entry.phosphate}mg · Na: {entry.sodium}mg · E: {entry.protein}g · Vocht: {entry.fluid}ml
                   </p>
                 </div>
               ))}

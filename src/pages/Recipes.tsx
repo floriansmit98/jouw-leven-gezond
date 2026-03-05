@@ -20,7 +20,7 @@ export default function Recipes() {
           <h1 className="mb-2 font-display text-2xl font-bold text-foreground">{recipe.name}</h1>
           <p className="mb-4 text-sm text-muted-foreground">{recipe.description}</p>
 
-          <div className="mb-4 grid grid-cols-3 gap-2">
+          <div className="mb-4 grid grid-cols-2 gap-2">
             <div className="rounded-xl bg-card border border-border p-3 text-center">
               <p className="text-xs text-muted-foreground">Kalium</p>
               <p className="text-lg font-bold text-foreground">{recipe.potassium} mg</p>
@@ -32,6 +32,10 @@ export default function Recipes() {
             <div className="rounded-xl bg-card border border-border p-3 text-center">
               <p className="text-xs text-muted-foreground">Natrium</p>
               <p className="text-lg font-bold text-foreground">{recipe.sodium} mg</p>
+            </div>
+            <div className="rounded-xl bg-card border border-border p-3 text-center">
+              <p className="text-xs text-muted-foreground">Eiwit</p>
+              <p className="text-lg font-bold text-foreground">{recipe.protein} g</p>
             </div>
           </div>
 
@@ -83,6 +87,7 @@ export default function Recipes() {
                   <span>K: {r.potassium}mg</span>
                   <span>F: {r.phosphate}mg</span>
                   <span>Na: {r.sodium}mg</span>
+                  <span>E: {r.protein}g</span>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
