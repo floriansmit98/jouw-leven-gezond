@@ -1,12 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Activity, Droplets, Camera } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Activity, Camera, FileText } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/voeding', icon: UtensilsCrossed, label: 'Voeding' },
   { path: '/scanner', icon: Camera, label: 'Scanner' },
   { path: '/symptomen', icon: Activity, label: 'Symptomen' },
-  { path: '/dialyse', icon: Droplets, label: 'Dialyse' },
+  { path: '/rapport', icon: FileText, label: 'Rapport' },
 ];
 
 export default function BottomNav() {
