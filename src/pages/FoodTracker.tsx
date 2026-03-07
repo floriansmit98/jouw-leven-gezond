@@ -3,7 +3,7 @@ import { Search, Plus, ChevronRight, Loader2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useFoodSearch, useTodayEntries, addFoodEntryDB, type FoodRow } from '@/hooks/useFoods';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,22 +19,24 @@ export default function FoodTracker() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
-  const [portions, setPortions] = useState('1');
+  const [amount, setAmount] = useState('100');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adding, setAdding] = useState(false);
 
   const { foods, loading, hasMore, loadMore } = useFoodSearch(search);
   const { entries, refetch } = useTodayEntries();
 
+  const amountNum = parseFloat(amount) || 0;
+  const factor = amountNum / 100;
+
   async function handleAddFood() {
-    if (!selectedFood || !user) return;
+    if (!selectedFood || !user || amountNum <= 0) return;
     setAdding(true);
     try {
-      const p = parseFloat(portions) || 1;
-      await addFoodEntryDB(user.id, selectedFood, p);
+      await addFoodEntryDB(user.id, selectedFood, factor);
       toast.success(`${selectedFood.name} toegevoegd!`);
       setSelectedFood(null);
-      setPortions('1');
+      setAmount('100');
       setDialogOpen(false);
       refetch();
     } catch {
@@ -43,7 +45,9 @@ export default function FoodTracker() {
     setAdding(false);
   }
 
-  const p = parseFloat(portions) || 1;
+  const isLiquid = selectedFood?.category?.toLowerCase().includes('drank') ||
+    selectedFood?.portion_description?.toLowerCase().includes('ml');
+  const unitLabel = isLiquid ? 'ml' : 'g';
 
   return (
     <div className="min-h-screen pb-24">
@@ -65,7 +69,7 @@ export default function FoodTracker() {
           {foods.map(food => (
             <button
               key={food.id}
-              onClick={() => { setSelectedFood(food); setDialogOpen(true); setPortions('1'); }}
+              onClick={() => { setSelectedFood(food); setDialogOpen(true); setAmount('100'); }}
               className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
             >
               <div className="flex-1">
@@ -76,7 +80,7 @@ export default function FoodTracker() {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {food.portion_description} · K: {food.potassium_mg}mg · F: {food.phosphate_mg}mg · E: {food.protein_g}g
+                  per 100{food.portion_description?.toLowerCase().includes('ml') ? 'ml' : 'g'} · K: {food.potassium_mg}mg · F: {food.phosphate_mg}mg · E: {food.protein_g}g
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
@@ -114,32 +118,40 @@ export default function FoodTracker() {
               <>
                 <DialogHeader>
                   <DialogTitle className="font-display">{selectedFood.name}</DialogTitle>
-                  <p className="text-xs text-muted-foreground">{selectedFood.category} · {selectedFood.portion_description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedFood.category} · voedingswaarden per 100{unitLabel}
+                  </p>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <NutrientBox label="Kalium" value={Math.round(selectedFood.potassium_mg * p)} unit="mg" />
-                    <NutrientBox label="Fosfaat" value={Math.round(selectedFood.phosphate_mg * p)} unit="mg" />
-                    <NutrientBox label="Natrium" value={Math.round(selectedFood.sodium_mg * p)} unit="mg" />
-                    <NutrientBox label="Eiwit" value={Math.round(selectedFood.protein_g * p)} unit="g" />
-                    <div className="col-span-2">
-                      <NutrientBox label="Vocht" value={Math.round(selectedFood.fluid_ml * p)} unit="ml" />
-                    </div>
-                  </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">
-                      Aantal porties ({selectedFood.portion_description})
+                      Hoeveelheid ({unitLabel})
                     </label>
                     <Input
                       type="number"
-                      min="0.5"
-                      step="0.5"
-                      value={portions}
-                      onChange={e => setPortions(e.target.value)}
+                      min="1"
+                      step="1"
+                      value={amount}
+                      onChange={e => setAmount(e.target.value)}
+                      placeholder={`bijv. 150 ${unitLabel}`}
                       className="h-12 rounded-xl text-base"
                     />
+                    {amountNum > 0 && amountNum !== 100 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Berekend voor {amountNum}{unitLabel} (i.p.v. 100{unitLabel})
+                      </p>
+                    )}
                   </div>
-                  <Button onClick={handleAddFood} disabled={adding} className="h-12 w-full rounded-xl text-base font-semibold">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <NutrientBox label="Kalium" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" />
+                    <NutrientBox label="Fosfaat" value={Math.round(selectedFood.phosphate_mg * factor)} unit="mg" />
+                    <NutrientBox label="Natrium" value={Math.round(selectedFood.sodium_mg * factor)} unit="mg" />
+                    <NutrientBox label="Eiwit" value={Math.round(selectedFood.protein_g * factor)} unit="g" />
+                    <div className="col-span-2">
+                      <NutrientBox label="Vocht" value={Math.round(selectedFood.fluid_ml * factor)} unit="ml" />
+                    </div>
+                  </div>
+                  <Button onClick={handleAddFood} disabled={adding || amountNum <= 0} className="h-12 w-full rounded-xl text-base font-semibold">
                     {adding ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Plus className="mr-2 h-5 w-5" />}
                     Toevoegen
                   </Button>
@@ -158,7 +170,7 @@ export default function FoodTracker() {
                 <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
                   <p className="font-medium text-foreground">{entry.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
+                    {Math.round(entry.portions * 100)}g · K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
                   </p>
                 </div>
               ))}
