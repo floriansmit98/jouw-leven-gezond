@@ -3,42 +3,49 @@ import { FileText, Download, Calendar, Share2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  getFoodEntries,
-  getSymptomEntries,
-  getDialysisSessions,
-  getFluidEntries,
-  getLimits,
-  SYMPTOM_LABELS,
-  type FoodEntry,
-  type SymptomEntry,
-  type DialysisSession,
-  type FluidEntry,
-  type DailyLimits,
-} from '@/lib/store';
+import { getLimits, getDialysisSessions, SYMPTOM_LABELS, type DialysisSession, type DailyLimits, type SymptomType } from '@/lib/store';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 
 type Period = '1' | '7' | '14' | '30';
-
-function filterByDays<T extends { timestamp?: string; date?: string }>(items: T[], days: number): T[] {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  return items.filter(item => {
-    const d = new Date(item.timestamp || item.date || '');
-    return d >= cutoff;
-  });
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+interface FoodRecord {
+  id: string;
+  name: string;
+  potassium_mg: number;
+  phosphate_mg: number;
+  sodium_mg: number;
+  protein_g: number;
+  fluid_ml: number;
+  portions: number;
+  logged_at: string;
+}
+
+interface SymptomRecord {
+  id: string;
+  symptom_name: string;
+  severity_score: number;
+  notes: string | null;
+  logged_at: string;
+}
+
+function getCutoff(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
+
 function generateReportText(
   period: number,
-  foods: FoodEntry[],
-  symptoms: SymptomEntry[],
+  foods: FoodRecord[],
+  symptoms: SymptomRecord[],
   sessions: DialysisSession[],
-  fluids: FluidEntry[],
   limits: DailyLimits
 ): string {
   const now = new Date();
@@ -54,7 +61,6 @@ function generateReportText(
   lines.push(`Gegenereerd op: ${formatDate(now.toISOString())} om ${now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`);
   lines.push('');
 
-  // Daily limits
   lines.push('───────────────────────────────────────');
   lines.push('  INGESTELDE DAGLIMIETEN');
   lines.push('───────────────────────────────────────');
@@ -65,15 +71,14 @@ function generateReportText(
   lines.push(`  Vocht:    ${limits.fluid} ml`);
   lines.push('');
 
-  // Nutrition summary
   if (foods.length > 0) {
-    const totalK = foods.reduce((s, f) => s + f.potassium, 0);
-    const totalP = foods.reduce((s, f) => s + f.phosphate, 0);
-    const totalNa = foods.reduce((s, f) => s + f.sodium, 0);
-    const totalPr = foods.reduce((s, f) => s + f.protein, 0);
-    const totalFl = foods.reduce((s, f) => s + f.fluid, 0) + fluids.reduce((s, f) => s + f.amount, 0);
+    const totalK = foods.reduce((s, f) => s + Number(f.potassium_mg), 0);
+    const totalP = foods.reduce((s, f) => s + Number(f.phosphate_mg), 0);
+    const totalNa = foods.reduce((s, f) => s + Number(f.sodium_mg), 0);
+    const totalPr = foods.reduce((s, f) => s + Number(f.protein_g), 0);
+    const totalFl = foods.reduce((s, f) => s + Number(f.fluid_ml), 0);
     const days = period;
-    
+
     lines.push('───────────────────────────────────────');
     lines.push('  VOEDINGSINNAME (GEMIDDELD PER DAG)');
     lines.push('───────────────────────────────────────');
@@ -83,27 +88,26 @@ function generateReportText(
     lines.push(`  Eiwit:    ${Math.round(totalPr / days)} g   (limiet: ${limits.protein} g)`);
     lines.push(`  Vocht:    ${Math.round(totalFl / days)} ml  (limiet: ${limits.fluid} ml)`);
     lines.push('');
-    lines.push(`  Totaal voedingsregistraties: ${foods.length}`);
-    lines.push(`  Totaal vochtregistraties: ${fluids.length}`);
+    lines.push(`  Totaal registraties: ${foods.length}`);
     lines.push('');
 
-    // Daily breakdown
     lines.push('  Voedingsdetails per dag:');
-    const byDate = new Map<string, FoodEntry[]>();
+    const byDate = new Map<string, FoodRecord[]>();
     foods.forEach(f => {
-      const day = f.timestamp.split('T')[0];
+      const day = f.logged_at.split('T')[0];
       if (!byDate.has(day)) byDate.set(day, []);
       byDate.get(day)!.push(f);
     });
-    
+
     Array.from(byDate.entries())
       .sort(([a], [b]) => b.localeCompare(a))
       .forEach(([date, entries]) => {
-        const dayK = entries.reduce((s, f) => s + f.potassium, 0);
-        const dayP = entries.reduce((s, f) => s + f.phosphate, 0);
-        const dayNa = entries.reduce((s, f) => s + f.sodium, 0);
-        lines.push(`    ${formatDate(date + 'T00:00:00')}: K=${dayK}mg P=${dayP}mg Na=${dayNa}mg`);
-        entries.forEach(e => lines.push(`      • ${e.name}`));
+        const dayK = entries.reduce((s, f) => s + Number(f.potassium_mg), 0);
+        const dayP = entries.reduce((s, f) => s + Number(f.phosphate_mg), 0);
+        const dayNa = entries.reduce((s, f) => s + Number(f.sodium_mg), 0);
+        const dayFl = entries.reduce((s, f) => s + Number(f.fluid_ml), 0);
+        lines.push(`    ${formatDate(date + 'T00:00:00')}: K=${dayK}mg P=${dayP}mg Na=${dayNa}mg Vocht=${dayFl}ml`);
+        entries.forEach(e => lines.push(`      • ${e.name} (${e.portions}x)`));
       });
     lines.push('');
   } else {
@@ -111,19 +115,18 @@ function generateReportText(
     lines.push('');
   }
 
-  // Symptoms
   if (symptoms.length > 0) {
     lines.push('───────────────────────────────────────');
     lines.push('  SYMPTOMEN');
     lines.push('───────────────────────────────────────');
-    
+
     const symptomCounts = new Map<string, { count: number; totalSeverity: number }>();
     symptoms.forEach(s => {
-      const label = SYMPTOM_LABELS[s.type];
+      const label = SYMPTOM_LABELS[s.symptom_name as SymptomType] || s.symptom_name;
       if (!symptomCounts.has(label)) symptomCounts.set(label, { count: 0, totalSeverity: 0 });
       const entry = symptomCounts.get(label)!;
       entry.count++;
-      entry.totalSeverity += s.severity;
+      entry.totalSeverity += s.severity_score;
     });
 
     symptomCounts.forEach((data, label) => {
@@ -134,11 +137,11 @@ function generateReportText(
 
     lines.push('  Symptoomdetails:');
     [...symptoms]
-      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+      .sort((a, b) => b.logged_at.localeCompare(a.logged_at))
       .forEach(s => {
-        const label = SYMPTOM_LABELS[s.type];
-        const stars = '●'.repeat(s.severity) + '○'.repeat(5 - s.severity);
-        lines.push(`    ${formatDate(s.timestamp)} - ${label} [${stars}]${s.notes ? ` - ${s.notes}` : ''}`);
+        const label = SYMPTOM_LABELS[s.symptom_name as SymptomType] || s.symptom_name;
+        const stars = '●'.repeat(s.severity_score) + '○'.repeat(5 - s.severity_score);
+        lines.push(`    ${formatDate(s.logged_at)} - ${label} [${stars}]${s.notes ? ` - ${s.notes}` : ''}`);
       });
     lines.push('');
   } else {
@@ -146,17 +149,16 @@ function generateReportText(
     lines.push('');
   }
 
-  // Dialysis sessions
   if (sessions.length > 0) {
     lines.push('───────────────────────────────────────');
     lines.push('  DIALYSE SESSIES');
     lines.push('───────────────────────────────────────');
     lines.push(`  Aantal sessies: ${sessions.length}`);
-    
+
     const avgFluidRemoved = sessions.reduce((s, d) => s + d.fluidRemoved, 0) / sessions.length;
     lines.push(`  Gem. vocht verwijderd: ${Math.round(avgFluidRemoved)} ml`);
     lines.push('');
-    
+
     [...sessions]
       .sort((a, b) => b.date.localeCompare(a.date))
       .forEach(s => {
@@ -179,20 +181,58 @@ function generateReportText(
 }
 
 export default function Report() {
+  const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
 
   const days = parseInt(period);
-  const foods = filterByDays(getFoodEntries(), days);
-  const symptoms = filterByDays(getSymptomEntries(), days);
-  const sessions = filterByDays(getDialysisSessions(), days);
-  const fluids = filterByDays(getFluidEntries(), days);
+  const cutoff = getCutoff(days);
+
+  const { data: foods = [] } = useQuery({
+    queryKey: ['report_foods', user?.id, days],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', cutoff)
+        .order('logged_at', { ascending: false });
+      if (error) throw error;
+      return data as FoodRecord[];
+    },
+    enabled: !!user,
+  });
+
+  const { data: symptoms = [] } = useQuery({
+    queryKey: ['report_symptoms', user?.id, days],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('symptom_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', cutoff)
+        .order('logged_at', { ascending: false });
+      if (error) throw error;
+      return data as SymptomRecord[];
+    },
+    enabled: !!user,
+  });
+
+  // Dialysis sessions still from localStorage, filtered by period
+  const allSessions = getDialysisSessions();
+  const sessions = allSessions.filter(s => {
+    const d = new Date(s.date);
+    return d >= new Date(cutoff);
+  });
+
   const limits = getLimits();
 
   const handleDownload = () => {
     setGenerating(true);
     try {
-      const text = generateReportText(days, foods, symptoms, sessions, fluids, limits);
+      const text = generateReportText(days, foods, symptoms, sessions, limits);
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -210,16 +250,11 @@ export default function Report() {
   };
 
   const handleShare = async () => {
-    const text = generateReportText(days, foods, symptoms, sessions, fluids, limits);
+    const text = generateReportText(days, foods, symptoms, sessions, limits);
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: 'Dialyse Rapport',
-          text,
-        });
-      } catch {
-        // User cancelled
-      }
+        await navigator.share({ title: 'Dialyse Rapport', text });
+      } catch { /* cancelled */ }
     } else {
       await navigator.clipboard.writeText(text);
       toast({ title: 'Gekopieerd', description: 'Het rapport is naar het klembord gekopieerd.' });
@@ -238,7 +273,6 @@ export default function Report() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader title="Rapport" mascotMood="neutral" mascotMessage="Exporteer uw gegevens voor uw arts." />
 
-        {/* Period selector */}
         <Card className="mb-4">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -263,7 +297,6 @@ export default function Report() {
           </CardContent>
         </Card>
 
-        {/* Summary preview */}
         <Card className="mb-4">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -273,31 +306,19 @@ export default function Report() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <SummaryRow label="Voedingsregistraties" value={foods.length} />
-              <SummaryRow label="Vochtregistraties" value={fluids.length} />
+              <SummaryRow label="Voeding & vocht registraties" value={foods.length} />
               <SummaryRow label="Symptoomregistraties" value={symptoms.length} />
               <SummaryRow label="Dialyse sessies" value={sessions.length} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Actions */}
         <div className="grid grid-cols-1 gap-3">
-          <Button
-            onClick={handleDownload}
-            disabled={generating}
-            size="lg"
-            className="h-14 gap-2 text-base font-semibold"
-          >
+          <Button onClick={handleDownload} disabled={generating} size="lg" className="h-14 gap-2 text-base font-semibold">
             <Download className="h-5 w-5" />
             {generating ? 'Genereren...' : 'Download rapport'}
           </Button>
-          <Button
-            onClick={handleShare}
-            variant="outline"
-            size="lg"
-            className="h-14 gap-2 text-base font-semibold"
-          >
+          <Button onClick={handleShare} variant="outline" size="lg" className="h-14 gap-2 text-base font-semibold">
             <Share2 className="h-5 w-5" />
             Delen met arts
           </Button>
@@ -305,7 +326,6 @@ export default function Report() {
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Dit rapport bevat een overzicht van uw voedingsinname, symptomen en dialyse sessies.
-          U kunt het downloaden of direct delen met uw zorgverlener.
         </p>
       </div>
     </div>
