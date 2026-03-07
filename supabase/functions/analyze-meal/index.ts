@@ -37,43 +37,17 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Je bent een voedingsdeskundige gespecialiseerd in diëten voor dialysepatiënten.
-Analyseer de foto van een maaltijd en geef een schatting van de voedingsstoffen.
-
-Antwoord ALTIJD in dit exacte JSON-formaat, zonder extra tekst:
-{
-  "naam": "Naam van het gerecht",
-  "items": [
-    {
-      "naam": "Voedingsmiddel",
-      "portie": "geschatte portie",
-      "kalium": 0,
-      "fosfaat": 0,
-      "natrium": 0,
-      "eiwit": 0,
-      "vocht": 0
-    }
-  ],
-  "totaal": {
-    "kalium": 0,
-    "fosfaat": 0,
-    "natrium": 0,
-    "eiwit": 0,
-    "vocht": 0
-  },
-  "waarschuwingen": ["eventuele waarschuwingen voor dialysepatiënten"],
-  "advies": "Kort advies in simpel Nederlands"
-}
-
-Kalium, fosfaat en natrium in mg. Eiwit in gram. Vocht in ml.
-Wees realistisch met de schattingen. Geef waarschuwingen als een voedingsmiddel veel kalium, fosfaat of natrium bevat.`,
+            content: `Je bent een voedselherkenner. Bekijk de foto en identificeer alle zichtbare voedingsmiddelen en dranken.
+Geef voor elk item de Nederlandse naam zoals je die in een voedingsdatabase zou zoeken (bijv. "kipfilet", "witte rijst", "broccoli", "appelsap").
+Schat ook de hoeveelheid in grammen of milliliters.
+Geef alleen de namen en geschatte hoeveelheden terug, GEEN voedingswaarden.`,
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Analyseer deze maaltijd en schat de voedingsstoffen. Geef het resultaat als JSON.",
+                text: "Welke voedingsmiddelen zie je op deze foto? Geef de Nederlandse namen en geschatte hoeveelheden.",
               },
               {
                 type: "image_url",
@@ -84,6 +58,45 @@ Wees realistisch met de schattingen. Geef waarschuwingen als een voedingsmiddel 
             ],
           },
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "identify_foods",
+              description: "Return the list of identified foods from the photo with Dutch names and estimated amounts.",
+              parameters: {
+                type: "object",
+                properties: {
+                  foods: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        naam: {
+                          type: "string",
+                          description: "Dutch name of the food as you would search in a nutrition database, e.g. 'kipfilet', 'witte rijst', 'broccoli'"
+                        },
+                        hoeveelheid_gram: {
+                          type: "number",
+                          description: "Estimated amount in grams (or ml for liquids)"
+                        },
+                        is_drank: {
+                          type: "boolean",
+                          description: "Whether this is a drink/liquid"
+                        }
+                      },
+                      required: ["naam", "hoeveelheid_gram", "is_drank"],
+                      additionalProperties: false
+                    }
+                  }
+                },
+                required: ["foods"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "identify_foods" } },
       }),
     });
 
@@ -109,19 +122,24 @@ Wees realistisch met de schattingen. Geef waarschuwingen als een voedingsmiddel 
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    
+    // Extract tool call result
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) {
+      // Fallback: try to parse content as JSON
+      const content = data.choices?.[0]?.message?.content || "";
+      console.error("No tool call in response, content:", content);
+      return new Response(JSON.stringify({ error: "Kon geen voedingsmiddelen herkennen. Probeer een duidelijkere foto." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Extract JSON from the response
     let parsed;
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error("No JSON found");
-      }
+      parsed = JSON.parse(toolCall.function.arguments);
     } catch {
-      console.error("Failed to parse AI response:", content);
+      console.error("Failed to parse tool call arguments:", toolCall.function.arguments);
       return new Response(JSON.stringify({ error: "Kon het resultaat niet verwerken. Probeer een duidelijkere foto." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
