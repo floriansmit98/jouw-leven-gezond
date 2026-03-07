@@ -97,7 +97,7 @@ export default function MealScanner() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Maaltijd Scanner"
