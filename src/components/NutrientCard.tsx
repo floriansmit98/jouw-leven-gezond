@@ -24,21 +24,27 @@ export default function NutrientCard({ label, current, limit, unit, icon }: Nutr
     danger: 'status-danger-bg',
   }[status];
 
+  const iconBg = {
+    safe: 'bg-safe/10 text-safe',
+    warning: 'bg-warning/10 text-warning',
+    danger: 'bg-danger/10 text-danger',
+  }[status];
+
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm gradient-card-highlight">
       <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">{icon}</span>
-          <span className="text-sm font-medium text-foreground">{label}</span>
+        <div className="flex items-center gap-2.5">
+          <span className={`rounded-lg p-1.5 ${iconBg}`}>{icon}</span>
+          <span className="text-sm font-semibold text-foreground">{label}</span>
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${bgColor}`}>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${bgColor}`}>
           {getStatusLabel(status)}
         </span>
       </div>
-      <div className="mb-1 text-2xl font-bold text-foreground">
+      <div className="mb-1.5 text-2xl font-bold text-foreground">
         {current} <span className="text-sm font-normal text-muted-foreground">/ {limit} {unit}</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
         <div
           className={`h-full rounded-full transition-all duration-500 ${barColor}`}
           style={{ width: `${percentage}%` }}

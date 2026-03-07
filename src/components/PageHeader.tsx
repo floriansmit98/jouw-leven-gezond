@@ -6,12 +6,14 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, action }: PageHeaderProps) {
   return (
-    <div className="mb-6 flex items-start justify-between">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+    <div className="mb-6 rounded-2xl gradient-header p-5 shadow-md">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-primary-foreground">{title}</h1>
+          {subtitle && <p className="mt-1 text-sm text-primary-foreground/80">{subtitle}</p>}
+        </div>
+        {action}
       </div>
-      {action}
     </div>
   );
 }
