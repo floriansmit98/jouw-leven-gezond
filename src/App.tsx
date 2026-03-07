@@ -43,7 +43,7 @@ function ProtectedRoutes() {
         <Route path="/dialyse" element={<DialysisLog />} />
         <Route path="/coach" element={<Coach />} />
         <Route path="/recepten" element={<Recipes />} />
-        <Route path="/scanner" element={<MealScanner />} />
+        <Route path="/scanner" element={<Navigate to="/voeding" replace />} />
         <Route path="/rapport" element={<Report />} />
         <Route path="/instellingen" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
