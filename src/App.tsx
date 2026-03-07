@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import FoodTracker from "./pages/FoodTracker";
 import SymptomTracker from "./pages/SymptomTracker";
@@ -13,9 +14,42 @@ import Recipes from "./pages/Recipes";
 import MealScanner from "./pages/MealScanner";
 import Report from "./pages/Report";
 import Settings from "./pages/Settings";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function ProtectedRoutes() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user) return <Auth />;
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/voeding" element={<FoodTracker />} />
+        <Route path="/symptomen" element={<SymptomTracker />} />
+        <Route path="/dialyse" element={<DialysisLog />} />
+        <Route path="/coach" element={<Coach />} />
+        <Route path="/recepten" element={<Recipes />} />
+        <Route path="/scanner" element={<MealScanner />} />
+        <Route path="/rapport" element={<Report />} />
+        <Route path="/instellingen" element={<Settings />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <BottomNav />
+    </>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -23,19 +57,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/voeding" element={<FoodTracker />} />
-          <Route path="/symptomen" element={<SymptomTracker />} />
-          <Route path="/dialyse" element={<DialysisLog />} />
-          <Route path="/coach" element={<Coach />} />
-          <Route path="/recepten" element={<Recipes />} />
-          <Route path="/scanner" element={<MealScanner />} />
-          <Route path="/rapport" element={<Report />} />
-          <Route path="/instellingen" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <BottomNav />
+        <AuthProvider>
+          <ProtectedRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

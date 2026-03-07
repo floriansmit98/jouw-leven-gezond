@@ -1,22 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings } from 'lucide-react';
+import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings, LogOut } from 'lucide-react';
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
 import PageHeader from '@/components/PageHeader';
-import { getTodayTotals, getLimits } from '@/lib/store';
+import { getLimits } from '@/lib/store';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTodayEntries } from '@/hooks/useFoods';
 
 export default function Index() {
   const navigate = useNavigate();
-  const [totals, setTotals] = useState(getTodayTotals());
+  const { user, signOut } = useAuth();
   const limits = getLimits();
+  const { entries } = useTodayEntries();
 
-  useEffect(() => {
-    const interval = setInterval(() => setTotals(getTodayTotals()), 2000);
-    return () => clearInterval(interval);
-  }, []);
+  const totals = {
+    potassium: entries.reduce((s, e) => s + Number(e.potassium_mg), 0),
+    phosphate: entries.reduce((s, e) => s + Number(e.phosphate_mg), 0),
+    sodium: entries.reduce((s, e) => s + Number(e.sodium_mg), 0),
+    protein: entries.reduce((s, e) => s + Number(e.protein_g), 0),
+    fluid: entries.reduce((s, e) => s + Number(e.fluid_ml), 0),
+  };
 
   return (
     <div className="min-h-screen pb-24">
@@ -25,91 +31,50 @@ export default function Index() {
           title="Goedendag 👋"
           subtitle="Uw dagelijkse gezondheidsoverzicht"
           action={
-            <button
-              onClick={() => navigate('/instellingen')}
-              className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
-            >
-              <Settings className="h-5 w-5" />
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate('/instellingen')}
+                className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+              <button
+                onClick={signOut}
+                className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
           }
         />
 
-        {/* Quick Actions */}
         <div className="mb-6 grid grid-cols-2 gap-3">
-          <Button
-            onClick={() => navigate('/voeding')}
-            className="h-14 gap-2 rounded-xl bg-primary text-primary-foreground text-base font-semibold shadow-md"
-          >
-            <Plus className="h-5 w-5" />
-            Voeding loggen
+          <Button onClick={() => navigate('/voeding')} className="h-14 gap-2 rounded-xl bg-primary text-primary-foreground text-base font-semibold shadow-md">
+            <Plus className="h-5 w-5" /> Voeding loggen
           </Button>
-          <Button
-            onClick={() => navigate('/dialyse')}
-            variant="outline"
-            className="h-14 gap-2 rounded-xl text-base font-semibold"
-          >
-            <Droplets className="h-5 w-5" />
-            Dialyse loggen
+          <Button onClick={() => navigate('/dialyse')} variant="outline" className="h-14 gap-2 rounded-xl text-base font-semibold">
+            <Droplets className="h-5 w-5" /> Dialyse loggen
           </Button>
         </div>
 
-        {/* Risk Alerts */}
         <div className="mb-6">
-          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">
-            Risicoanalyse
-          </h2>
+          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">Risicoanalyse</h2>
           <RiskAlerts />
         </div>
 
-        {/* Nutrient Cards */}
         <div className="mb-6">
-          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">
-            Dagelijks overzicht
-          </h2>
+          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">Dagelijks overzicht</h2>
           <div className="grid gap-3">
-            <NutrientCard
-              label="Kalium"
-              current={totals.potassium}
-              limit={limits.potassium}
-              unit="mg"
-              icon={<Beaker className="h-5 w-5" />}
-            />
-            <NutrientCard
-              label="Fosfaat"
-              current={totals.phosphate}
-              limit={limits.phosphate}
-              unit="mg"
-              icon={<Flame className="h-5 w-5" />}
-            />
-            <NutrientCard
-              label="Natrium"
-              current={totals.sodium}
-              limit={limits.sodium}
-              unit="mg"
-              icon={<Waves className="h-5 w-5" />}
-            />
-            <GoalCard
-              label="Eiwit"
-              current={totals.protein}
-              goal={limits.protein}
-              unit="g"
-              icon={<Egg className="h-5 w-5" />}
-            />
-            <NutrientCard
-              label="Vocht"
-              current={totals.fluid}
-              limit={limits.fluid}
-              unit="ml"
-              icon={<Droplets className="h-5 w-5" />}
-            />
+            <NutrientCard label="Kalium" current={totals.potassium} limit={limits.potassium} unit="mg" icon={<Beaker className="h-5 w-5" />} />
+            <NutrientCard label="Fosfaat" current={totals.phosphate} limit={limits.phosphate} unit="mg" icon={<Flame className="h-5 w-5" />} />
+            <NutrientCard label="Natrium" current={totals.sodium} limit={limits.sodium} unit="mg" icon={<Waves className="h-5 w-5" />} />
+            <GoalCard label="Eiwit" current={totals.protein} goal={limits.protein} unit="g" icon={<Egg className="h-5 w-5" />} />
+            <NutrientCard label="Vocht" current={totals.fluid} limit={limits.fluid} unit="ml" icon={<Droplets className="h-5 w-5" />} />
           </div>
         </div>
 
-        {/* Fluid Schedule */}
         <div className="mb-6">
-          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">
-            Vochtschema vandaag
-          </h2>
+          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">Vochtschema vandaag</h2>
           <FluidSchedule totalLimit={limits.fluid} consumed={totals.fluid} />
         </div>
       </div>
@@ -141,12 +106,7 @@ function FluidSchedule({ totalLimit, consumed }: { totalLimit: number; consumed:
           const hour = parseInt(slot.time.split(':')[0]);
           const isPast = hour < currentHour;
           return (
-            <div
-              key={i}
-              className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
-                isPast ? 'bg-muted/50 text-muted-foreground' : 'bg-secondary/50'
-              }`}
-            >
+            <div key={i} className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${isPast ? 'bg-muted/50 text-muted-foreground' : 'bg-secondary/50'}`}>
               <span className="font-medium">{slot.time}</span>
               <span>{slot.amount} ml</span>
             </div>
