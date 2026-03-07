@@ -16,8 +16,8 @@ export default function PageHeader({ title, subtitle, action, mascotMood = 'neut
       <div className="relative rounded-2xl gradient-header pt-20 p-5 shadow-md overflow-visible mt-28">
         <div className="flex items-end gap-4">
           {/* Mascot - anchored bottom-right, popping out of the card */}
-          <div className="absolute -top-14 right-4 z-10">
-            <Mascot mood={mascotMood} className="h-32 w-auto drop-shadow-xl" />
+          <div className="absolute -top-32 right-3 z-10">
+            <Mascot mood={mascotMood} className="h-40 w-auto drop-shadow-xl" />
           </div>
 
           {/* Text content */}
