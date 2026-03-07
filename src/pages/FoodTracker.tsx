@@ -1,39 +1,60 @@
 import { useState } from 'react';
-import { Search, Plus, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, Plus, ChevronRight, Loader2, ShoppingCart } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useFoodSearch, useTodayEntries, addFoodEntryDB, type FoodRow } from '@/hooks/useFoods';
+import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
-const RISK_COLORS: Record<string, string> = {
-  laag: 'bg-green-100 text-green-800',
-  gemiddeld: 'bg-yellow-100 text-yellow-800',
-  hoog: 'bg-red-100 text-red-800',
-};
+import { supabase } from '@/integrations/supabase/client';
 
 export default function FoodTracker() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
+  const [isOFF, setIsOFF] = useState(false);
   const [amount, setAmount] = useState('100');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  const { foods, loading, hasMore, loadMore } = useFoodSearch(search, false);
+  const { foods, loading: nevoLoading, hasMore, loadMore } = useFoodSearch(search, false);
+  const { products: offFoods, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore } = useOFFSearch(search, false);
   const { entries, refetch } = useTodayEntries();
 
   const amountNum = parseFloat(amount) || 0;
   const factor = amountNum / 100;
 
+  function selectFood(food: FoodRow, fromOFF: boolean) {
+    setSelectedFood(food);
+    setIsOFF(fromOFF);
+    setDialogOpen(true);
+    setAmount('100');
+  }
+
   async function handleAddFood() {
     if (!selectedFood || !user || amountNum <= 0) return;
     setAdding(true);
     try {
-      await addFoodEntryDB(user.id, selectedFood, factor);
+      if (isOFF) {
+        // For OFF products, insert directly into food_entries (no food_id)
+        const { error } = await supabase.from('food_entries').insert({
+          user_id: user.id,
+          food_id: null,
+          name: selectedFood.name,
+          potassium_mg: Math.round(selectedFood.potassium_mg * factor),
+          phosphate_mg: Math.round(selectedFood.phosphate_mg * factor),
+          sodium_mg: Math.round(selectedFood.sodium_mg * factor),
+          protein_g: Math.round(selectedFood.protein_g * factor * 10) / 10,
+          fluid_ml: Math.round(selectedFood.fluid_ml * factor),
+          portions: factor,
+        });
+        if (error) throw error;
+      } else {
+        await addFoodEntryDB(user.id, selectedFood, factor);
+      }
       toast.success(`${selectedFood.name} toegevoegd!`);
       setSelectedFood(null);
       setAmount('100');
@@ -45,9 +66,7 @@ export default function FoodTracker() {
     setAdding(false);
   }
 
-  const isLiquid = selectedFood?.category?.toLowerCase().includes('drank') ||
-    selectedFood?.portion_description?.toLowerCase().includes('ml');
-  const unitLabel = isLiquid ? 'ml' : 'g';
+  const unitLabel = 'g';
 
   return (
     <div className="min-h-screen pb-24">
@@ -64,43 +83,53 @@ export default function FoodTracker() {
           />
         </div>
 
-        {/* Food List - only show when searching */}
         {search.trim() !== '' && (
           <div className="mb-6 space-y-2">
-            {foods.map(food => (
-              <button
-                key={food.id}
-                onClick={() => { setSelectedFood(food); setDialogOpen(true); setAmount('100'); }}
-                className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
-              >
-              <div className="flex-1">
-                  <p className="font-semibold text-foreground">{food.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    per 100{food.portion_description?.toLowerCase().includes('ml') ? 'ml' : 'g'}
-                  </p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-              </button>
-            ))}
+            {/* NEVO results */}
+            {foods.length > 0 && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">NEVO-database</p>
+                {foods.map(food => (
+                  <FoodListItem key={food.id} food={food} onClick={() => selectFood(food, false)} />
+                ))}
+                {hasMore && !nevoLoading && (
+                  <Button variant="outline" onClick={loadMore} className="w-full rounded-xl text-sm">
+                    Meer NEVO-resultaten...
+                  </Button>
+                )}
+              </>
+            )}
 
-            {loading && (
+            {/* OFF results */}
+            {offFoods.length > 0 && (
+              <>
+                <p className="mt-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 flex items-center gap-1.5">
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  Supermarktproducten
+                </p>
+                {offFoods.map(food => (
+                  <FoodListItem key={food.id} food={food} onClick={() => selectFood(food, true)} isSupermarket />
+                ))}
+                {offHasMore && !offLoading && (
+                  <Button variant="outline" onClick={offLoadMore} className="w-full rounded-xl text-sm">
+                    Meer supermarktproducten...
+                  </Button>
+                )}
+              </>
+            )}
+
+            {(nevoLoading || offLoading) && (
               <div className="flex justify-center py-4">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             )}
 
-            {!loading && foods.length === 0 && (
+            {!nevoLoading && !offLoading && foods.length === 0 && offFoods.length === 0 && (
               <div className="py-6 text-center">
                 <p className="text-sm font-medium text-foreground">
                   Geen producten gevonden voor "{search.trim()}".
                 </p>
               </div>
-            )}
-
-            {hasMore && !loading && (
-              <Button variant="outline" onClick={loadMore} className="w-full rounded-xl">
-                Meer laden...
-              </Button>
             )}
           </div>
         )}
@@ -113,7 +142,7 @@ export default function FoodTracker() {
                 <DialogHeader>
                   <DialogTitle className="font-display">{selectedFood.name}</DialogTitle>
                   <p className="text-xs text-muted-foreground">
-                    {selectedFood.category} · voedingswaarden per 100{unitLabel}
+                    {isOFF ? 'Open Food Facts' : selectedFood.category} · voedingswaarden per 100{unitLabel}
                   </p>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -140,7 +169,7 @@ export default function FoodTracker() {
                     <NutrientBox label="Kalium" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" />
                     <NutrientBox label="Fosfaat" value={Math.round(selectedFood.phosphate_mg * factor)} unit="mg" />
                     <NutrientBox label="Natrium" value={Math.round(selectedFood.sodium_mg * factor)} unit="mg" />
-                    <NutrientBox label="Eiwit" value={Math.round(selectedFood.protein_g * factor)} unit="g" />
+                    <NutrientBox label="Eiwit" value={Math.round(selectedFood.protein_g * factor * 10) / 10} unit="g" />
                     <div className="col-span-2">
                       <NutrientBox label="Vocht" value={Math.round(selectedFood.fluid_ml * factor)} unit="ml" />
                     </div>
@@ -173,6 +202,26 @@ export default function FoodTracker() {
         )}
       </div>
     </div>
+  );
+}
+
+function FoodListItem({ food, onClick, isSupermarket }: { food: FoodRow; onClick: () => void; isSupermarket?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
+    >
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-foreground">{food.name}</p>
+          {isSupermarket && (
+            <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-accent/20">OFF</Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">per 100g</p>
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </button>
   );
 }
 

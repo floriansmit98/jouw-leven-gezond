@@ -1,25 +1,29 @@
 import { useState } from 'react';
-import { Search, Plus, ChevronRight, Loader2, Droplets } from 'lucide-react';
+import { Search, Plus, ChevronRight, Loader2, ShoppingCart } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { useFoodSearch, useTodayEntries, addFoodEntryDB, type FoodRow } from '@/hooks/useFoods';
+import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function FluidTracker() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedDrink, setSelectedDrink] = useState<FoodRow | null>(null);
+  const [isOFF, setIsOFF] = useState(false);
   const [amount, setAmount] = useState('100');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  const { foods: drinks, loading, hasMore, loadMore } = useFoodSearch(search, true);
+  const { foods: drinks, loading: nevoLoading, hasMore, loadMore } = useFoodSearch(search, true);
+  const { products: offDrinks, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore } = useOFFSearch(search, true);
   const { entries, refetch } = useTodayEntries();
 
-  // Filter only drink entries from today
   const drinkEntries = entries.filter(e => {
     const name = e.name.toLowerCase();
     return name.includes('drank') || name.includes('sap') || name.includes('melk') ||
@@ -32,11 +36,33 @@ export default function FluidTracker() {
   const amountNum = parseFloat(amount) || 0;
   const factor = amountNum / 100;
 
+  function selectDrink(drink: FoodRow, fromOFF: boolean) {
+    setSelectedDrink(drink);
+    setIsOFF(fromOFF);
+    setDialogOpen(true);
+    setAmount('100');
+  }
+
   async function handleAddDrink() {
     if (!selectedDrink || !user || amountNum <= 0) return;
     setAdding(true);
     try {
-      await addFoodEntryDB(user.id, selectedDrink, factor);
+      if (isOFF) {
+        const { error } = await supabase.from('food_entries').insert({
+          user_id: user.id,
+          food_id: null,
+          name: selectedDrink.name,
+          potassium_mg: Math.round(selectedDrink.potassium_mg * factor),
+          phosphate_mg: Math.round(selectedDrink.phosphate_mg * factor),
+          sodium_mg: Math.round(selectedDrink.sodium_mg * factor),
+          protein_g: Math.round(selectedDrink.protein_g * factor * 10) / 10,
+          fluid_ml: Math.round(amountNum), // For drinks, fluid = amount consumed
+          portions: factor,
+        });
+        if (error) throw error;
+      } else {
+        await addFoodEntryDB(user.id, selectedDrink, factor);
+      }
       toast.success(`${selectedDrink.name} toegevoegd!`);
       setSelectedDrink(null);
       setAmount('100');
@@ -65,38 +91,51 @@ export default function FluidTracker() {
 
         {search.trim() !== '' && (
           <div className="mb-6 space-y-2">
-            {drinks.map(drink => (
-              <button
-                key={drink.id}
-                onClick={() => { setSelectedDrink(drink); setDialogOpen(true); setAmount('100'); }}
-                className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
-              >
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">{drink.name}</p>
-                  <p className="text-xs text-muted-foreground">per 100ml</p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-              </button>
-            ))}
+            {/* NEVO results */}
+            {drinks.length > 0 && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">NEVO-database</p>
+                {drinks.map(drink => (
+                  <DrinkListItem key={drink.id} drink={drink} onClick={() => selectDrink(drink, false)} />
+                ))}
+                {hasMore && !nevoLoading && (
+                  <Button variant="outline" onClick={loadMore} className="w-full rounded-xl text-sm">
+                    Meer NEVO-resultaten...
+                  </Button>
+                )}
+              </>
+            )}
 
-            {loading && (
+            {/* OFF results */}
+            {offDrinks.length > 0 && (
+              <>
+                <p className="mt-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 flex items-center gap-1.5">
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  Supermarktproducten
+                </p>
+                {offDrinks.map(drink => (
+                  <DrinkListItem key={drink.id} drink={drink} onClick={() => selectDrink(drink, true)} isSupermarket />
+                ))}
+                {offHasMore && !offLoading && (
+                  <Button variant="outline" onClick={offLoadMore} className="w-full rounded-xl text-sm">
+                    Meer supermarktproducten...
+                  </Button>
+                )}
+              </>
+            )}
+
+            {(nevoLoading || offLoading) && (
               <div className="flex justify-center py-4">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             )}
 
-            {!loading && drinks.length === 0 && (
+            {!nevoLoading && !offLoading && drinks.length === 0 && offDrinks.length === 0 && (
               <div className="py-6 text-center">
                 <p className="text-sm font-medium text-foreground">
                   Geen dranken gevonden voor "{search.trim()}".
                 </p>
               </div>
-            )}
-
-            {hasMore && !loading && (
-              <Button variant="outline" onClick={loadMore} className="w-full rounded-xl">
-                Meer laden...
-              </Button>
             )}
           </div>
         )}
@@ -109,7 +148,7 @@ export default function FluidTracker() {
                 <DialogHeader>
                   <DialogTitle className="font-display">{selectedDrink.name}</DialogTitle>
                   <p className="text-xs text-muted-foreground">
-                    {selectedDrink.category} · voedingswaarden per 100ml
+                    {isOFF ? 'Open Food Facts' : selectedDrink.category} · voedingswaarden per 100ml
                   </p>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -133,7 +172,7 @@ export default function FluidTracker() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <NutrientBox label="Vocht" value={Math.round(selectedDrink.fluid_ml * factor)} unit="ml" />
+                    <NutrientBox label="Vocht" value={isOFF ? amountNum : Math.round(selectedDrink.fluid_ml * factor)} unit="ml" />
                     <NutrientBox label="Kalium" value={Math.round(selectedDrink.potassium_mg * factor)} unit="mg" />
                     <NutrientBox label="Fosfaat" value={Math.round(selectedDrink.phosphate_mg * factor)} unit="mg" />
                     <NutrientBox label="Natrium" value={Math.round(selectedDrink.sodium_mg * factor)} unit="mg" />
@@ -148,7 +187,6 @@ export default function FluidTracker() {
           </DialogContent>
         </Dialog>
 
-        {/* Today's drink entries */}
         {drinkEntries.length > 0 && (
           <div>
             <h2 className="mb-3 font-display text-lg font-semibold">Vandaag gedronken</h2>
@@ -166,6 +204,26 @@ export default function FluidTracker() {
         )}
       </div>
     </div>
+  );
+}
+
+function DrinkListItem({ drink, onClick, isSupermarket }: { drink: FoodRow; onClick: () => void; isSupermarket?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
+    >
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-foreground">{drink.name}</p>
+          {isSupermarket && (
+            <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-accent/20">OFF</Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">per 100ml</p>
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </button>
   );
 }
 
