@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beaker, Droplets, Flame, Waves, Plus, Egg } from 'lucide-react';
+import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings } from 'lucide-react';
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
@@ -24,6 +24,14 @@ export default function Index() {
         <PageHeader
           title="Goedendag 👋"
           subtitle="Uw dagelijkse gezondheidsoverzicht"
+          action={
+            <button
+              onClick={() => navigate('/instellingen')}
+              className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+          }
         />
 
         {/* Quick Actions */}
