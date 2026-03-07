@@ -117,8 +117,9 @@ export function useOFFSearch(search: string, filterDrinks?: boolean) {
           console.log('[OFF] Search results for:', search, '→', data.count, 'total,', (data.products || []).length, 'on page');
           const rawProducts = (data.products || []) as OFFProduct[];
 
-          // Only filter out products without a name
-          let filtered = rawProducts.filter(p => p.product_name && p.product_name.trim() !== '');
+          // Only keep products with a name AND all required nutrition values
+          let filtered = rawProducts.filter(p => p.product_name && p.product_name.trim() !== '' && hasCompleteNutrition(p));
+          console.log('[OFF] Complete products:', filtered.length, 'of', rawProducts.length, 'total');
 
           // Optionally filter by drink/food category
           if (filterDrinks === true) {
