@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Beaker, Droplets, Flame, Waves, Plus, Egg } from 'lucide-react';
 import NutrientCard from '@/components/NutrientCard';
+import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
 import PageHeader from '@/components/PageHeader';
 import { getTodayTotals, getLimits } from '@/lib/store';
@@ -79,10 +80,10 @@ export default function Index() {
               unit="mg"
               icon={<Waves className="h-5 w-5" />}
             />
-            <NutrientCard
+            <GoalCard
               label="Eiwit"
               current={totals.protein}
-              limit={limits.protein}
+              goal={limits.protein}
               unit="g"
               icon={<Egg className="h-5 w-5" />}
             />
