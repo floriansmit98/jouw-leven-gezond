@@ -52,11 +52,11 @@ export default function FluidTracker() {
           user_id: user.id,
           food_id: null,
           name: selectedDrink.name,
-          potassium_mg: Math.round(selectedDrink.potassium_mg * factor),
+         potassium_mg: Math.round(selectedDrink.potassium_mg * factor),
           phosphate_mg: Math.round(selectedDrink.phosphate_mg * factor),
           sodium_mg: Math.round(selectedDrink.sodium_mg * factor),
           protein_g: Math.round(selectedDrink.protein_g * factor * 10) / 10,
-          fluid_ml: Math.round(amountNum), // For drinks, fluid = amount consumed
+          fluid_ml: Math.round(selectedDrink.fluid_ml * factor),
           portions: factor,
         });
         if (error) throw error;
@@ -122,7 +122,7 @@ export default function FluidTracker() {
                   </Button>
                 )}
                 {!offLoading && offNoResults && (
-                  <p className="text-xs text-muted-foreground px-1 py-2">Geen supermarktdranken gevonden.</p>
+                  <p className="text-xs text-muted-foreground px-1 py-2">Geen supermarktdranken met volledige voedingswaarden gevonden.</p>
                 )}
               </>
             )}
@@ -175,7 +175,7 @@ export default function FluidTracker() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <NutrientBox label="Vocht" value={isOFF ? amountNum : Math.round(selectedDrink.fluid_ml * factor)} unit="ml" />
+                    <NutrientBox label="Vocht" value={Math.round(selectedDrink.fluid_ml * factor)} unit="ml" />
                     <NutrientBox label="Kalium" value={Math.round(selectedDrink.potassium_mg * factor)} unit="mg" />
                     <NutrientBox label="Fosfaat" value={Math.round(selectedDrink.phosphate_mg * factor)} unit="mg" />
                     <NutrientBox label="Natrium" value={Math.round(selectedDrink.sodium_mg * factor)} unit="mg" />

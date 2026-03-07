@@ -116,7 +116,7 @@ export default function FoodTracker() {
                   </Button>
                 )}
                 {!offLoading && offNoResults && (
-                  <p className="text-xs text-muted-foreground px-1 py-2">Geen supermarktproducten gevonden.</p>
+                  <p className="text-xs text-muted-foreground px-1 py-2">Geen supermarktproducten met volledige voedingswaarden gevonden.</p>
                 )}
               </>
             )}
