@@ -64,52 +64,51 @@ export default function FoodTracker() {
           />
         </div>
 
-        {/* Food List */}
-        <div className="mb-6 space-y-2">
-          {foods.map(food => (
-            <button
-              key={food.id}
-              onClick={() => { setSelectedFood(food); setDialogOpen(true); setAmount('100'); }}
-              className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-foreground">{food.name}</p>
-                  <Badge variant="outline" className={`text-[10px] ${RISK_COLORS[food.dialysis_risk_label] || ''}`}>
-                    {food.dialysis_risk_label}
-                  </Badge>
+        {/* Food List - only show when searching */}
+        {search.trim() !== '' && (
+          <div className="mb-6 space-y-2">
+            {foods.map(food => (
+              <button
+                key={food.id}
+                onClick={() => { setSelectedFood(food); setDialogOpen(true); setAmount('100'); }}
+                className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-foreground">{food.name}</p>
+                    <Badge variant="outline" className={`text-[10px] ${RISK_COLORS[food.dialysis_risk_label] || ''}`}>
+                      {food.dialysis_risk_label}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    per 100{food.portion_description?.toLowerCase().includes('ml') ? 'ml' : 'g'}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  per 100{food.portion_description?.toLowerCase().includes('ml') ? 'ml' : 'g'} · K: {food.potassium_mg}mg · F: {food.phosphate_mg}mg · E: {food.protein_g}g
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              </button>
+            ))}
+
+            {loading && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
+
+            {!loading && foods.length === 0 && (
+              <div className="py-6 text-center">
+                <p className="text-sm font-medium text-foreground">
+                  Geen producten gevonden voor "{search.trim()}".
                 </p>
               </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
+            )}
 
-          {loading && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          )}
-
-          {!loading && foods.length === 0 && (
-            <div className="py-6 text-center">
-              <p className="text-sm font-medium text-foreground">
-                Geen producten gevonden{search.trim() ? ` voor "${search.trim()}"` : ''}.
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                De database bevat momenteel een beperkt aantal voedingsmiddelen. Meer producten worden binnenkort toegevoegd.
-              </p>
-            </div>
-          )}
-
-          {hasMore && !loading && (
-            <Button variant="outline" onClick={loadMore} className="w-full rounded-xl">
-              Meer laden...
-            </Button>
-          )}
-        </div>
+            {hasMore && !loading && (
+              <Button variant="outline" onClick={loadMore} className="w-full rounded-xl">
+                Meer laden...
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Detail Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
