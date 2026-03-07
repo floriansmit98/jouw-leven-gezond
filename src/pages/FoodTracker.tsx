@@ -30,7 +30,7 @@ export default function FoodTracker() {
   const [manualSearch, setManualSearch] = useState('');
 
   const { entries, refetch } = useTodayEntries();
-  const { foods: searchResults, loading: searchLoading } = useFoodSearch(manualSearch, false);
+  const { foods: searchResults, loading: searchLoading } = useFoodSearch(manualSearch);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);

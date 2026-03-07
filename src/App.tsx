@@ -38,7 +38,7 @@ function ProtectedRoutes() {
       <Routes>
         <Route path="/" element={<Index />} />
           <Route path="/voeding" element={<FoodTracker />} />
-          <Route path="/vocht" element={<FluidTracker />} />
+          <Route path="/vocht" element={<Navigate to="/voeding" replace />} />
         <Route path="/symptomen" element={<SymptomTracker />} />
         <Route path="/dialyse" element={<DialysisLog />} />
         <Route path="/coach" element={<Coach />} />

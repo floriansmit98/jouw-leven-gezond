@@ -1,10 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Droplets, Activity, FileText } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Activity, FileText } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/voeding', icon: UtensilsCrossed, label: 'Voeding' },
-  { path: '/vocht', icon: Droplets, label: 'Vocht' },
   { path: '/symptomen', icon: Activity, label: 'Symptomen' },
   { path: '/rapport', icon: FileText, label: 'Rapport' },
 ];
