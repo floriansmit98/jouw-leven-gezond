@@ -14,7 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      food_entries: {
+        Row: {
+          fluid_ml: number
+          food_id: string | null
+          id: string
+          logged_at: string
+          name: string
+          phosphate_mg: number
+          portions: number
+          potassium_mg: number
+          protein_g: number
+          sodium_mg: number
+          user_id: string
+        }
+        Insert: {
+          fluid_ml?: number
+          food_id?: string | null
+          id?: string
+          logged_at?: string
+          name: string
+          phosphate_mg?: number
+          portions?: number
+          potassium_mg?: number
+          protein_g?: number
+          sodium_mg?: number
+          user_id: string
+        }
+        Update: {
+          fluid_ml?: number
+          food_id?: string | null
+          id?: string
+          logged_at?: string
+          name?: string
+          phosphate_mg?: number
+          portions?: number
+          potassium_mg?: number
+          protein_g?: number
+          sodium_mg?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_entries_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      foods: {
+        Row: {
+          category: string
+          created_at: string
+          dialysis_risk_label: string | null
+          fluid_ml: number
+          id: string
+          name: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          sodium_mg: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          dialysis_risk_label?: string | null
+          fluid_ml?: number
+          id?: string
+          name: string
+          phosphate_mg?: number
+          portion_description: string
+          portion_grams?: number
+          potassium_mg?: number
+          protein_g?: number
+          sodium_mg?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          dialysis_risk_label?: string | null
+          fluid_ml?: number
+          id?: string
+          name?: string
+          phosphate_mg?: number
+          portion_description?: string
+          portion_grams?: number
+          potassium_mg?: number
+          protein_g?: number
+          sodium_mg?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
