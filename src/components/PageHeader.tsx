@@ -1,5 +1,4 @@
 import Mascot from '@/components/Mascot';
-import type { MascotMood } from '@/components/Mascot';
 
 interface PageHeaderProps {
   title: string;
