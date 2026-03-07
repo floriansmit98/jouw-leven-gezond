@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getLimits, saveLimits, type DailyLimits } from '@/lib/store';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+
 
 interface NutrientFieldProps {
   label: string;
