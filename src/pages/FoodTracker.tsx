@@ -21,7 +21,7 @@ export default function FoodTracker() {
   const [adding, setAdding] = useState(false);
 
   const { foods, loading: nevoLoading, hasMore, loadMore } = useFoodSearch(search, false);
-  const { products: offFoods, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore } = useOFFSearch(search, false);
+  const { products: offFoods, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore, noResults: offNoResults } = useOFFSearch(search, false);
   const { entries, refetch } = useTodayEntries();
 
   const amountNum = parseFloat(amount) || 0;
