@@ -73,13 +73,8 @@ export default function FoodTracker() {
                 onClick={() => { setSelectedFood(food); setDialogOpen(true); setAmount('100'); }}
                 className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-foreground">{food.name}</p>
-                    <Badge variant="outline" className={`text-[10px] ${RISK_COLORS[food.dialysis_risk_label] || ''}`}>
-                      {food.dialysis_risk_label}
-                    </Badge>
-                  </div>
+              <div className="flex-1">
+                  <p className="font-semibold text-foreground">{food.name}</p>
                   <p className="text-xs text-muted-foreground">
                     per 100{food.portion_description?.toLowerCase().includes('ml') ? 'ml' : 'g'}
                   </p>
