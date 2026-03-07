@@ -151,7 +151,111 @@ export default function SettingsPage() {
           <Save className="h-5 w-5" />
           {saved ? 'Opgeslagen ✓' : 'Opslaan'}
         </Button>
+
+        <div className="mt-8 mb-4">
+          <h2 className="mb-3 font-display text-base font-semibold text-foreground">
+            Voedingsdatabase
+          </h2>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Importeer de NEVO-voedingsdatabase. Dit vervangt alle bestaande voedingsmiddelen.
+          </p>
+          <ImportNevoButton />
+        </div>
       </div>
+    </div>
+  );
+}
+
+function ImportNevoButton() {
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState('');
+
+  async function handleImport() {
+    if (importing) return;
+    setImporting(true);
+    setProgress('Excel-bestand laden...');
+
+    try {
+      const res = await fetch('/nevo-data.xlsx');
+      const arrayBuffer = await res.arrayBuffer();
+      
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+
+      // Find header row
+      const headerRow = rawRows[0] as string[];
+      const nameIdx = headerRow.findIndex(h => h && String(h).includes('Voedingsmiddelnaam'));
+      const synIdx = headerRow.findIndex(h => h && String(h).includes('Synoniem'));
+      const portionIdx = headerRow.findIndex(h => h && String(h).includes('Hoeveelheid'));
+      const waterIdx = headerRow.findIndex(h => h && String(h).includes('WATER'));
+      const protIdx = headerRow.findIndex(h => h && String(h).includes('PROT'));
+      const naIdx = headerRow.findIndex(h => h && String(h).includes('NA'));
+      const kIdx = headerRow.findIndex(h => h && String(h).includes('K ('));
+      const pIdx = headerRow.findIndex(h => h && String(h).includes('P ('));
+
+      if (nameIdx === -1) {
+        // Fallback: try index-based
+        throw new Error('Kan de kolommen niet vinden in het Excel-bestand');
+      }
+
+      const dataRows = rawRows.slice(1).filter(r => r[nameIdx]);
+      
+      const rows = dataRows.map(r => ({
+        name: String(r[nameIdx] || ''),
+        synonym: r[synIdx] ? String(r[synIdx]) : '',
+        portion: r[portionIdx] ? String(r[portionIdx]) : 'per 100g',
+        water: String(r[waterIdx] || 0),
+        protein: String(r[protIdx] || 0),
+        sodium: String(r[naIdx] || 0),
+        potassium: String(r[kIdx] || 0),
+        phosphorus: String(r[pIdx] || 0),
+      }));
+
+      setProgress(`${rows.length} voedingsmiddelen gevonden. Importeren...`);
+
+      // Send to edge function - first batch clears old data
+      const batchSize = 200;
+      let imported = 0;
+      for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize);
+        const isFirst = i === 0;
+        
+        const { data, error } = await supabase.functions.invoke('import-nevo', {
+          body: { rows: batch, clear: isFirst },
+        });
+
+        if (error) throw new Error(error.message);
+        imported += data?.inserted || batch.length;
+        setProgress(`${imported} / ${rows.length} geïmporteerd...`);
+      }
+
+      setProgress('');
+      toast.success(`${imported} voedingsmiddelen succesvol geïmporteerd!`);
+    } catch (err: any) {
+      console.error('Import error:', err);
+      toast.error(`Import mislukt: ${err.message}`);
+      setProgress('');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <Button
+        onClick={handleImport}
+        disabled={importing}
+        variant="outline"
+        className="h-12 w-full gap-2 rounded-xl"
+      >
+        {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        {importing ? 'Bezig met importeren...' : 'NEVO-database importeren'}
+      </Button>
+      {progress && (
+        <p className="text-sm text-muted-foreground text-center">{progress}</p>
+      )}
     </div>
   );
 }
