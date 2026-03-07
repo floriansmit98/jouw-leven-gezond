@@ -90,9 +90,14 @@ export default function FoodTracker() {
           )}
 
           {!loading && foods.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Geen voedingsmiddelen gevonden.
-            </p>
+            <div className="py-6 text-center">
+              <p className="text-sm font-medium text-foreground">
+                Geen producten gevonden{search.trim() ? ` voor "${search.trim()}"` : ''}.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                De database bevat momenteel een beperkt aantal voedingsmiddelen. Meer producten worden binnenkort toegevoegd.
+              </p>
+            </div>
           )}
 
           {hasMore && !loading && (

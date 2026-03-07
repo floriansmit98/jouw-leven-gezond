@@ -45,35 +45,30 @@ export function useFoodSearch(search: string) {
     let cancelled = false;
     setLoading(true);
 
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+    const offset = page * PAGE_SIZE;
 
-    let query = supabase
-      .from('foods')
-      .select('*')
-      .order('name')
-      .range(from, to);
-
-    if (search.trim()) {
-      query = query.ilike('name', `%${search.trim()}%`);
-    }
-
-    query.then(({ data, error }) => {
-      if (cancelled) return;
-      if (error) {
-        console.error('Food search error:', error);
+    supabase
+      .rpc('search_foods', {
+        search_query: search.trim(),
+        page_size: PAGE_SIZE,
+        page_offset: offset,
+      })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error('Food search error:', error);
+          setLoading(false);
+          return;
+        }
+        const rows = (data ?? []) as FoodRow[];
+        if (page === 0) {
+          setFoods(rows);
+        } else {
+          setFoods(prev => [...prev, ...rows]);
+        }
+        setHasMore(rows.length === PAGE_SIZE);
         setLoading(false);
-        return;
-      }
-      const rows = (data ?? []) as FoodRow[];
-      if (page === 0) {
-        setFoods(rows);
-      } else {
-        setFoods(prev => [...prev, ...rows]);
-      }
-      setHasMore(rows.length === PAGE_SIZE);
-      setLoading(false);
-    });
+      });
 
     return () => { cancelled = true; };
   }, [search, page]);
