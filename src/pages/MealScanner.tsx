@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Camera, Upload, Loader2, Plus, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { Camera, Upload, Loader2, Plus, AlertTriangle, X } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,35 +32,38 @@ interface MealAnalysis {
 
 export default function MealScanner() {
   const [preview, setPreview] = useState<string | null>(null);
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<MealAnalysis | null>(null);
+  // Stable key so inputs don't remount on state changes
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleFile(file: File) {
+  // Step 1: Store file + show preview — do NOT start analysis yet
+  const handleCapture = useCallback((file: File) => {
     setResult(null);
-    
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+    setCapturedFile(file);
 
-    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Step 2: User confirms preview → start analysis
+  const handleAnalyze = useCallback(async () => {
+    if (!capturedFile) return;
     setAnalyzing(true);
     try {
-      const base64 = await fileToBase64(file);
+      const base64 = await fileToBase64(capturedFile);
 
       const { data, error } = await supabase.functions.invoke('analyze-meal', {
         body: { imageBase64: base64 },
       });
 
-      if (error) {
-        throw new Error(error.message || 'Analyse mislukt');
-      }
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw new Error(error.message || 'Analyse mislukt');
+      if (data.error) throw new Error(data.error);
 
       setResult(data as MealAnalysis);
     } catch (err: any) {
@@ -68,19 +71,27 @@ export default function MealScanner() {
     } finally {
       setAnalyzing(false);
     }
-  }
+  }, [capturedFile]);
 
   function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
-        // Remove data:image/...;base64, prefix
         resolve(result.split(',')[1]);
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  function handleClearPhoto() {
+    setPreview(null);
+    setCapturedFile(null);
+    setResult(null);
+    // Reset file inputs so the same file can be re-selected
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   function handleAddToLog() {
@@ -96,6 +107,16 @@ export default function MealScanner() {
     toast.success(`${result.naam} toegevoegd aan uw voedingslog!`);
   }
 
+  // Handle file input change — called directly from the user gesture
+  const onFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleCapture(file);
+    }
+    // Reset value so onChange fires even for the same file
+    e.target.value = '';
+  }, [handleCapture]);
+
   return (
     <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
@@ -105,53 +126,69 @@ export default function MealScanner() {
           mascotMessage="Maak een foto voor een voedingsanalyse!"
         />
 
-        {/* Upload buttons */}
-        <div className="mb-6 grid grid-cols-2 gap-3">
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file);
-            }}
-          />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file);
-            }}
-          />
+        {/* Hidden file inputs — kept stable, never re-mounted */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={onFileChange}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onFileChange}
+        />
 
-          <Button
-            onClick={() => cameraInputRef.current?.click()}
-            variant="outline"
-            className="h-24 flex-col gap-2 rounded-xl border-2 border-dashed text-base"
-          >
-            <Camera className="h-8 w-8 text-primary" />
-            <span className="text-sm font-medium">Foto maken</span>
-          </Button>
+        {/* Upload buttons — only show when no preview */}
+        {!preview && (
+          <div className="mb-6 grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => cameraInputRef.current?.click()}
+              variant="outline"
+              className="h-24 flex-col gap-2 rounded-xl border-2 border-dashed text-base"
+            >
+              <Camera className="h-8 w-8 text-primary" />
+              <span className="text-sm font-medium">Foto maken</span>
+            </Button>
 
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            variant="outline"
-            className="h-24 flex-col gap-2 rounded-xl border-2 border-dashed text-base"
-          >
-            <Upload className="h-8 w-8 text-primary" />
-            <span className="text-sm font-medium">Foto kiezen</span>
-          </Button>
-        </div>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              variant="outline"
+              className="h-24 flex-col gap-2 rounded-xl border-2 border-dashed text-base"
+            >
+              <Upload className="h-8 w-8 text-primary" />
+              <span className="text-sm font-medium">Foto kiezen</span>
+            </Button>
+          </div>
+        )}
 
-        {/* Preview */}
+        {/* Preview with actions */}
         {preview && (
-          <div className="mb-6 overflow-hidden rounded-xl border border-border shadow-sm">
-            <img src={preview} alt="Maaltijd foto" className="w-full object-cover" />
+          <div className="mb-6">
+            <div className="relative overflow-hidden rounded-xl border border-border shadow-sm">
+              <img src={preview} alt="Maaltijd foto" className="w-full object-cover" />
+              <button
+                onClick={handleClearPhoto}
+                className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 backdrop-blur-sm"
+                aria-label="Foto verwijderen"
+              >
+                <X className="h-5 w-5 text-foreground" />
+              </button>
+            </div>
+
+            {/* Analyze button — only when not yet analyzing and no result */}
+            {!analyzing && !result && (
+              <Button
+                onClick={handleAnalyze}
+                className="mt-3 h-12 w-full rounded-xl text-base font-semibold"
+              >
+                Analyseer deze maaltijd
+              </Button>
+            )}
           </div>
         )}
 
@@ -170,7 +207,6 @@ export default function MealScanner() {
             <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
               <h2 className="mb-3 font-display text-xl font-bold text-foreground">{result.naam}</h2>
 
-              {/* Items */}
               <div className="mb-4 space-y-2">
                 {result.items.map((item, i) => (
                   <div key={i} className="rounded-lg bg-muted p-3">
@@ -185,7 +221,6 @@ export default function MealScanner() {
                 ))}
               </div>
 
-              {/* Totals */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg bg-primary/10 p-3">
                   <p className="text-xs text-muted-foreground">Kalium</p>
@@ -210,7 +245,6 @@ export default function MealScanner() {
               </div>
             </div>
 
-            {/* Warnings */}
             {result.waarschuwingen && result.waarschuwingen.length > 0 && (
               <div className="rounded-xl border border-warning/30 bg-warning/10 p-4">
                 <div className="mb-2 flex items-center gap-2">
@@ -225,7 +259,6 @@ export default function MealScanner() {
               </div>
             )}
 
-            {/* Advice */}
             {result.advies && (
               <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
                 <p className="mb-1 text-sm font-semibold text-muted-foreground">Advies</p>
@@ -233,11 +266,15 @@ export default function MealScanner() {
               </div>
             )}
 
-            {/* Add to log button */}
-            <Button onClick={handleAddToLog} className="h-12 w-full rounded-xl text-base font-semibold">
-              <Plus className="mr-2 h-5 w-5" />
-              Toevoegen aan voedingslog
-            </Button>
+            <div className="flex gap-3">
+              <Button onClick={handleClearPhoto} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
+                Nieuwe foto
+              </Button>
+              <Button onClick={handleAddToLog} className="h-12 flex-1 rounded-xl text-base font-semibold">
+                <Plus className="mr-2 h-5 w-5" />
+                Toevoegen
+              </Button>
+            </div>
           </div>
         )}
       </div>
