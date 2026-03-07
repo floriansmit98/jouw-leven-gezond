@@ -175,7 +175,7 @@ export default function FluidTracker() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <NutrientBox label="Vocht" value={isOFF ? amountNum : Math.round(selectedDrink.fluid_ml * factor)} unit="ml" />
+                    <NutrientBox label="Vocht" value={Math.round(selectedDrink.fluid_ml * factor)} unit="ml" />
                     <NutrientBox label="Kalium" value={Math.round(selectedDrink.potassium_mg * factor)} unit="mg" />
                     <NutrientBox label="Fosfaat" value={Math.round(selectedDrink.phosphate_mg * factor)} unit="mg" />
                     <NutrientBox label="Natrium" value={Math.round(selectedDrink.sodium_mg * factor)} unit="mg" />
