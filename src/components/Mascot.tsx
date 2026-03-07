@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-type MascotMood = 'greeting' | 'thinking' | 'happy' | 'neutral';
+export type MascotMood = 'greeting' | 'thinking' | 'happy' | 'neutral';
 
 interface MascotProps {
   mood?: MascotMood;
