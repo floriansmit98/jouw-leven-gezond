@@ -23,7 +23,7 @@ export default function FoodTracker() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  const { foods, loading, hasMore, loadMore } = useFoodSearch(search);
+  const { foods, loading, hasMore, loadMore } = useFoodSearch(search, false);
   const { entries, refetch } = useTodayEntries();
 
   const amountNum = parseFloat(amount) || 0;
