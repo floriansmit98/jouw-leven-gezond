@@ -67,7 +67,7 @@ export default function Coach() {
   return (
     <div className="flex min-h-screen flex-col bg-background pb-24">
       <div className="mx-auto w-full max-w-lg px-4 pt-6">
-        <PageHeader title="Dialyse Coach" subtitle="Stel uw vragen over dieet en gezondheid" />
+        <PageHeader title="Dialyse Coach" mascotMood="thinking" mascotMessage="Stel mij uw vragen over dieet en gezondheid." />
       </div>
 
       {/* Messages */}
