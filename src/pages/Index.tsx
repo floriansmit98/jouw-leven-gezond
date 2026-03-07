@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Beaker, Droplets, Flame, Waves, Plus, Egg } from 'lucide-react';
 import NutrientCard from '@/components/NutrientCard';
+import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
 import PageHeader from '@/components/PageHeader';
 import { getTodayTotals, getLimits } from '@/lib/store';
