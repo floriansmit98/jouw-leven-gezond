@@ -152,15 +152,6 @@ export default function SettingsPage() {
           {saved ? 'Opgeslagen ✓' : 'Opslaan'}
         </Button>
 
-        <div className="mt-8 mb-4">
-          <h2 className="mb-3 font-display text-base font-semibold text-foreground">
-            Voedingsdatabase
-          </h2>
-          <p className="mb-4 text-xs text-muted-foreground">
-            Importeer de NEVO-voedingsdatabase. Dit vervangt alle bestaande voedingsmiddelen.
-          </p>
-          <ImportNevoButton />
-        </div>
       </div>
     </div>
   );
