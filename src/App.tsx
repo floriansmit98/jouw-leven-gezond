@@ -12,6 +12,7 @@ import Coach from "./pages/Coach";
 import Recipes from "./pages/Recipes";
 import MealScanner from "./pages/MealScanner";
 import Report from "./pages/Report";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/recepten" element={<Recipes />} />
           <Route path="/scanner" element={<MealScanner />} />
           <Route path="/rapport" element={<Report />} />
+          <Route path="/instellingen" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <BottomNav />
