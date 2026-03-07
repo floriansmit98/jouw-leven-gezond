@@ -30,7 +30,7 @@ export default function FoodTracker() {
   const [manualSearch, setManualSearch] = useState('');
 
   const { entries, refetch } = useTodayEntries();
-  const { foods: searchResults, loading: searchLoading } = useFoodSearch(manualSearch, false);
+  const { foods: searchResults, loading: searchLoading } = useFoodSearch(manualSearch);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -156,7 +156,7 @@ export default function FoodTracker() {
     <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
-          title="Voeding"
+          title="Voeding & Vocht"
           mascotMood="happy"
           mascotMessage={step === 'capture' ? 'Maak een foto van uw maaltijd!' : step === 'confirm' ? 'Controleer de herkende voedingsmiddelen.' : 'Even geduld...'}
         />
