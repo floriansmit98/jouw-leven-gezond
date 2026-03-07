@@ -12,8 +12,8 @@ interface PageHeaderProps {
 export default function PageHeader({ title, subtitle, action, mascotMood = 'neutral', mascotMessage }: PageHeaderProps) {
   return (
     <div className="relative mb-6">
-      {/* Header card */}
-      <div className="relative rounded-2xl gradient-header p-5 shadow-md overflow-visible">
+      {/* Header card with extra top padding for mascot space */}
+      <div className="relative rounded-2xl gradient-header pt-20 p-5 shadow-md overflow-visible mt-28">
         <div className="flex items-end gap-4">
           {/* Mascot - anchored bottom-right, popping out of the card */}
           <div className="absolute -top-14 right-4 z-10">
