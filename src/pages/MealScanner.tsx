@@ -167,28 +167,27 @@ export default function MealScanner() {
         )}
 
         {/* Preview with actions */}
-        {preview && (
+        {preview && !analyzing && !result && (
           <div className="mb-6">
-            <div className="relative overflow-hidden rounded-xl border border-border shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-border shadow-sm">
               <img src={preview} alt="Maaltijd foto" className="w-full object-cover" />
-              <button
-                onClick={handleClearPhoto}
-                className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 backdrop-blur-sm"
-                aria-label="Foto verwijderen"
-              >
-                <X className="h-5 w-5 text-foreground" />
-              </button>
             </div>
-
-            {/* Analyze button — only when not yet analyzing and no result */}
-            {!analyzing && !result && (
+            <div className="mt-3 flex gap-3">
+              <Button
+                onClick={handleClearPhoto}
+                variant="outline"
+                className="h-12 flex-1 rounded-xl text-base font-semibold"
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Nieuwe foto maken
+              </Button>
               <Button
                 onClick={handleAnalyze}
-                className="mt-3 h-12 w-full rounded-xl text-base font-semibold"
+                className="h-12 flex-1 rounded-xl text-base font-semibold"
               >
-                Analyseer deze maaltijd
+                Analyseer maaltijd
               </Button>
-            )}
+            </div>
           </div>
         )}
 
