@@ -22,6 +22,21 @@ function isDrinkProduct(product: OFFProduct): boolean {
     drinkKeywords.some(kw => combined.includes(kw));
 }
 
+/**
+ * Check if an OFF product has all required nutrition values for dialysis tracking:
+ * potassium, phosphorus, sodium, protein, and water/fluid content.
+ */
+function hasCompleteNutrition(product: OFFProduct): boolean {
+  const n = product.nutriments || {};
+  const hasPotassium = (n.potassium_100g ?? n.potassium_value) !== undefined;
+  const hasPhosphorus = (n.phosphorus_100g ?? n.phosphorus_value) !== undefined;
+  const hasSodium = (n.sodium_100g ?? n.sodium_value) !== undefined;
+  const hasProtein = (n.proteins_100g ?? n.proteins_value) !== undefined;
+  // OFF uses "water" for fluid/water content
+  const hasWater = (n.water_100g ?? n.water_value) !== undefined;
+  return hasPotassium && hasPhosphorus && hasSodium && hasProtein && hasWater;
+}
+
 function offToFoodRow(product: OFFProduct): FoodRow {
   const n = product.nutriments || {};
 
@@ -35,6 +50,7 @@ function offToFoodRow(product: OFFProduct): FoodRow {
   const potassiumMg = toMg(n.potassium_100g ?? n.potassium_value);
   const phosphorusMg = toMg(n.phosphorus_100g ?? n.phosphorus_value);
   const proteinG = n.proteins_100g ?? n.proteins_value ?? 0;
+  const waterMl = Math.round((n.water_100g ?? n.water_value ?? 0) * 10) / 10;
 
   const brand = product.brands ? ` (${product.brands.split(',')[0].trim()})` : '';
 
@@ -48,7 +64,7 @@ function offToFoodRow(product: OFFProduct): FoodRow {
     phosphate_mg: phosphorusMg,
     sodium_mg: sodiumMg,
     protein_g: Math.round(proteinG * 10) / 10,
-    fluid_ml: 0,
+    fluid_ml: waterMl,
     dialysis_risk_label: potassiumMg > 300 ? 'hoog' : potassiumMg > 150 ? 'gemiddeld' : 'laag',
   };
 }
