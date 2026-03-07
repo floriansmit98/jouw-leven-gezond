@@ -21,7 +21,7 @@ export default function FoodTracker() {
   const [adding, setAdding] = useState(false);
 
   const { foods, loading: nevoLoading, hasMore, loadMore } = useFoodSearch(search, false);
-  const { products: offFoods, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore } = useOFFSearch(search, false);
+  const { products: offFoods, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore, noResults: offNoResults } = useOFFSearch(search, false);
   const { entries, refetch } = useTodayEntries();
 
   const amountNum = parseFloat(amount) || 0;
@@ -101,19 +101,22 @@ export default function FoodTracker() {
             )}
 
             {/* OFF results */}
-            {offFoods.length > 0 && (
+            {search.trim().length >= 2 && (
               <>
                 <p className="mt-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 flex items-center gap-1.5">
                   <ShoppingCart className="h-3.5 w-3.5" />
                   Supermarktproducten
                 </p>
-                {offFoods.map(food => (
+                {offFoods.length > 0 && offFoods.map(food => (
                   <FoodListItem key={food.id} food={food} onClick={() => selectFood(food, true)} isSupermarket />
                 ))}
                 {offHasMore && !offLoading && (
                   <Button variant="outline" onClick={offLoadMore} className="w-full rounded-xl text-sm">
                     Meer supermarktproducten...
                   </Button>
+                )}
+                {!offLoading && offNoResults && (
+                  <p className="text-xs text-muted-foreground px-1 py-2">Geen supermarktproducten gevonden.</p>
                 )}
               </>
             )}
