@@ -122,7 +122,7 @@ export default function FluidTracker() {
                   </Button>
                 )}
                 {!offLoading && offNoResults && (
-                  <p className="text-xs text-muted-foreground px-1 py-2">Geen supermarktdranken gevonden.</p>
+                  <p className="text-xs text-muted-foreground px-1 py-2">Geen supermarktdranken met volledige voedingswaarden gevonden.</p>
                 )}
               </>
             )}
