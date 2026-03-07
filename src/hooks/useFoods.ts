@@ -31,7 +31,7 @@ export interface FoodEntryRow {
 
 const PAGE_SIZE = 20;
 
-export function useFoodSearch(search: string) {
+export function useFoodSearch(search: string, isDrink: boolean = false) {
   const [foods, setFoods] = useState<FoodRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -39,7 +39,7 @@ export function useFoodSearch(search: string) {
 
   useEffect(() => {
     setPage(0);
-  }, [search]);
+  }, [search, isDrink]);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,8 +48,9 @@ export function useFoodSearch(search: string) {
     const offset = page * PAGE_SIZE;
 
     supabase
-      .rpc('search_foods', {
+      .rpc('search_foods_by_type', {
         search_query: search.trim(),
+        is_drink: isDrink,
         page_size: PAGE_SIZE,
         page_offset: offset,
       })
@@ -71,7 +72,7 @@ export function useFoodSearch(search: string) {
       });
 
     return () => { cancelled = true; };
-  }, [search, page]);
+  }, [search, page, isDrink]);
 
   const loadMore = () => setPage(p => p + 1);
 
