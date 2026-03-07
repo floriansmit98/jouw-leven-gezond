@@ -172,11 +172,27 @@ export function getStatusColor(current: number, limit: number): 'safe' | 'warnin
   return 'danger';
 }
 
+// For protein: low = bad, reaching goal = good
+export function getGoalStatus(current: number, goal: number): 'danger' | 'warning' | 'safe' {
+  const ratio = current / goal;
+  if (ratio >= 0.9) return 'safe';
+  if (ratio >= 0.6) return 'warning';
+  return 'danger';
+}
+
 export function getStatusLabel(status: 'safe' | 'warning' | 'danger'): string {
   switch (status) {
     case 'safe': return 'Veilig';
     case 'warning': return 'Let op';
     case 'danger': return 'Te hoog';
+  }
+}
+
+export function getGoalLabel(status: 'safe' | 'warning' | 'danger'): string {
+  switch (status) {
+    case 'safe': return 'Behaald ✓';
+    case 'warning': return 'Bijna';
+    case 'danger': return 'Te laag';
   }
 }
 
