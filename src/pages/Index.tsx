@@ -80,10 +80,10 @@ export default function Index() {
               unit="mg"
               icon={<Waves className="h-5 w-5" />}
             />
-            <NutrientCard
+            <GoalCard
               label="Eiwit"
               current={totals.protein}
-              limit={limits.protein}
+              goal={limits.protein}
               unit="g"
               icon={<Egg className="h-5 w-5" />}
             />
