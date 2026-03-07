@@ -101,7 +101,8 @@ export default function MealScanner() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Maaltijd Scanner"
-          subtitle="Maak een foto van uw maaltijd voor een voedingsanalyse"
+          mascotMood="happy"
+          mascotMessage="Maak een foto voor een voedingsanalyse!"
         />
 
         {/* Upload buttons */}

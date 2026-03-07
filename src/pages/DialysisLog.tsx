@@ -51,7 +51,8 @@ export default function DialysisLog() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Dialyse"
-          subtitle="Log uw dialyse sessies"
+          mascotMood="neutral"
+          mascotMessage="Log hier uw dialyse sessies."
           action={
             <Button
               onClick={() => setShowForm(!showForm)}

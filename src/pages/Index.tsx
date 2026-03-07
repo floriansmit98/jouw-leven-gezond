@@ -32,7 +32,8 @@ export default function Index() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Goedendag 👋"
-          subtitle="Uw dagelijkse gezondheidsoverzicht"
+          mascotMood="greeting"
+          mascotMessage="Welkom terug! Hier ziet u uw dagelijkse overzicht."
           action={
             <div className="flex gap-2">
               <button
