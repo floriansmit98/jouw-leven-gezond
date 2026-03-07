@@ -31,7 +31,7 @@ export interface FoodEntryRow {
 
 const PAGE_SIZE = 20;
 
-export function useFoodSearch(search: string, isDrink: boolean = false) {
+export function useFoodSearch(search: string, isDrink?: boolean) {
   const [foods, setFoods] = useState<FoodRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -47,29 +47,35 @@ export function useFoodSearch(search: string, isDrink: boolean = false) {
 
     const offset = page * PAGE_SIZE;
 
-    supabase
-      .rpc('search_foods_by_type', {
-        search_query: search.trim(),
-        is_drink: isDrink,
-        page_size: PAGE_SIZE,
-        page_offset: offset,
-      })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          console.error('Food search error:', error);
-          setLoading(false);
-          return;
-        }
-        const rows = (data ?? []) as FoodRow[];
-        if (page === 0) {
-          setFoods(rows);
-        } else {
-          setFoods(prev => [...prev, ...rows]);
-        }
-        setHasMore(rows.length === PAGE_SIZE);
+    const query = isDrink === undefined
+      ? supabase.rpc('search_foods', {
+          search_query: search.trim(),
+          page_size: PAGE_SIZE,
+          page_offset: offset,
+        })
+      : supabase.rpc('search_foods_by_type', {
+          search_query: search.trim(),
+          is_drink: isDrink,
+          page_size: PAGE_SIZE,
+          page_offset: offset,
+        });
+
+    query.then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) {
+        console.error('Food search error:', error);
         setLoading(false);
-      });
+        return;
+      }
+      const rows = (data ?? []) as FoodRow[];
+      if (page === 0) {
+        setFoods(rows);
+      } else {
+        setFoods(prev => [...prev, ...rows]);
+      }
+      setHasMore(rows.length === PAGE_SIZE);
+      setLoading(false);
+    });
 
     return () => { cancelled = true; };
   }, [search, page, isDrink]);
