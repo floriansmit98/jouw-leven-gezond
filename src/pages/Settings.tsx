@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Settings, Save, Beaker, Flame, Waves, Egg, Droplets, Info } from 'lucide-react';
+import { Settings, Save, Beaker, Flame, Waves, Egg, Droplets, Info, Upload, Loader2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getLimits, saveLimits, type DailyLimits } from '@/lib/store';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NutrientFieldProps {
   label: string;
