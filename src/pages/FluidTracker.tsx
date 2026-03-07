@@ -21,7 +21,7 @@ export default function FluidTracker() {
   const [adding, setAdding] = useState(false);
 
   const { foods: drinks, loading: nevoLoading, hasMore, loadMore } = useFoodSearch(search, true);
-  const { products: offDrinks, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore } = useOFFSearch(search, true);
+  const { products: offDrinks, loading: offLoading, hasMore: offHasMore, loadMore: offLoadMore, noResults: offNoResults } = useOFFSearch(search, true);
   const { entries, refetch } = useTodayEntries();
 
   const drinkEntries = entries.filter(e => {
