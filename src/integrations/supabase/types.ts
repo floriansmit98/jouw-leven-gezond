@@ -130,6 +130,33 @@ export type Database = {
         }
         Relationships: []
       }
+      symptom_entries: {
+        Row: {
+          id: string
+          logged_at: string
+          notes: string | null
+          severity_score: number
+          symptom_name: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          severity_score?: number
+          symptom_name: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          severity_score?: number
+          symptom_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
