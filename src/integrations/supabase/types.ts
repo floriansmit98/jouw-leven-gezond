@@ -159,6 +159,35 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      search_foods_by_type: {
+        Args: {
+          is_drink?: boolean
+          page_offset?: number
+          page_size?: number
+          search_query: string
+        }
+        Returns: {
+          aliases: string[] | null
+          category: string
+          created_at: string
+          dialysis_risk_label: string | null
+          fluid_ml: number
+          id: string
+          name: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          sodium_mg: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "foods"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
