@@ -329,49 +329,10 @@ export default function FoodTracker() {
 
         {/* Step: Manual search */}
         {step === 'manual' && (
-          <div className="mb-6 space-y-3">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setStep(detectedFoods.length > 0 ? 'confirm' : 'capture')}>
-                ← Terug
-              </Button>
-              <h2 className="font-display text-lg font-semibold text-foreground">Zoeken</h2>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Zoek voedingsmiddel..."
-                value={manualSearch}
-                onChange={e => setManualSearch(e.target.value)}
-                className="h-12 rounded-xl pl-10 text-base"
-                autoFocus
-              />
-            </div>
-            {manualSearch.trim() !== '' && (
-              <div className="space-y-2">
-                {searchResults.map(food => (
-                  <button
-                    key={food.id}
-                    onClick={() => addManualFood(food)}
-                    className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
-                  >
-                    <div className="flex-1">
-                      <p className="font-semibold text-foreground">{food.name}</p>
-                      <p className="text-xs text-muted-foreground">{food.portion_description} · {food.category}</p>
-                    </div>
-                    <Plus className="h-5 w-5 shrink-0 text-primary" />
-                  </button>
-                ))}
-                {searchLoading && (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                )}
-                {!searchLoading && searchResults.length === 0 && (
-                  <p className="py-4 text-center text-sm text-muted-foreground">Geen resultaten gevonden.</p>
-                )}
-              </div>
-            )}
-          </div>
+          <ManualSearchPanel
+            onAddFood={addManualFood}
+            onBack={() => setStep(detectedFoods.length > 0 ? 'confirm' : 'capture')}
+          />
         )}
 
         {/* Step: Barcode scanner */}
