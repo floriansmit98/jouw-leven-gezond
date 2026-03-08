@@ -35,10 +35,11 @@ interface SymptomRecord {
   logged_at: string;
 }
 
-function getCutoff(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
+function getPeriodStart(days: number) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+  return start;
 }
 
 function generateReportText(
