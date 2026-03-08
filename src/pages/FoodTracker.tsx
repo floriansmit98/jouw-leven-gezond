@@ -511,6 +511,119 @@ function DetectedFoodCard({
   );
 }
 
+// --- Manual Search Panel with recent/most-used ---
+function ManualSearchPanel({ onAddFood, onBack }: { onAddFood: (food: FoodRow) => void; onBack: () => void }) {
+  const [query, setQuery] = useState('');
+  const { foods: searchResults, loading: searchLoading } = useFoodSearch(query);
+  const { foods: recentFoods } = useRecentFoods();
+  const { foods: mostUsedFoods } = useMostUsedFoods();
+
+  const showResults = query.trim().length > 0;
+
+  return (
+    <div className="mb-6 space-y-3">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          ← Terug
+        </Button>
+        <h2 className="font-display text-lg font-semibold text-foreground">Zoeken</h2>
+      </div>
+
+      {/* Search input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Zoek voedingsmiddel of drank..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="h-12 rounded-xl pl-10 pr-10 text-base"
+          autoFocus
+        />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Search results */}
+      {showResults && (
+        <div className="space-y-1.5">
+          {searchResults.map(food => (
+            <FoodSearchResult key={food.id} food={food} onSelect={onAddFood} />
+          ))}
+          {searchLoading && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+          {!searchLoading && searchResults.length === 0 && (
+            <div className="rounded-xl border border-border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground">Geen resultaten voor "{query}"</p>
+              <p className="mt-1 text-xs text-muted-foreground">Probeer een andere zoekterm</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* When not searching: show recent & most used */}
+      {!showResults && (
+        <>
+          {mostUsedFoods.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-foreground flex items-center gap-1.5">
+                ⭐ Meest gebruikt
+              </h3>
+              <div className="space-y-1.5">
+                {mostUsedFoods.map(food => (
+                  <FoodSearchResult key={food.id} food={food} onSelect={onAddFood} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recentFoods.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-foreground flex items-center gap-1.5">
+                🕐 Recent gebruikt
+              </h3>
+              <div className="space-y-1.5">
+                {recentFoods.map(food => (
+                  <FoodSearchResult key={food.id} food={food} onSelect={onAddFood} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recentFoods.length === 0 && mostUsedFoods.length === 0 && (
+            <div className="rounded-xl border border-border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground">Typ om te zoeken in 2300+ voedingsmiddelen</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function FoodSearchResult({ food, onSelect }: { food: FoodRow; onSelect: (f: FoodRow) => void }) {
+  return (
+    <button
+      onClick={() => onSelect(food)}
+      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
+    >
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-foreground text-sm truncate">{food.name}</p>
+        <p className="text-xs text-muted-foreground">{food.portion_description} · {food.category}</p>
+      </div>
+      <Plus className="h-5 w-5 shrink-0 text-primary ml-2" />
+    </button>
+  );
+}
+
 function NutrientMini({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
     <div className="rounded-md bg-muted px-1 py-1.5">
