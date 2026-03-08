@@ -37,6 +37,22 @@ interface SymptomRecord {
   logged_at: string;
 }
 
+type Period = '1' | '7' | '14' | '30';
+
+const PERIOD_LABELS: Record<Period, string> = {
+  '1': 'Vandaag',
+  '7': 'Week',
+  '14': '2 weken',
+  '30': 'Maand',
+};
+
+function getPeriodStart(days: number) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+  return start;
+}
+
 export default function SymptomTracker() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -44,15 +60,22 @@ export default function SymptomTracker() {
   const [severity, setSeverity] = useState(3);
   const [notes, setNotes] = useState('');
   const [chartFilter, setChartFilter] = useState<SymptomType | 'all'>('all');
+  const [period, setPeriod] = useState<Period>('7');
+
+  const days = parseInt(period, 10);
+  const periodStart = getPeriodStart(days);
+  const periodStartIso = periodStart.toISOString();
 
   const { data: entries = [] } = useQuery({
-    queryKey: ['symptom_entries', user?.id],
+    queryKey: ['symptom_entries', user?.id, days],
     queryFn: async () => {
       if (!user) return [];
+      const cutoff = getPeriodStart(days).toISOString();
       const { data, error } = await supabase
         .from('symptom_entries')
         .select('*')
         .eq('user_id', user.id)
+        .gte('logged_at', cutoff)
         .order('logged_at', { ascending: false });
       if (error) throw error;
       return data as SymptomRecord[];
@@ -90,16 +113,14 @@ export default function SymptomTracker() {
     });
   }
 
-  // Chart data: filter by selected symptom
   const chartData = useMemo(() => {
     const filtered = chartFilter === 'all'
       ? entries
       : entries.filter(e => e.symptom_name === chartFilter);
 
-    // Group by date, take max severity per symptom per day
     const byDate = new Map<string, Map<string, number>>();
     filtered.forEach(e => {
-      const dateKey = e.logged_at.split('T')[0];
+      const dateKey = format(new Date(e.logged_at), 'yyyy-MM-dd');
       if (!byDate.has(dateKey)) byDate.set(dateKey, new Map());
       const dayMap = byDate.get(dateKey)!;
       const current = dayMap.get(e.symptom_name) || 0;
@@ -108,7 +129,6 @@ export default function SymptomTracker() {
 
     return Array.from(byDate.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-14) // last 14 days
       .map(([date, symptoms]) => {
         const point: Record<string, string | number> = {
           date: format(new Date(date), 'd MMM', { locale: nl }),
@@ -136,9 +156,6 @@ export default function SymptomTracker() {
     duizeligheid: 'hsl(0, 70%, 55%)',
     krampen: 'hsl(50, 80%, 50%)',
   };
-
-  // Recent history (last 20)
-  const recentEntries = entries.slice(0, 20);
 
   return (
     <div className="min-h-screen pb-24">
@@ -205,12 +222,31 @@ export default function SymptomTracker() {
           </div>
         )}
 
+        {/* Period selector */}
+        <div className="mb-4">
+          <div className="grid grid-cols-4 gap-2">
+            {(Object.entries(PERIOD_LABELS) as [Period, string][]).map(([key, label]) => (
+              <Button
+                key={key}
+                variant={period === key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPeriod(key)}
+                className="text-sm"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {/* Chart section */}
         {entries.length > 0 && (
           <div className="mb-6">
-            <h2 className="mb-3 font-display text-lg font-semibold text-foreground">Verloop</h2>
+            <h2 className="mb-3 font-display text-lg font-semibold text-foreground">
+              Verloop ({PERIOD_LABELS[period].toLowerCase()})
+            </h2>
 
-            {/* Filter buttons */}
+            {/* Symptom filter buttons */}
             <div className="mb-3 flex flex-wrap gap-2">
               <button
                 onClick={() => setChartFilter('all')}
@@ -272,11 +308,10 @@ export default function SymptomTracker() {
                 </ResponsiveContainer>
               ) : (
                 <p className="py-8 text-center text-sm text-muted-foreground">
-                  Geen data voor dit symptoom.
+                  Geen data in deze periode.
                 </p>
               )}
 
-              {/* Legend */}
               {chartFilter === 'all' && activeSymptoms.length > 1 && (
                 <div className="mt-3 flex flex-wrap gap-3">
                   {activeSymptoms.map(s => (
@@ -292,11 +327,13 @@ export default function SymptomTracker() {
         )}
 
         {/* Recent history */}
-        {recentEntries.length > 0 && (
+        {entries.length > 0 && (
           <div className="mb-6">
-            <h2 className="mb-3 font-display text-lg font-semibold text-foreground">Geschiedenis</h2>
+            <h2 className="mb-3 font-display text-lg font-semibold text-foreground">
+              Geschiedenis ({PERIOD_LABELS[period].toLowerCase()})
+            </h2>
             <div className="space-y-2">
-              {recentEntries.map(entry => (
+              {entries.map(entry => (
                 <div
                   key={entry.id}
                   className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
