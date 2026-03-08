@@ -185,6 +185,7 @@ export default function Report() {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
+  const isMobile = useIsMobile();
 
   const days = parseInt(period, 10);
   const periodStart = getPeriodStart(days);
