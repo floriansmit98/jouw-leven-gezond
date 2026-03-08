@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
+import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,9 +114,8 @@ export default function FoodTracker() {
   const addManualFood = (food: FoodRow) => {
     setDetectedFoods(prev => [
       ...prev,
-      { naam: food.name, hoeveelheid_gram: 100, is_drank: false, matched: food, amount: 100, confirmed: true },
+      { naam: food.name, hoeveelheid_gram: food.portion_grams || 100, is_drank: false, matched: food, amount: food.portion_grams || 100, confirmed: true },
     ]);
-    // search is handled in ManualSearchPanel
     setStep('confirm');
   };
 
@@ -156,8 +156,12 @@ export default function FoodTracker() {
 
   const handleBarcodeScan = useCallback(async (barcode: string) => {
     setStep('barcode-result');
-    setBarcodeAmount(100);
-    await barcodeLookup.lookup(barcode);
+    const barcodeResult = await barcodeLookup.lookup(barcode);
+    if (barcodeResult?.nevoMatch) {
+      setBarcodeAmount(barcodeResult.nevoMatch.portion_grams || 100);
+    } else {
+      setBarcodeAmount(100);
+    }
   }, [barcodeLookup]);
 
   const handleAddBarcodeProduct = async () => {
@@ -444,18 +448,29 @@ function DetectedFoodCard({
       </div>
 
       {/* Amount input */}
-      <div className="mt-3 flex items-center gap-2">
-        <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
-        <Input
-          type="number"
-          min="1"
-          step="1"
-          value={food.amount}
-          onChange={e => onUpdateAmount(index, parseFloat(e.target.value) || 0)}
-          className="h-9 w-24 rounded-lg text-sm"
-        />
-        <span className="text-sm text-muted-foreground">{food.is_drank ? 'ml' : 'g'}</span>
-      </div>
+      {food.matched && (
+        <div className="mt-3">
+          <AmountInput
+            food={food.matched}
+            grams={food.amount}
+            onGramsChange={(g) => onUpdateAmount(index, g)}
+          />
+        </div>
+      )}
+      {!food.matched && (
+        <div className="mt-3 flex items-center gap-2">
+          <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={food.amount}
+            onChange={e => onUpdateAmount(index, parseFloat(e.target.value) || 0)}
+            className="h-9 w-24 rounded-lg text-sm"
+          />
+          <span className="text-sm text-muted-foreground">g</span>
+        </div>
+      )}
 
       {/* Nutrient preview from NEVO */}
       {food.matched && food.amount > 0 && (
@@ -690,23 +705,16 @@ function BarcodeResultCard({
           </div>
 
           {/* Amount input */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
-            <Input
-              type="number"
-              min="1"
-              step="1"
-              value={amount}
-              onChange={e => onAmountChange(parseFloat(e.target.value) || 0)}
-              className="h-9 w-24 rounded-lg text-sm"
-            />
-            <span className="text-sm text-muted-foreground">g/ml</span>
-          </div>
+          <AmountInput
+            food={nevo}
+            grams={amount}
+            onGramsChange={onAmountChange}
+          />
 
           {/* Calculated values */}
           {amount > 0 && (
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}g/ml:</p>
+              <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}{['dranken', 'alcohol'].includes(nevo.category) ? 'ml' : 'g'}:</p>
               <div className="grid grid-cols-5 gap-1 text-center">
                 <NutrientMini label="K" value={Math.round(nevo.potassium_mg * factor)} unit="mg" />
                 <NutrientMini label="F" value={Math.round(nevo.phosphate_mg * factor)} unit="mg" />
