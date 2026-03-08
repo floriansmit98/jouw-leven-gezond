@@ -43,19 +43,29 @@ export function useFoodSearch(search: string, isDrink?: boolean) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    const trimmed = search.trim();
 
+    // Don't search if empty
+    if (!trimmed) {
+      setFoods([]);
+      setLoading(false);
+      setHasMore(false);
+      return;
+    }
+
+    setLoading(true);
     const offset = page * PAGE_SIZE;
 
-    const query = isDrink === undefined
-      ? supabase.rpc('search_foods', {
-          search_query: search.trim(),
+    // Use the new ranked search for general queries, or type-based for drink filtering
+    const query = isDrink !== undefined
+      ? supabase.rpc('search_foods_by_type', {
+          search_query: trimmed,
+          is_drink: isDrink,
           page_size: PAGE_SIZE,
           page_offset: offset,
         })
-      : supabase.rpc('search_foods_by_type', {
-          search_query: search.trim(),
-          is_drink: isDrink,
+      : supabase.rpc('search_foods_ranked', {
+          search_query: trimmed,
           page_size: PAGE_SIZE,
           page_offset: offset,
         });
@@ -124,6 +134,42 @@ export function useTodayTotals() {
     protein: entries.reduce((s, e) => s + Number(e.protein_g), 0),
     fluid: entries.reduce((s, e) => s + Number(e.fluid_ml), 0),
   };
+}
+
+export function useRecentFoods() {
+  const { user } = useAuth();
+  const [foods, setFoods] = useState<FoodRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setFoods([]); setLoading(false); return; }
+    supabase
+      .rpc('get_recent_foods', { p_user_id: user.id, p_limit: 8 })
+      .then(({ data, error }) => {
+        if (!error) setFoods((data ?? []) as FoodRow[]);
+        setLoading(false);
+      });
+  }, [user]);
+
+  return { foods, loading };
+}
+
+export function useMostUsedFoods() {
+  const { user } = useAuth();
+  const [foods, setFoods] = useState<FoodRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setFoods([]); setLoading(false); return; }
+    supabase
+      .rpc('get_most_used_foods', { p_user_id: user.id, p_limit: 8 })
+      .then(({ data, error }) => {
+        if (!error) setFoods((data ?? []) as FoodRow[]);
+        setLoading(false);
+      });
+  }, [user]);
+
+  return { foods, loading };
 }
 
 export async function addFoodEntryDB(userId: string, food: FoodRow, portions: number) {
