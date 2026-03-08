@@ -168,6 +168,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_display_name: { Args: { raw_name: string }; Returns: string }
       get_most_used_foods: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
