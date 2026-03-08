@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface FoodRow {
   id: string;
   name: string;
+  display_name: string | null;
   category: string;
   portion_description: string;
   portion_grams: number;
@@ -14,6 +15,11 @@ export interface FoodRow {
   protein_g: number;
   fluid_ml: number;
   dialysis_risk_label: string;
+}
+
+/** Returns the user-friendly display name, falling back to the raw name */
+export function foodDisplayName(food: FoodRow): string {
+  return food.display_name || food.name;
 }
 
 export interface FoodEntryRow {
