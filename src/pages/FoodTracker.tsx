@@ -29,11 +29,9 @@ export default function FoodTracker() {
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [detectedFoods, setDetectedFoods] = useState<DetectedFood[]>([]);
   const [saving, setSaving] = useState(false);
-  const [manualSearch, setManualSearch] = useState('');
   const [barcodeAmount, setBarcodeAmount] = useState(100);
 
   const { entries, refetch } = useTodayEntries();
-  const { foods: searchResults, loading: searchLoading } = useFoodSearch(manualSearch);
   const barcodeLookup = useOpenFoodFactsLookup();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
