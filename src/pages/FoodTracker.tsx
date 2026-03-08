@@ -631,59 +631,71 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-// --- Barcode Product Card ---
-function BarcodeProductCard({
-  product,
+// --- Barcode Result Card (NEVO-first approach) ---
+function BarcodeResultCard({
+  result,
   amount,
   onAmountChange,
   onAdd,
   onRescan,
+  onManualSearch,
   saving,
 }: {
-  product: OpenFoodFactsProduct;
+  result: BarcodeResult;
   amount: number;
   onAmountChange: (amount: number) => void;
   onAdd: () => void;
   onRescan: () => void;
+  onManualSearch: () => void;
   saving: boolean;
 }) {
   const factor = amount / 100;
-  const n = product.nutriments;
+  const nevo = result.nevoMatch;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-      {/* Product info */}
+      {/* Product info from barcode */}
       <div className="flex gap-3">
-        {product.image_url && (
+        {result.imageUrl && (
           <img
-            src={product.image_url}
-            alt={product.name}
+            src={result.imageUrl}
+            alt={result.offName}
             className="h-20 w-20 rounded-lg object-contain border border-border bg-white"
           />
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground">{product.name}</p>
-          {product.brand && (
-            <p className="text-sm text-muted-foreground">{product.brand}</p>
+          <p className="font-semibold text-foreground">{result.offName}</p>
+          {result.offBrand && (
+            <p className="text-sm text-muted-foreground">{result.offBrand}</p>
           )}
-          <p className="text-xs text-muted-foreground mt-1">Barcode: {product.barcode}</p>
+          <p className="text-xs text-muted-foreground mt-1">Barcode: {result.barcode}</p>
         </div>
       </div>
 
-      {/* Nutrient values per 100g */}
-      <div>
-        <p className="text-sm font-medium text-foreground mb-2">Voedingswaarden per 100g/ml:</p>
-        <div className="grid grid-cols-5 gap-1 text-center">
-          <NutrientMiniBarcode label="K" value={n.potassium_mg} unit="mg" />
-          <NutrientMiniBarcode label="F" value={n.phosphorus_mg} unit="mg" />
-          <NutrientMiniBarcode label="Na" value={n.sodium_mg} unit="mg" />
-          <NutrientMiniBarcode label="E" value={n.proteins_g} unit="g" />
-          <NutrientMiniBarcode label="V" value={n.water_ml} unit="ml" />
-        </div>
-      </div>
-
-      {product.isComplete ? (
+      {nevo ? (
         <>
+          {/* NEVO match found */}
+          <div className="rounded-lg bg-safe/10 border border-safe/30 p-3">
+            <p className="text-sm font-medium text-safe">
+              ✓ Gekoppeld aan NEVO-database: {foodDisplayName(nevo)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Voedingswaarden komen uit de betrouwbare NEVO-database.
+            </p>
+          </div>
+
+          {/* Nutrient values per 100g from NEVO */}
+          <div>
+            <p className="text-sm font-medium text-foreground mb-2">Voedingswaarden per 100g (NEVO):</p>
+            <div className="grid grid-cols-5 gap-1 text-center">
+              <NutrientMini label="K" value={nevo.potassium_mg} unit="mg" />
+              <NutrientMini label="F" value={nevo.phosphate_mg} unit="mg" />
+              <NutrientMini label="Na" value={nevo.sodium_mg} unit="mg" />
+              <NutrientMini label="E" value={Math.round(nevo.protein_g * 10) / 10} unit="g" />
+              <NutrientMini label="V" value={nevo.fluid_ml} unit="ml" />
+            </div>
+          </div>
+
           {/* Amount input */}
           <div className="flex items-center gap-2">
             <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
@@ -703,16 +715,16 @@ function BarcodeProductCard({
             <div>
               <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}g/ml:</p>
               <div className="grid grid-cols-5 gap-1 text-center">
-                <NutrientMini label="K" value={Math.round((n.potassium_mg ?? 0) * factor)} unit="mg" />
-                <NutrientMini label="F" value={Math.round((n.phosphorus_mg ?? 0) * factor)} unit="mg" />
-                <NutrientMini label="Na" value={Math.round((n.sodium_mg ?? 0) * factor)} unit="mg" />
-                <NutrientMini label="E" value={Math.round((n.proteins_g ?? 0) * factor * 10) / 10} unit="g" />
-                <NutrientMini label="V" value={Math.round((n.water_ml ?? 0) * factor)} unit="ml" />
+                <NutrientMini label="K" value={Math.round(nevo.potassium_mg * factor)} unit="mg" />
+                <NutrientMini label="F" value={Math.round(nevo.phosphate_mg * factor)} unit="mg" />
+                <NutrientMini label="Na" value={Math.round(nevo.sodium_mg * factor)} unit="mg" />
+                <NutrientMini label="E" value={Math.round(nevo.protein_g * factor * 10) / 10} unit="g" />
+                <NutrientMini label="V" value={Math.round(nevo.fluid_ml * factor)} unit="ml" />
               </div>
             </div>
           )}
 
-          {/* Add button */}
+          {/* Buttons */}
           <div className="flex gap-3">
             <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
               Opnieuw scannen
@@ -729,31 +741,36 @@ function BarcodeProductCard({
         </>
       ) : (
         <>
-          {/* Incomplete product warning */}
+          {/* No NEVO match */}
           <div className="rounded-lg bg-warning/10 border border-warning/30 p-3">
             <p className="text-sm font-medium text-warning">
-              Dit product kan niet worden toegevoegd omdat niet alle benodigde voedingswaarden beschikbaar zijn.
+              Dit product is herkend, maar bevat onvoldoende voedingsgegevens voor betrouwbare dialyseberekening.
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Ontbrekend: {product.missingFields.join(', ')}
+              Het product kon niet worden gekoppeld aan de interne voedingsdatabase. Zoek het product handmatig op voor betrouwbare waarden.
             </p>
           </div>
-          <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
-            Ander product scannen
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
+              Opnieuw scannen
+            </Button>
+            <Button onClick={onManualSearch} className="h-12 flex-1 rounded-xl text-base font-semibold">
+              <Search className="mr-2 h-5 w-5" />
+              Handmatig zoeken
+            </Button>
+          </div>
         </>
       )}
     </div>
   );
 }
 
-function NutrientMiniBarcode({ label, value, unit }: { label: string; value: number | null; unit: string }) {
+function NutrientMini({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
-    <div className={`rounded-md px-1 py-1.5 ${value != null ? 'bg-muted' : 'bg-warning/10'}`}>
+    <div className="rounded-md bg-muted px-1 py-1.5">
       <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-xs font-bold text-foreground">
-        {value != null ? `${Math.round(value)}` : '—'}
-      </p>
+      <p className="text-xs font-bold text-foreground">{value}</p>
     </div>
   );
 }
+
