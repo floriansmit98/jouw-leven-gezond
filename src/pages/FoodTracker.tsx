@@ -701,18 +701,11 @@ function BarcodeResultCard({
           </div>
 
           {/* Amount input */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
-            <Input
-              type="number"
-              min="1"
-              step="1"
-              value={amount}
-              onChange={e => onAmountChange(parseFloat(e.target.value) || 0)}
-              className="h-9 w-24 rounded-lg text-sm"
-            />
-            <span className="text-sm text-muted-foreground">g/ml</span>
-          </div>
+          <AmountInput
+            food={nevo}
+            grams={amount}
+            onGramsChange={onAmountChange}
+          />
 
           {/* Calculated values */}
           {amount > 0 && (
