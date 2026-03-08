@@ -113,7 +113,28 @@ export default function FoodTracker() {
     ));
   };
 
-  // --- Add manual food to the detected list ---
+  // --- Add manual food directly (save immediately) ---
+  const addManualFoodDirect = async (food: FoodRow, amountGrams: number) => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const factor = amountGrams / 100;
+      await addFoodEntryDB(user.id, food, factor);
+      toast.success(`${foodDisplayName(food)} toegevoegd!`);
+      refetch();
+      // If we came from confirm step (AI detection), go back there
+      if (detectedFoods.length > 0) {
+        setStep('confirm');
+      } else {
+        setStep('capture');
+      }
+    } catch {
+      toast.error('Kon voeding niet opslaan.');
+    }
+    setSaving(false);
+  };
+
+  // --- Add manual food to detected list (used from confirm step "add more") ---
   const addManualFood = (food: FoodRow) => {
     setDetectedFoods(prev => [
       ...prev,
@@ -325,8 +346,10 @@ export default function FoodTracker() {
         {/* Step: Manual search */}
         {step === 'manual' && (
           <ManualSearchPanel
-            onAddFood={addManualFood}
+            onAddFood={detectedFoods.length > 0 ? addManualFood : undefined}
+            onAddFoodDirect={detectedFoods.length === 0 ? addManualFoodDirect : undefined}
             onBack={() => setStep(detectedFoods.length > 0 ? 'confirm' : 'capture')}
+            saving={saving}
           />
         )}
 
@@ -546,13 +569,97 @@ function DetectedFoodCard({
 }
 
 // --- Manual Search Panel with recent/most-used ---
-function ManualSearchPanel({ onAddFood, onBack }: { onAddFood: (food: FoodRow) => void; onBack: () => void }) {
+function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
+  onAddFood?: (food: FoodRow) => void;
+  onAddFoodDirect?: (food: FoodRow, amountGrams: number) => Promise<void>;
+  onBack: () => void;
+  saving?: boolean;
+}) {
   const [query, setQuery] = useState('');
+  const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
+  const [amount, setAmount] = useState(100);
   const { foods: searchResults, loading: searchLoading } = useFoodSearch(query);
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
 
   const showResults = query.trim().length > 0;
+
+  const handleSelectFood = (food: FoodRow) => {
+    if (onAddFood) {
+      // Quick-add mode (from confirm step)
+      onAddFood(food);
+    } else {
+      // Direct-save mode: show amount picker
+      setSelectedFood(food);
+      setAmount(food.portion_grams || 100);
+    }
+  };
+
+  const handleSaveDirect = async () => {
+    if (selectedFood && onAddFoodDirect) {
+      await onAddFoodDirect(selectedFood, amount);
+      setSelectedFood(null);
+      setQuery('');
+    }
+  };
+
+  // If a food is selected, show the amount picker + save
+  if (selectedFood && onAddFoodDirect) {
+    const factor = amount / 100;
+    const warnings = analyzeFoodWarnings(selectedFood, amount);
+
+    return (
+      <div className="mb-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedFood(null)}>
+            ← Terug
+          </Button>
+          <h2 className="font-display text-lg font-semibold text-foreground">Hoeveelheid</h2>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div>
+            <p className="font-semibold text-foreground">{foodDisplayName(selectedFood)}</p>
+            <p className="text-xs text-muted-foreground">{selectedFood.portion_description} · {selectedFood.category}</p>
+          </div>
+
+          <AmountInput
+            food={selectedFood}
+            grams={amount}
+            onGramsChange={setAmount}
+          />
+
+          {/* Nutrient preview */}
+          {amount > 0 && (
+            <div className="grid grid-cols-5 gap-1 text-center">
+              <NutrientMini label="K" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" />
+              <NutrientMini label="F" value={Math.round(selectedFood.phosphate_mg * factor)} unit="mg" />
+              <NutrientMini label="Na" value={Math.round(selectedFood.sodium_mg * factor)} unit="mg" />
+              <NutrientMini label="E" value={Math.round(selectedFood.protein_g * factor * 10) / 10} unit="g" />
+              <NutrientMini label="V" value={Math.round(selectedFood.fluid_ml * factor)} unit="ml" />
+            </div>
+          )}
+
+          {/* Warnings */}
+          {warnings.length > 0 && (
+            <div className="space-y-1.5">
+              <WarningBadges warnings={warnings} />
+              <WarningMessages warnings={warnings} />
+            </div>
+          )}
+        </div>
+
+        <Button
+          onClick={handleSaveDirect}
+          disabled={saving || amount <= 0}
+          className="h-12 w-full rounded-xl text-base font-semibold"
+        >
+          {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
+          Toevoegen
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6 space-y-3">
@@ -587,7 +694,7 @@ function ManualSearchPanel({ onAddFood, onBack }: { onAddFood: (food: FoodRow) =
       {showResults && (
         <div className="space-y-1.5">
           {searchResults.map(food => (
-            <FoodSearchResult key={food.id} food={food} onSelect={onAddFood} />
+            <FoodSearchResult key={food.id} food={food} onSelect={handleSelectFood} />
           ))}
           {searchLoading && (
             <div className="flex justify-center py-4">
@@ -613,7 +720,7 @@ function ManualSearchPanel({ onAddFood, onBack }: { onAddFood: (food: FoodRow) =
               </h3>
               <div className="space-y-1.5">
                 {mostUsedFoods.map(food => (
-                  <FoodSearchResult key={food.id} food={food} onSelect={onAddFood} />
+                  <FoodSearchResult key={food.id} food={food} onSelect={handleSelectFood} />
                 ))}
               </div>
             </div>
@@ -626,7 +733,7 @@ function ManualSearchPanel({ onAddFood, onBack }: { onAddFood: (food: FoodRow) =
               </h3>
               <div className="space-y-1.5">
                 {recentFoods.map(food => (
-                  <FoodSearchResult key={food.id} food={food} onSelect={onAddFood} />
+                  <FoodSearchResult key={food.id} food={food} onSelect={handleSelectFood} />
                 ))}
               </div>
             </div>
@@ -653,7 +760,7 @@ function FoodSearchResult({ food, onSelect }: { food: FoodRow; onSelect: (f: Foo
         <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
         <p className="text-xs text-muted-foreground">{food.portion_description} · {food.category}</p>
       </div>
-      <Plus className="h-5 w-5 shrink-0 text-primary ml-2" />
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
     </button>
   );
 }
