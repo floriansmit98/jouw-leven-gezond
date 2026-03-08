@@ -1,41 +1,37 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { FoodRow } from './useFoods';
+import { foodDisplayName } from './useFoods';
 
-export interface OpenFoodFactsProduct {
+export interface BarcodeResult {
   barcode: string;
-  name: string;
-  brand: string;
-  image_url?: string;
-  nutriments: {
-    potassium_mg: number | null;
-    phosphorus_mg: number | null;
-    sodium_mg: number | null;
-    proteins_g: number | null;
-    water_ml: number | null;
-  };
-  isComplete: boolean;
-  missingFields: string[];
+  /** Product name from Open Food Facts */
+  offName: string;
+  /** Brand from Open Food Facts */
+  offBrand: string;
+  /** Product image from Open Food Facts */
+  imageUrl?: string;
+  /** Matched NEVO food (if found) */
+  nevoMatch: FoodRow | null;
+  /** Whether we have a usable match with complete nutrition */
+  isUsable: boolean;
 }
 
-const NUTRIENT_LABELS: Record<string, string> = {
-  potassium_mg: 'Kalium',
-  phosphorus_mg: 'Fosfaat',
-  sodium_mg: 'Natrium',
-  proteins_g: 'Eiwit',
-  water_ml: 'Vocht',
-};
-
-export function useOpenFoodFactsLookup() {
+export function useBarcodeLookup() {
   const [loading, setLoading] = useState(false);
-  const [product, setProduct] = useState<OpenFoodFactsProduct | null>(null);
+  const [result, setResult] = useState<BarcodeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const lookup = async (barcode: string) => {
     setLoading(true);
     setError(null);
-    setProduct(null);
+    setResult(null);
 
     try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,brands,image_front_url,nutriments`);
+      // Step 1: Look up barcode in Open Food Facts to get product name
+      const res = await fetch(
+        `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,brands,image_front_url`
+      );
       const json = await res.json();
 
       if (json.status !== 1 || !json.product) {
@@ -45,37 +41,45 @@ export function useOpenFoodFactsLookup() {
       }
 
       const p = json.product;
-      const n = p.nutriments || {};
+      const offName = p.product_name || '';
+      const offBrand = p.brands || '';
 
-      const potassium_mg = parseNutrient(n['potassium_100g'], n['potassium_unit']);
-      const phosphorus_mg = parseNutrient(n['phosphorus_100g'], n['phosphorus_unit']);
-      const sodium_mg = parseNutrient(n['sodium_100g'], n['sodium_unit']);
-      const proteins_g = n['proteins_100g'] != null ? Number(n['proteins_100g']) : null;
-      // Water: OFF doesn't always have water; try to estimate from moisture or use null
-      const water_ml = n['water_100g'] != null ? Number(n['water_100g']) : null;
+      if (!offName.trim()) {
+        setError('Product herkend maar geen naam beschikbaar.');
+        setLoading(false);
+        return null;
+      }
 
-      const nutriments = { potassium_mg, phosphorus_mg, sodium_mg, proteins_g, water_ml };
+      // Step 2: Search NEVO database for this product name
+      // Try several search strategies
+      const searchTerms = buildSearchTerms(offName, offBrand);
+      let nevoMatch: FoodRow | null = null;
 
-      const missingFields: string[] = [];
-      if (potassium_mg == null) missingFields.push(NUTRIENT_LABELS.potassium_mg);
-      if (phosphorus_mg == null) missingFields.push(NUTRIENT_LABELS.phosphorus_mg);
-      if (sodium_mg == null) missingFields.push(NUTRIENT_LABELS.sodium_mg);
-      if (proteins_g == null) missingFields.push(NUTRIENT_LABELS.proteins_g);
-      if (water_ml == null) missingFields.push(NUTRIENT_LABELS.water_ml);
+      for (const term of searchTerms) {
+        if (!term.trim()) continue;
+        const { data } = await supabase.rpc('search_foods_ranked', {
+          search_query: term,
+          page_size: 5,
+          page_offset: 0,
+        });
+        if (data && data.length > 0) {
+          nevoMatch = data[0] as FoodRow;
+          break;
+        }
+      }
 
-      const result: OpenFoodFactsProduct = {
+      const barcodeResult: BarcodeResult = {
         barcode,
-        name: p.product_name || 'Onbekend product',
-        brand: p.brands || '',
-        image_url: p.image_front_url || undefined,
-        nutriments,
-        isComplete: missingFields.length === 0,
-        missingFields,
+        offName,
+        offBrand,
+        imageUrl: p.image_front_url || undefined,
+        nevoMatch,
+        isUsable: nevoMatch !== null,
       };
 
-      setProduct(result);
+      setResult(barcodeResult);
       setLoading(false);
-      return result;
+      return barcodeResult;
     } catch {
       setError('Kon product niet opzoeken. Controleer uw internetverbinding.');
       setLoading(false);
@@ -84,18 +88,31 @@ export function useOpenFoodFactsLookup() {
   };
 
   const reset = () => {
-    setProduct(null);
+    setResult(null);
     setError(null);
   };
 
-  return { lookup, product, loading, error, reset };
+  return { lookup, result, loading, error, reset };
 }
 
-function parseNutrient(value: unknown, unit?: string): number | null {
-  if (value == null || value === '') return null;
-  let num = Number(value);
-  if (isNaN(num)) return null;
-  // Convert to mg if given in g
-  if (unit === 'g') num *= 1000;
-  return Math.round(num * 100) / 100;
+/**
+ * Build an array of search terms to try against NEVO, from most specific to least.
+ * E.g. "Stroopwafel" from brand "Lotus" → ["Stroopwafel Lotus", "Stroopwafel", "stroopwafel"]
+ */
+function buildSearchTerms(name: string, brand: string): string[] {
+  const terms: string[] = [];
+  const cleanName = name.replace(/[®™©]/g, '').trim();
+
+  // Try full name + brand
+  if (brand) {
+    terms.push(`${cleanName} ${brand.split(',')[0].trim()}`);
+  }
+  // Try just the product name
+  terms.push(cleanName);
+  // Try first word only (for compound products like "Stroopwafel original")
+  const firstWord = cleanName.split(/\s+/)[0];
+  if (firstWord && firstWord.length >= 3 && firstWord !== cleanName) {
+    terms.push(firstWord);
+  }
+  return terms;
 }
