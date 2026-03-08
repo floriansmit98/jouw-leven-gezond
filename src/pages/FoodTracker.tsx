@@ -20,7 +20,7 @@ interface DetectedFood {
   confirmed: boolean;
 }
 
-type Step = 'capture' | 'analyzing' | 'confirm' | 'manual';
+type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result';
 
 export default function FoodTracker() {
   const { user } = useAuth();
@@ -30,9 +30,11 @@ export default function FoodTracker() {
   const [detectedFoods, setDetectedFoods] = useState<DetectedFood[]>([]);
   const [saving, setSaving] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
+  const [barcodeAmount, setBarcodeAmount] = useState(100);
 
   const { entries, refetch } = useTodayEntries();
   const { foods: searchResults, loading: searchLoading } = useFoodSearch(manualSearch);
+  const barcodeLookup = useOpenFoodFactsLookup();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
