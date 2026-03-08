@@ -491,15 +491,26 @@ function DetectedFoodCard({
         </div>
       )}
 
-      {/* Nutrient preview from NEVO */}
+      {/* Nutrient preview + warnings from NEVO */}
       {food.matched && food.amount > 0 && (
-        <div className="mt-2 grid grid-cols-5 gap-1 text-center">
-          <NutrientMini label="K" value={Math.round(food.matched.potassium_mg * factor)} unit="mg" />
-          <NutrientMini label="F" value={Math.round(food.matched.phosphate_mg * factor)} unit="mg" />
-          <NutrientMini label="Na" value={Math.round(food.matched.sodium_mg * factor)} unit="mg" />
-          <NutrientMini label="E" value={Math.round(food.matched.protein_g * factor * 10) / 10} unit="g" />
-          <NutrientMini label="V" value={Math.round(food.matched.fluid_ml * factor)} unit="ml" />
-        </div>
+        <>
+          <div className="mt-2 grid grid-cols-5 gap-1 text-center">
+            <NutrientMini label="K" value={Math.round(food.matched.potassium_mg * factor)} unit="mg" />
+            <NutrientMini label="F" value={Math.round(food.matched.phosphate_mg * factor)} unit="mg" />
+            <NutrientMini label="Na" value={Math.round(food.matched.sodium_mg * factor)} unit="mg" />
+            <NutrientMini label="E" value={Math.round(food.matched.protein_g * factor * 10) / 10} unit="g" />
+            <NutrientMini label="V" value={Math.round(food.matched.fluid_ml * factor)} unit="ml" />
+          </div>
+          {(() => {
+            const warnings = analyzeFoodWarnings(food.matched!, food.amount);
+            return warnings.length > 0 ? (
+              <div className="mt-2 space-y-1.5">
+                <WarningBadges warnings={warnings} />
+                <WarningMessages warnings={warnings} />
+              </div>
+            ) : null;
+          })()}
+        </>
       )}
 
       {/* Replace search */}
