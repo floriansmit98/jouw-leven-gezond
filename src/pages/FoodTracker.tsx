@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
@@ -10,6 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { useBarcodeLookup, type BarcodeResult } from '@/hooks/useBarcodeLookup';
+import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } from '@/lib/nutrientWarnings';
+import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
+import { getLimits } from '@/lib/store';
 
 interface DetectedFood {
   naam: string;
@@ -375,19 +378,35 @@ export default function FoodTracker() {
           </div>
         )}
 
-        {/* Today's entries */}
+        {/* Today's entries with daily warnings */}
         {entries.length > 0 && step !== 'manual' && step !== 'barcode' && (
           <div>
             <h2 className="mb-3 font-display text-lg font-semibold">Vandaag gegeten</h2>
+
+            {/* Daily total warnings */}
+            <DailyTotalWarnings entries={entries} />
+
             <div className="space-y-2">
-              {entries.map(entry => (
-                <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
-                  <p className="font-medium text-foreground">{entry.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {Math.round(entry.portions * 100)}g · K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
-                  </p>
-                </div>
-              ))}
+              {entries.map(entry => {
+                // Build per-entry warning badges from stored values
+                const entryWarnings = analyzeFoodWarnings(
+                  { potassium_mg: entry.potassium_mg / entry.portions, phosphate_mg: entry.phosphate_mg / entry.portions, sodium_mg: entry.sodium_mg / entry.portions, protein_g: entry.protein_g / entry.portions, fluid_ml: entry.fluid_ml / entry.portions, portion_grams: 100, portion_description: '', name: entry.name, display_name: null, id: entry.id, category: '', dialysis_risk_label: '' } as FoodRow,
+                  entry.portions * 100
+                );
+                return (
+                  <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
+                    <p className="font-medium text-foreground">{entry.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
+                    </p>
+                    {entryWarnings.length > 0 && (
+                      <div className="mt-1.5">
+                        <WarningBadges warnings={entryWarnings} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -472,15 +491,26 @@ function DetectedFoodCard({
         </div>
       )}
 
-      {/* Nutrient preview from NEVO */}
+      {/* Nutrient preview + warnings from NEVO */}
       {food.matched && food.amount > 0 && (
-        <div className="mt-2 grid grid-cols-5 gap-1 text-center">
-          <NutrientMini label="K" value={Math.round(food.matched.potassium_mg * factor)} unit="mg" />
-          <NutrientMini label="F" value={Math.round(food.matched.phosphate_mg * factor)} unit="mg" />
-          <NutrientMini label="Na" value={Math.round(food.matched.sodium_mg * factor)} unit="mg" />
-          <NutrientMini label="E" value={Math.round(food.matched.protein_g * factor * 10) / 10} unit="g" />
-          <NutrientMini label="V" value={Math.round(food.matched.fluid_ml * factor)} unit="ml" />
-        </div>
+        <>
+          <div className="mt-2 grid grid-cols-5 gap-1 text-center">
+            <NutrientMini label="K" value={Math.round(food.matched.potassium_mg * factor)} unit="mg" />
+            <NutrientMini label="F" value={Math.round(food.matched.phosphate_mg * factor)} unit="mg" />
+            <NutrientMini label="Na" value={Math.round(food.matched.sodium_mg * factor)} unit="mg" />
+            <NutrientMini label="E" value={Math.round(food.matched.protein_g * factor * 10) / 10} unit="g" />
+            <NutrientMini label="V" value={Math.round(food.matched.fluid_ml * factor)} unit="ml" />
+          </div>
+          {(() => {
+            const warnings = analyzeFoodWarnings(food.matched!, food.amount);
+            return warnings.length > 0 ? (
+              <div className="mt-2 space-y-1.5">
+                <WarningBadges warnings={warnings} />
+                <WarningMessages warnings={warnings} />
+              </div>
+            ) : null;
+          })()}
+        </>
       )}
 
       {/* Replace search */}
@@ -711,9 +741,9 @@ function BarcodeResultCard({
             onGramsChange={onAmountChange}
           />
 
-          {/* Calculated values */}
+          {/* Calculated values + warnings */}
           {amount > 0 && (
-            <div>
+            <div className="space-y-2">
               <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}{['dranken', 'alcohol'].includes(nevo.category) ? 'ml' : 'g'}:</p>
               <div className="grid grid-cols-5 gap-1 text-center">
                 <NutrientMini label="K" value={Math.round(nevo.potassium_mg * factor)} unit="mg" />
@@ -722,6 +752,15 @@ function BarcodeResultCard({
                 <NutrientMini label="E" value={Math.round(nevo.protein_g * factor * 10) / 10} unit="g" />
                 <NutrientMini label="V" value={Math.round(nevo.fluid_ml * factor)} unit="ml" />
               </div>
+              {(() => {
+                const warnings = analyzeFoodWarnings(nevo, amount);
+                return warnings.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <WarningBadges warnings={warnings} />
+                    <WarningMessages warnings={warnings} />
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
 
@@ -771,6 +810,26 @@ function NutrientMini({ label, value, unit }: { label: string; value: number; un
     <div className="rounded-md bg-muted px-1 py-1.5">
       <p className="text-[10px] text-muted-foreground">{label}</p>
       <p className="text-xs font-bold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+/** Daily total warnings component */
+function DailyTotalWarnings({ entries }: { entries: { potassium_mg: number; phosphate_mg: number; sodium_mg: number; protein_g: number; fluid_ml: number }[] }) {
+  const totals = useMemo(() => ({
+    potassium: entries.reduce((s, e) => s + Number(e.potassium_mg), 0),
+    phosphate: entries.reduce((s, e) => s + Number(e.phosphate_mg), 0),
+    sodium: entries.reduce((s, e) => s + Number(e.sodium_mg), 0),
+    protein: entries.reduce((s, e) => s + Number(e.protein_g), 0),
+    fluid: entries.reduce((s, e) => s + Number(e.fluid_ml), 0),
+  }), [entries]);
+
+  const warnings = analyzeDailyWarnings(totals);
+  if (warnings.length === 0) return null;
+
+  return (
+    <div className="mb-3">
+      <DailyWarningAlerts warnings={warnings} />
     </div>
   );
 }

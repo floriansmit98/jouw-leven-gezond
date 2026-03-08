@@ -1,8 +1,23 @@
-import { AlertTriangle, CheckCircle, Shield } from 'lucide-react';
-import { analyzeRisks } from '@/lib/store';
+import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { analyzeDailyWarnings, type DailyWarning } from '@/lib/nutrientWarnings';
+import { RISK_STYLES } from '@/lib/nutrientWarnings';
+import { useTodayEntries } from '@/hooks/useFoods';
+import { getLimits } from '@/lib/store';
+import { useMemo } from 'react';
 
 export default function RiskAlerts() {
-  const warnings = analyzeRisks();
+  const { entries } = useTodayEntries();
+  const limits = getLimits();
+
+  const totals = useMemo(() => ({
+    potassium: entries.reduce((s, e) => s + Number(e.potassium_mg), 0),
+    phosphate: entries.reduce((s, e) => s + Number(e.phosphate_mg), 0),
+    sodium: entries.reduce((s, e) => s + Number(e.sodium_mg), 0),
+    protein: entries.reduce((s, e) => s + Number(e.protein_g), 0),
+    fluid: entries.reduce((s, e) => s + Number(e.fluid_ml), 0),
+  }), [entries]);
+
+  const warnings = analyzeDailyWarnings(totals, limits);
 
   if (warnings.length === 0) {
     return (
@@ -20,17 +35,21 @@ export default function RiskAlerts() {
 
   return (
     <div className="space-y-3">
-      {warnings.map((warning, i) => (
-        <div
-          key={i}
-          className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/8 p-4"
-        >
-          <div className="mt-0.5 rounded-lg bg-warning/15 p-1.5">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
+      {warnings.map((warning, i) => {
+        const s = RISK_STYLES[warning.level];
+        const Icon = warning.level === 'hoog' ? AlertTriangle : Info;
+        return (
+          <div
+            key={i}
+            className={`flex items-start gap-3 rounded-xl border p-4 ${s.bg} ${s.border}`}
+          >
+            <div className={`mt-0.5 rounded-lg p-1.5 ${s.bg}`}>
+              <Icon className={`h-4 w-4 shrink-0 ${s.text}`} />
+            </div>
+            <p className="text-sm font-medium text-foreground">{warning.message}</p>
           </div>
-          <p className="text-sm font-medium text-foreground">{warning}</p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
