@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { useFoodSearch, useTodayEntries, addFoodEntryDB, type FoodRow } from '@/hooks/useFoods';
+import { useFoodSearch, useTodayEntries, addFoodEntryDB, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
 import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
