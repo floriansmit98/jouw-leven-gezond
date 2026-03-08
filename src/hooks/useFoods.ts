@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface FoodRow {
   id: string;
   name: string;
+  display_name: string | null;
   category: string;
   portion_description: string;
   portion_grams: number;
@@ -14,6 +15,11 @@ export interface FoodRow {
   protein_g: number;
   fluid_ml: number;
   dialysis_risk_label: string;
+}
+
+/** Returns the user-friendly display name, falling back to the raw name */
+export function foodDisplayName(food: FoodRow): string {
+  return food.display_name || food.name;
 }
 
 export interface FoodEntryRow {
@@ -176,7 +182,7 @@ export async function addFoodEntryDB(userId: string, food: FoodRow, portions: nu
   const { error } = await supabase.from('food_entries').insert({
     user_id: userId,
     food_id: food.id,
-    name: food.name,
+    name: food.display_name || food.name,
     potassium_mg: Math.round(food.potassium_mg * portions),
     phosphate_mg: Math.round(food.phosphate_mg * portions),
     sodium_mg: Math.round(food.sodium_mg * portions),

@@ -3,7 +3,7 @@ import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, 
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useFoodSearch, useTodayEntries, addFoodEntryDB, useRecentFoods, useMostUsedFoods, type FoodRow } from '@/hooks/useFoods';
+import { useFoodSearch, useTodayEntries, addFoodEntryDB, useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -429,7 +429,7 @@ function DetectedFoodCard({
             <>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-safe shrink-0" />
-                <p className="font-semibold text-foreground">{food.matched.name}</p>
+                <p className="font-semibold text-foreground">{foodDisplayName(food.matched)}</p>
               </div>
               <p className="ml-6 text-xs text-muted-foreground">
                 NEVO · {food.matched.category}
@@ -497,7 +497,7 @@ function DetectedFoodCard({
                 onClick={() => { onReplace(index, r); setEditing(false); }}
                 className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm hover:bg-muted"
               >
-                <span className="text-foreground">{r.name}</span>
+                <span className="text-foreground">{foodDisplayName(r)}</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
             ))}
@@ -614,7 +614,7 @@ function FoodSearchResult({ food, onSelect }: { food: FoodRow; onSelect: (f: Foo
       className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
     >
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-foreground text-sm truncate">{food.name}</p>
+        <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
         <p className="text-xs text-muted-foreground">{food.portion_description} · {food.category}</p>
       </div>
       <Plus className="h-5 w-5 shrink-0 text-primary ml-2" />

@@ -54,9 +54,11 @@ function offToFoodRow(product: OFFProduct): FoodRow {
 
   const brand = product.brands ? ` (${product.brands.split(',')[0].trim()})` : '';
 
+  const displayName = `${product.product_name || 'Onbekend'}${brand}`;
   return {
     id: `off-${product.code}`,
-    name: `${product.product_name || 'Onbekend'}${brand}`,
+    name: displayName,
+    display_name: displayName,
     category: isDrinkProduct(product) ? 'dranken' : 'supermarkt',
     portion_description: 'per 100g',
     portion_grams: 100,

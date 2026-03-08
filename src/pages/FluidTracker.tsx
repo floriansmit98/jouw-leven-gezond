@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { useFoodSearch, useTodayEntries, addFoodEntryDB, type FoodRow } from '@/hooks/useFoods';
+import { useFoodSearch, useTodayEntries, addFoodEntryDB, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
 import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -63,7 +63,7 @@ export default function FluidTracker() {
       } else {
         await addFoodEntryDB(user.id, selectedDrink, factor);
       }
-      toast.success(`${selectedDrink.name} toegevoegd!`);
+      toast.success(`${foodDisplayName(selectedDrink)} toegevoegd!`);
       setSelectedDrink(null);
       setAmount('100');
       setDialogOpen(false);
@@ -149,7 +149,7 @@ export default function FluidTracker() {
             {selectedDrink && (
               <>
                 <DialogHeader>
-                  <DialogTitle className="font-display">{selectedDrink.name}</DialogTitle>
+                  <DialogTitle className="font-display">{foodDisplayName(selectedDrink)}</DialogTitle>
                   <p className="text-xs text-muted-foreground">
                     {isOFF ? 'Open Food Facts' : selectedDrink.category} · voedingswaarden per 100ml
                   </p>
@@ -218,7 +218,7 @@ function DrinkListItem({ drink, onClick, isSupermarket }: { drink: FoodRow; onCl
     >
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <p className="font-semibold text-foreground">{drink.name}</p>
+          <p className="font-semibold text-foreground">{foodDisplayName(drink)}</p>
           {isSupermarket && (
             <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-accent/20">OFF</Badge>
           )}
