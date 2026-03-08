@@ -150,8 +150,42 @@ export default function FoodTracker() {
     setCapturedFile(null);
     setDetectedFoods([]);
     setManualSearch('');
+    setBarcodeAmount(100);
+    barcodeLookup.reset();
     if (cameraInputRef.current) cameraInputRef.current.value = '';
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleBarcodeScan = useCallback(async (barcode: string) => {
+    setStep('barcode-result');
+    setBarcodeAmount(100);
+    await barcodeLookup.lookup(barcode);
+  }, [barcodeLookup]);
+
+  const handleAddBarcodeProduct = async () => {
+    if (!user || !barcodeLookup.product || !barcodeLookup.product.isComplete) return;
+    setSaving(true);
+    try {
+      const p = barcodeLookup.product;
+      const factor = barcodeAmount / 100;
+      const { error } = await supabase.from('food_entries').insert({
+        user_id: user.id,
+        name: `${p.name}${p.brand ? ` (${p.brand})` : ''}`,
+        potassium_mg: Math.round((p.nutriments.potassium_mg ?? 0) * factor),
+        phosphate_mg: Math.round((p.nutriments.phosphorus_mg ?? 0) * factor),
+        sodium_mg: Math.round((p.nutriments.sodium_mg ?? 0) * factor),
+        protein_g: Math.round((p.nutriments.proteins_g ?? 0) * factor * 10) / 10,
+        fluid_ml: Math.round((p.nutriments.water_ml ?? 0) * factor),
+        portions: factor,
+      });
+      if (error) throw error;
+      toast.success('Product toegevoegd!');
+      handleReset();
+      refetch();
+    } catch {
+      toast.error('Kon product niet opslaan.');
+    }
+    setSaving(false);
   };
 
   const confirmedCount = detectedFoods.filter(f => f.confirmed && f.matched).length;
