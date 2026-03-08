@@ -613,14 +613,7 @@ function FoodSearchResult({ food, onSelect }: { food: FoodRow; onSelect: (f: Foo
   );
 }
 
-function NutrientMini({ label, value, unit }: { label: string; value: number; unit: string }) {
-  return (
-    <div className="rounded-md bg-muted px-1 py-1.5">
-      <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-xs font-bold text-foreground">{value}</p>
-    </div>
-  );
-}
+
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
