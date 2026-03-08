@@ -182,7 +182,7 @@ export async function addFoodEntryDB(userId: string, food: FoodRow, portions: nu
   const { error } = await supabase.from('food_entries').insert({
     user_id: userId,
     food_id: food.id,
-    name: food.name,
+    name: food.display_name || food.name,
     potassium_mg: Math.round(food.potassium_mg * portions),
     phosphate_mg: Math.round(food.phosphate_mg * portions),
     sodium_mg: Math.round(food.sodium_mg * portions),
