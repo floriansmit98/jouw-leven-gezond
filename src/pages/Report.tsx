@@ -50,8 +50,7 @@ function generateReportText(
   limits: DailyLimits
 ): string {
   const now = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - period);
+  const startDate = getPeriodStart(period);
 
   const lines: string[] = [];
   lines.push('═══════════════════════════════════════');
