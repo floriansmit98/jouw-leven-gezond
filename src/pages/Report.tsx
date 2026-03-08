@@ -374,7 +374,11 @@ export default function Report() {
         <div className="grid grid-cols-1 gap-3">
           <Button onClick={handleDownload} disabled={generating} size="lg" className="h-14 gap-2 text-base font-semibold">
             <Download className="h-5 w-5" />
-            {generating ? 'Genereren...' : 'Download rapport'}
+            {generating ? 'Genereren...' : (isMobile ? 'Download / Deel rapport' : 'Download rapport')}
+          </Button>
+          <Button onClick={handleOpenReport} variant="outline" size="lg" className="h-14 gap-2 text-base font-semibold">
+            <ExternalLink className="h-5 w-5" />
+            Open rapport
           </Button>
           <Button onClick={handleShare} variant="outline" size="lg" className="h-14 gap-2 text-base font-semibold">
             <Share2 className="h-5 w-5" />
