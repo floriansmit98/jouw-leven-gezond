@@ -218,7 +218,7 @@ function DrinkListItem({ drink, onClick, isSupermarket }: { drink: FoodRow; onCl
     >
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <p className="font-semibold text-foreground">{drink.name}</p>
+          <p className="font-semibold text-foreground">{foodDisplayName(drink)}</p>
           {isSupermarket && (
             <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-accent/20">OFF</Badge>
           )}
