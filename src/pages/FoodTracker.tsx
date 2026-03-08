@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
+import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
