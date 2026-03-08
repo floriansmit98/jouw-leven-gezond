@@ -115,7 +115,7 @@ export default function FoodTracker() {
       ...prev,
       { naam: food.name, hoeveelheid_gram: 100, is_drank: false, matched: food, amount: 100, confirmed: true },
     ]);
-    setManualSearch('');
+    // search is handled in ManualSearchPanel
     setStep('confirm');
   };
 
