@@ -22,7 +22,7 @@ export default function AmountInput({ food, grams, onGramsChange }: AmountInputP
   const isDrink = ['dranken', 'alcohol'].includes(food.category);
   const unit = isDrink ? 'ml' : 'g';
   const portionGrams = food.portion_grams || 100;
-  const hasPortion = portionGrams !== 100 && !!food.portion_description;
+  const hasPortion = !!food.portion_description;
 
   const [mode, setMode] = useState<'portion' | 'unit'>(hasPortion ? 'portion' : 'unit');
   const [portionCount, setPortionCount] = useState(() =>
