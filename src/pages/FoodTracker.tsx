@@ -357,13 +357,14 @@ export default function FoodTracker() {
               </div>
             )}
 
-            {barcodeLookup.product && (
-              <BarcodeProductCard
-                product={barcodeLookup.product}
+            {barcodeLookup.result && (
+              <BarcodeResultCard
+                result={barcodeLookup.result}
                 amount={barcodeAmount}
                 onAmountChange={setBarcodeAmount}
                 onAdd={handleAddBarcodeProduct}
                 onRescan={() => { barcodeLookup.reset(); setStep('barcode'); }}
+                onManualSearch={() => setStep('manual')}
                 saving={saving}
               />
             )}
