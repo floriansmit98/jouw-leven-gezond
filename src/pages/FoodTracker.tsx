@@ -429,7 +429,7 @@ function DetectedFoodCard({
             <>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-safe shrink-0" />
-                <p className="font-semibold text-foreground">{food.matched.name}</p>
+                <p className="font-semibold text-foreground">{foodDisplayName(food.matched)}</p>
               </div>
               <p className="ml-6 text-xs text-muted-foreground">
                 NEVO · {food.matched.category}
