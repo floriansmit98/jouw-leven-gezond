@@ -805,3 +805,23 @@ function NutrientMini({ label, value, unit }: { label: string; value: number; un
   );
 }
 
+/** Daily total warnings component */
+function DailyTotalWarnings({ entries }: { entries: { potassium_mg: number; phosphate_mg: number; sodium_mg: number; protein_g: number; fluid_ml: number }[] }) {
+  const totals = useMemo(() => ({
+    potassium: entries.reduce((s, e) => s + Number(e.potassium_mg), 0),
+    phosphate: entries.reduce((s, e) => s + Number(e.phosphate_mg), 0),
+    sodium: entries.reduce((s, e) => s + Number(e.sodium_mg), 0),
+    protein: entries.reduce((s, e) => s + Number(e.protein_g), 0),
+    fluid: entries.reduce((s, e) => s + Number(e.fluid_ml), 0),
+  }), [entries]);
+
+  const warnings = analyzeDailyWarnings(totals);
+  if (warnings.length === 0) return null;
+
+  return (
+    <div className="mb-3">
+      <DailyWarningAlerts warnings={warnings} />
+    </div>
+  );
+}
+
