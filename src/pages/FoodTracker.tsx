@@ -614,7 +614,7 @@ function FoodSearchResult({ food, onSelect }: { food: FoodRow; onSelect: (f: Foo
       className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
     >
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-foreground text-sm truncate">{food.name}</p>
+        <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
         <p className="text-xs text-muted-foreground">{food.portion_description} · {food.category}</p>
       </div>
       <Plus className="h-5 w-5 shrink-0 text-primary ml-2" />
