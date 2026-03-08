@@ -113,7 +113,28 @@ export default function FoodTracker() {
     ));
   };
 
-  // --- Add manual food to the detected list ---
+  // --- Add manual food directly (save immediately) ---
+  const addManualFoodDirect = async (food: FoodRow, amountGrams: number) => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const factor = amountGrams / 100;
+      await addFoodEntryDB(user.id, food, factor);
+      toast.success(`${foodDisplayName(food)} toegevoegd!`);
+      refetch();
+      // If we came from confirm step (AI detection), go back there
+      if (detectedFoods.length > 0) {
+        setStep('confirm');
+      } else {
+        setStep('capture');
+      }
+    } catch {
+      toast.error('Kon voeding niet opslaan.');
+    }
+    setSaving(false);
+  };
+
+  // --- Add manual food to detected list (used from confirm step "add more") ---
   const addManualFood = (food: FoodRow) => {
     setDetectedFoods(prev => [
       ...prev,
