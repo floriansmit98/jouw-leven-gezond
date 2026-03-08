@@ -186,17 +186,17 @@ export default function Report() {
   const [generating, setGenerating] = useState(false);
 
   const days = parseInt(period);
-  const cutoff = getCutoff(days);
 
   const { data: foods = [] } = useQuery({
     queryKey: ['report_foods', user?.id, days],
     queryFn: async () => {
       if (!user) return [];
+      const periodCutoff = getCutoff(days);
       const { data, error } = await supabase
         .from('food_entries')
         .select('*')
         .eq('user_id', user.id)
-        .gte('logged_at', cutoff)
+        .gte('logged_at', periodCutoff)
         .order('logged_at', { ascending: false });
       if (error) throw error;
       return data as FoodRecord[];
@@ -208,11 +208,12 @@ export default function Report() {
     queryKey: ['report_symptoms', user?.id, days],
     queryFn: async () => {
       if (!user) return [];
+      const periodCutoff = getCutoff(days);
       const { data, error } = await supabase
         .from('symptom_entries')
         .select('*')
         .eq('user_id', user.id)
-        .gte('logged_at', cutoff)
+        .gte('logged_at', periodCutoff)
         .order('logged_at', { ascending: false });
       if (error) throw error;
       return data as SymptomRecord[];
@@ -222,9 +223,10 @@ export default function Report() {
 
   // Dialysis sessions still from localStorage, filtered by period
   const allSessions = getDialysisSessions();
+  const periodCutoff = getCutoff(days);
   const sessions = allSessions.filter(s => {
     const d = new Date(s.date);
-    return d >= new Date(cutoff);
+    return d >= new Date(periodCutoff);
   });
 
   const limits = getLimits();
