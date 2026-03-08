@@ -346,8 +346,10 @@ export default function FoodTracker() {
         {/* Step: Manual search */}
         {step === 'manual' && (
           <ManualSearchPanel
-            onAddFood={addManualFood}
+            onAddFood={detectedFoods.length > 0 ? addManualFood : undefined}
+            onAddFoodDirect={detectedFoods.length === 0 ? addManualFoodDirect : undefined}
             onBack={() => setStep(detectedFoods.length > 0 ? 'confirm' : 'capture')}
+            saving={saving}
           />
         )}
 
