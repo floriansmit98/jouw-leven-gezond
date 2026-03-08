@@ -741,9 +741,9 @@ function BarcodeResultCard({
             onGramsChange={onAmountChange}
           />
 
-          {/* Calculated values */}
+          {/* Calculated values + warnings */}
           {amount > 0 && (
-            <div>
+            <div className="space-y-2">
               <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}{['dranken', 'alcohol'].includes(nevo.category) ? 'ml' : 'g'}:</p>
               <div className="grid grid-cols-5 gap-1 text-center">
                 <NutrientMini label="K" value={Math.round(nevo.potassium_mg * factor)} unit="mg" />
@@ -752,6 +752,15 @@ function BarcodeResultCard({
                 <NutrientMini label="E" value={Math.round(nevo.protein_g * factor * 10) / 10} unit="g" />
                 <NutrientMini label="V" value={Math.round(nevo.fluid_ml * factor)} unit="ml" />
               </div>
+              {(() => {
+                const warnings = analyzeFoodWarnings(nevo, amount);
+                return warnings.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <WarningBadges warnings={warnings} />
+                    <WarningMessages warnings={warnings} />
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
 
