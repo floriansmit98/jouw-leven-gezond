@@ -497,7 +497,7 @@ function DetectedFoodCard({
                 onClick={() => { onReplace(index, r); setEditing(false); }}
                 className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm hover:bg-muted"
               >
-                <span className="text-foreground">{r.name}</span>
+                <span className="text-foreground">{foodDisplayName(r)}</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
             ))}
