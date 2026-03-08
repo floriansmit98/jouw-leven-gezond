@@ -161,23 +161,13 @@ export default function FoodTracker() {
   }, [barcodeLookup]);
 
   const handleAddBarcodeProduct = async () => {
-    if (!user || !barcodeLookup.product || !barcodeLookup.product.isComplete) return;
+    if (!user || !barcodeLookup.result || !barcodeLookup.result.nevoMatch) return;
     setSaving(true);
     try {
-      const p = barcodeLookup.product;
+      const nevo = barcodeLookup.result.nevoMatch;
       const factor = barcodeAmount / 100;
-      const { error } = await supabase.from('food_entries').insert({
-        user_id: user.id,
-        name: `${p.name}${p.brand ? ` (${p.brand})` : ''}`,
-        potassium_mg: Math.round((p.nutriments.potassium_mg ?? 0) * factor),
-        phosphate_mg: Math.round((p.nutriments.phosphorus_mg ?? 0) * factor),
-        sodium_mg: Math.round((p.nutriments.sodium_mg ?? 0) * factor),
-        protein_g: Math.round((p.nutriments.proteins_g ?? 0) * factor * 10) / 10,
-        fluid_ml: Math.round((p.nutriments.water_ml ?? 0) * factor),
-        portions: factor,
-      });
-      if (error) throw error;
-      toast.success('Product toegevoegd!');
+      await addFoodEntryDB(user.id, nevo, factor);
+      toast.success(`${foodDisplayName(nevo)} toegevoegd!`);
       handleReset();
       refetch();
     } catch {
