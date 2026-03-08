@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { useFoodSearch, useTodayEntries, addFoodEntryDB, type FoodRow } from '@/
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import BarcodeScanner from '@/components/BarcodeScanner';
+import { useOpenFoodFactsLookup, type OpenFoodFactsProduct } from '@/hooks/useBarcodeLookup';
 
 interface DetectedFood {
   naam: string;
@@ -18,7 +20,7 @@ interface DetectedFood {
   confirmed: boolean;
 }
 
-type Step = 'capture' | 'analyzing' | 'confirm' | 'manual';
+type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result';
 
 export default function FoodTracker() {
   const { user } = useAuth();
@@ -28,9 +30,11 @@ export default function FoodTracker() {
   const [detectedFoods, setDetectedFoods] = useState<DetectedFood[]>([]);
   const [saving, setSaving] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
+  const [barcodeAmount, setBarcodeAmount] = useState(100);
 
   const { entries, refetch } = useTodayEntries();
   const { foods: searchResults, loading: searchLoading } = useFoodSearch(manualSearch);
+  const barcodeLookup = useOpenFoodFactsLookup();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -146,8 +150,42 @@ export default function FoodTracker() {
     setCapturedFile(null);
     setDetectedFoods([]);
     setManualSearch('');
+    setBarcodeAmount(100);
+    barcodeLookup.reset();
     if (cameraInputRef.current) cameraInputRef.current.value = '';
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleBarcodeScan = useCallback(async (barcode: string) => {
+    setStep('barcode-result');
+    setBarcodeAmount(100);
+    await barcodeLookup.lookup(barcode);
+  }, [barcodeLookup]);
+
+  const handleAddBarcodeProduct = async () => {
+    if (!user || !barcodeLookup.product || !barcodeLookup.product.isComplete) return;
+    setSaving(true);
+    try {
+      const p = barcodeLookup.product;
+      const factor = barcodeAmount / 100;
+      const { error } = await supabase.from('food_entries').insert({
+        user_id: user.id,
+        name: `${p.name}${p.brand ? ` (${p.brand})` : ''}`,
+        potassium_mg: Math.round((p.nutriments.potassium_mg ?? 0) * factor),
+        phosphate_mg: Math.round((p.nutriments.phosphorus_mg ?? 0) * factor),
+        sodium_mg: Math.round((p.nutriments.sodium_mg ?? 0) * factor),
+        protein_g: Math.round((p.nutriments.proteins_g ?? 0) * factor * 10) / 10,
+        fluid_ml: Math.round((p.nutriments.water_ml ?? 0) * factor),
+        portions: factor,
+      });
+      if (error) throw error;
+      toast.success('Product toegevoegd!');
+      handleReset();
+      refetch();
+    } catch {
+      toast.error('Kon product niet opslaan.');
+    }
+    setSaving(false);
   };
 
   const confirmedCount = detectedFoods.filter(f => f.confirmed && f.matched).length;
@@ -197,13 +235,20 @@ export default function FoodTracker() {
             )}
 
             {/* Manual search fallback */}
-            <div className="mb-4">
+            <div className="mb-4 grid grid-cols-2 gap-3">
               <button
                 onClick={() => setStep('manual')}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
               >
                 <Search className="h-4 w-4" />
                 Handmatig zoeken
+              </button>
+              <button
+                onClick={() => setStep('barcode')}
+                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+              >
+                <ScanBarcode className="h-4 w-4" />
+                Barcode scannen
               </button>
             </div>
           </>
@@ -329,8 +374,55 @@ export default function FoodTracker() {
           </div>
         )}
 
+        {/* Step: Barcode scanner */}
+        {step === 'barcode' && (
+          <BarcodeScanner
+            onScan={handleBarcodeScan}
+            onClose={() => setStep('capture')}
+          />
+        )}
+
+        {/* Step: Barcode result */}
+        {step === 'barcode-result' && (
+          <div className="mb-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleReset}>
+                ← Terug
+              </Button>
+              <h2 className="font-display text-lg font-semibold text-foreground">Barcode resultaat</h2>
+            </div>
+
+            {barcodeLookup.loading && (
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-8">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-base font-medium text-foreground">Product opzoeken...</p>
+              </div>
+            )}
+
+            {barcodeLookup.error && (
+              <div className="rounded-xl border border-border bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground">{barcodeLookup.error}</p>
+                <Button onClick={() => setStep('barcode')} variant="outline" className="mt-4">
+                  Opnieuw scannen
+                </Button>
+              </div>
+            )}
+
+            {barcodeLookup.product && (
+              <BarcodeProductCard
+                product={barcodeLookup.product}
+                amount={barcodeAmount}
+                onAmountChange={setBarcodeAmount}
+                onAdd={handleAddBarcodeProduct}
+                onRescan={() => { barcodeLookup.reset(); setStep('barcode'); }}
+                saving={saving}
+              />
+            )}
+          </div>
+        )}
+
         {/* Today's entries */}
-        {entries.length > 0 && step !== 'manual' && (
+        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && (
           <div>
             <h2 className="mb-3 font-display text-lg font-semibold">Vandaag gegeten</h2>
             <div className="space-y-2">
@@ -474,4 +566,131 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// --- Barcode Product Card ---
+function BarcodeProductCard({
+  product,
+  amount,
+  onAmountChange,
+  onAdd,
+  onRescan,
+  saving,
+}: {
+  product: OpenFoodFactsProduct;
+  amount: number;
+  onAmountChange: (amount: number) => void;
+  onAdd: () => void;
+  onRescan: () => void;
+  saving: boolean;
+}) {
+  const factor = amount / 100;
+  const n = product.nutriments;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+      {/* Product info */}
+      <div className="flex gap-3">
+        {product.image_url && (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="h-20 w-20 rounded-lg object-contain border border-border bg-white"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground">{product.name}</p>
+          {product.brand && (
+            <p className="text-sm text-muted-foreground">{product.brand}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Barcode: {product.barcode}</p>
+        </div>
+      </div>
+
+      {/* Nutrient values per 100g */}
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Voedingswaarden per 100g/ml:</p>
+        <div className="grid grid-cols-5 gap-1 text-center">
+          <NutrientMiniBarcode label="K" value={n.potassium_mg} unit="mg" />
+          <NutrientMiniBarcode label="F" value={n.phosphorus_mg} unit="mg" />
+          <NutrientMiniBarcode label="Na" value={n.sodium_mg} unit="mg" />
+          <NutrientMiniBarcode label="E" value={n.proteins_g} unit="g" />
+          <NutrientMiniBarcode label="V" value={n.water_ml} unit="ml" />
+        </div>
+      </div>
+
+      {product.isComplete ? (
+        <>
+          {/* Amount input */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={amount}
+              onChange={e => onAmountChange(parseFloat(e.target.value) || 0)}
+              className="h-9 w-24 rounded-lg text-sm"
+            />
+            <span className="text-sm text-muted-foreground">g/ml</span>
+          </div>
+
+          {/* Calculated values */}
+          {amount > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}g/ml:</p>
+              <div className="grid grid-cols-5 gap-1 text-center">
+                <NutrientMini label="K" value={Math.round((n.potassium_mg ?? 0) * factor)} unit="mg" />
+                <NutrientMini label="F" value={Math.round((n.phosphorus_mg ?? 0) * factor)} unit="mg" />
+                <NutrientMini label="Na" value={Math.round((n.sodium_mg ?? 0) * factor)} unit="mg" />
+                <NutrientMini label="E" value={Math.round((n.proteins_g ?? 0) * factor * 10) / 10} unit="g" />
+                <NutrientMini label="V" value={Math.round((n.water_ml ?? 0) * factor)} unit="ml" />
+              </div>
+            </div>
+          )}
+
+          {/* Add button */}
+          <div className="flex gap-3">
+            <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
+              Opnieuw scannen
+            </Button>
+            <Button
+              onClick={onAdd}
+              disabled={saving || amount <= 0}
+              className="h-12 flex-1 rounded-xl text-base font-semibold"
+            >
+              {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
+              Toevoegen
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Incomplete product warning */}
+          <div className="rounded-lg bg-warning/10 border border-warning/30 p-3">
+            <p className="text-sm font-medium text-warning">
+              Dit product kan niet worden toegevoegd omdat niet alle benodigde voedingswaarden beschikbaar zijn.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ontbrekend: {product.missingFields.join(', ')}
+            </p>
+          </div>
+          <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
+            Ander product scannen
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NutrientMiniBarcode({ label, value, unit }: { label: string; value: number | null; unit: string }) {
+  return (
+    <div className={`rounded-md px-1 py-1.5 ${value != null ? 'bg-muted' : 'bg-warning/10'}`}>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="text-xs font-bold text-foreground">
+        {value != null ? `${Math.round(value)}` : '—'}
+      </p>
+    </div>
+  );
 }
