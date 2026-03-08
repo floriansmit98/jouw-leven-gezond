@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { useFoodSearch, useTodayEntries, addFoodEntryDB, type FoodRow } from '@/
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import BarcodeScanner from '@/components/BarcodeScanner';
+import { useOpenFoodFactsLookup, type OpenFoodFactsProduct } from '@/hooks/useBarcodeLookup';
 
 interface DetectedFood {
   naam: string;
