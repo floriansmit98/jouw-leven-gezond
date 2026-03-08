@@ -70,6 +70,7 @@ export type Database = {
           category: string
           created_at: string
           dialysis_risk_label: string | null
+          display_name: string | null
           fluid_ml: number
           id: string
           keywords: string[] | null
@@ -86,6 +87,7 @@ export type Database = {
           category?: string
           created_at?: string
           dialysis_risk_label?: string | null
+          display_name?: string | null
           fluid_ml?: number
           id?: string
           keywords?: string[] | null
@@ -102,6 +104,7 @@ export type Database = {
           category?: string
           created_at?: string
           dialysis_risk_label?: string | null
+          display_name?: string | null
           fluid_ml?: number
           id?: string
           keywords?: string[] | null
@@ -172,6 +175,7 @@ export type Database = {
           category: string
           created_at: string
           dialysis_risk_label: string | null
+          display_name: string | null
           fluid_ml: number
           id: string
           keywords: string[] | null
@@ -197,6 +201,7 @@ export type Database = {
           category: string
           created_at: string
           dialysis_risk_label: string | null
+          display_name: string | null
           fluid_ml: number
           id: string
           keywords: string[] | null
@@ -222,6 +227,7 @@ export type Database = {
           category: string
           created_at: string
           dialysis_risk_label: string | null
+          display_name: string | null
           fluid_ml: number
           id: string
           keywords: string[] | null
@@ -252,6 +258,7 @@ export type Database = {
           category: string
           created_at: string
           dialysis_risk_label: string | null
+          display_name: string | null
           fluid_ml: number
           id: string
           keywords: string[] | null
@@ -277,6 +284,7 @@ export type Database = {
           category: string
           created_at: string
           dialysis_risk_label: string | null
+          display_name: string | null
           fluid_ml: number
           id: string
           keywords: string[] | null
