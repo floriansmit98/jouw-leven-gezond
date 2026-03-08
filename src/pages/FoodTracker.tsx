@@ -714,7 +714,7 @@ function BarcodeResultCard({
           {/* Calculated values */}
           {amount > 0 && (
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}g/ml:</p>
+              <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}{['dranken', 'alcohol'].includes(nevo.category) ? 'ml' : 'g'}:</p>
               <div className="grid grid-cols-5 gap-1 text-center">
                 <NutrientMini label="K" value={Math.round(nevo.potassium_mg * factor)} unit="mg" />
                 <NutrientMini label="F" value={Math.round(nevo.phosphate_mg * factor)} unit="mg" />
