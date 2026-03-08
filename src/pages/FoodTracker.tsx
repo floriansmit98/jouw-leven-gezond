@@ -444,18 +444,29 @@ function DetectedFoodCard({
       </div>
 
       {/* Amount input */}
-      <div className="mt-3 flex items-center gap-2">
-        <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
-        <Input
-          type="number"
-          min="1"
-          step="1"
-          value={food.amount}
-          onChange={e => onUpdateAmount(index, parseFloat(e.target.value) || 0)}
-          className="h-9 w-24 rounded-lg text-sm"
-        />
-        <span className="text-sm text-muted-foreground">{food.is_drank ? 'ml' : 'g'}</span>
-      </div>
+      {food.matched && (
+        <div className="mt-3">
+          <AmountInput
+            food={food.matched}
+            grams={food.amount}
+            onGramsChange={(g) => onUpdateAmount(index, g)}
+          />
+        </div>
+      )}
+      {!food.matched && (
+        <div className="mt-3 flex items-center gap-2">
+          <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={food.amount}
+            onChange={e => onUpdateAmount(index, parseFloat(e.target.value) || 0)}
+            className="h-9 w-24 rounded-lg text-sm"
+          />
+          <span className="text-sm text-muted-foreground">g</span>
+        </div>
+      )}
 
       {/* Nutrient preview from NEVO */}
       {food.matched && food.amount > 0 && (
