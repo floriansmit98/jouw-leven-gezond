@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import BarcodeScanner from '@/components/BarcodeScanner';
-import { useOpenFoodFactsLookup, type OpenFoodFactsProduct } from '@/hooks/useBarcodeLookup';
+import { useBarcodeLookup, type BarcodeResult } from '@/hooks/useBarcodeLookup';
 
 interface DetectedFood {
   naam: string;
