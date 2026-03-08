@@ -235,13 +235,20 @@ export default function FoodTracker() {
             )}
 
             {/* Manual search fallback */}
-            <div className="mb-4">
+            <div className="mb-4 grid grid-cols-2 gap-3">
               <button
                 onClick={() => setStep('manual')}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
               >
                 <Search className="h-4 w-4" />
                 Handmatig zoeken
+              </button>
+              <button
+                onClick={() => setStep('barcode')}
+                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+              >
+                <ScanBarcode className="h-4 w-4" />
+                Barcode scannen
               </button>
             </div>
           </>
