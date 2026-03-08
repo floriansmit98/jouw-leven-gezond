@@ -149,7 +149,7 @@ export default function FluidTracker() {
             {selectedDrink && (
               <>
                 <DialogHeader>
-                  <DialogTitle className="font-display">{selectedDrink.name}</DialogTitle>
+                  <DialogTitle className="font-display">{foodDisplayName(selectedDrink)}</DialogTitle>
                   <p className="text-xs text-muted-foreground">
                     {isOFF ? 'Open Food Facts' : selectedDrink.category} · voedingswaarden per 100ml
                   </p>
