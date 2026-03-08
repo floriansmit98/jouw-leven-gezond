@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
@@ -10,6 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { useBarcodeLookup, type BarcodeResult } from '@/hooks/useBarcodeLookup';
+import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } from '@/lib/nutrientWarnings';
+import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
+import { getLimits } from '@/lib/store';
 
 interface DetectedFood {
   naam: string;
