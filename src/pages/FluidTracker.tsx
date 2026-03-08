@@ -63,7 +63,7 @@ export default function FluidTracker() {
       } else {
         await addFoodEntryDB(user.id, selectedDrink, factor);
       }
-      toast.success(`${selectedDrink.name} toegevoegd!`);
+      toast.success(`${foodDisplayName(selectedDrink)} toegevoegd!`);
       setSelectedDrink(null);
       setAmount('100');
       setDialogOpen(false);
