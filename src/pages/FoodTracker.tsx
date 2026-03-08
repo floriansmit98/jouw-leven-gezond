@@ -114,9 +114,8 @@ export default function FoodTracker() {
   const addManualFood = (food: FoodRow) => {
     setDetectedFoods(prev => [
       ...prev,
-      { naam: food.name, hoeveelheid_gram: 100, is_drank: false, matched: food, amount: 100, confirmed: true },
+      { naam: food.name, hoeveelheid_gram: food.portion_grams || 100, is_drank: false, matched: food, amount: food.portion_grams || 100, confirmed: true },
     ]);
-    // search is handled in ManualSearchPanel
     setStep('confirm');
   };
 
