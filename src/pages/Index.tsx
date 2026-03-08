@@ -102,7 +102,7 @@ function generateSchedule(totalLimit: number, config: ScheduleConfig) {
     : (24 * 60 - wakeMinutes) + sleepMinutes;
 
   const intervalMinutes = Math.floor(totalMinutes / config.intervals);
-  const amountPerSlot = Math.round(totalLimit / config.intervals);
+  const amountPerSlot = Math.round(totalLimit / config.intervals / 50) * 50 || 50;
 
   const slots: { time: string; amount: number }[] = [];
   for (let i = 0; i < config.intervals; i++) {
