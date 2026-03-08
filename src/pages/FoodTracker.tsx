@@ -147,7 +147,7 @@ export default function FoodTracker() {
     setPreview(null);
     setCapturedFile(null);
     setDetectedFoods([]);
-    setManualSearch('');
+    // search state is local to ManualSearchPanel
     setBarcodeAmount(100);
     barcodeLookup.reset();
     if (cameraInputRef.current) cameraInputRef.current.value = '';
