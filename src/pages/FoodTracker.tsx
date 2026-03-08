@@ -567,3 +567,130 @@ function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+// --- Barcode Product Card ---
+function BarcodeProductCard({
+  product,
+  amount,
+  onAmountChange,
+  onAdd,
+  onRescan,
+  saving,
+}: {
+  product: OpenFoodFactsProduct;
+  amount: number;
+  onAmountChange: (amount: number) => void;
+  onAdd: () => void;
+  onRescan: () => void;
+  saving: boolean;
+}) {
+  const factor = amount / 100;
+  const n = product.nutriments;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+      {/* Product info */}
+      <div className="flex gap-3">
+        {product.image_url && (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="h-20 w-20 rounded-lg object-contain border border-border bg-white"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground">{product.name}</p>
+          {product.brand && (
+            <p className="text-sm text-muted-foreground">{product.brand}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">Barcode: {product.barcode}</p>
+        </div>
+      </div>
+
+      {/* Nutrient values per 100g */}
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Voedingswaarden per 100g/ml:</p>
+        <div className="grid grid-cols-5 gap-1 text-center">
+          <NutrientMiniBarcode label="K" value={n.potassium_mg} unit="mg" />
+          <NutrientMiniBarcode label="F" value={n.phosphorus_mg} unit="mg" />
+          <NutrientMiniBarcode label="Na" value={n.sodium_mg} unit="mg" />
+          <NutrientMiniBarcode label="E" value={n.proteins_g} unit="g" />
+          <NutrientMiniBarcode label="V" value={n.water_ml} unit="ml" />
+        </div>
+      </div>
+
+      {product.isComplete ? (
+        <>
+          {/* Amount input */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground whitespace-nowrap">Hoeveelheid:</label>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={amount}
+              onChange={e => onAmountChange(parseFloat(e.target.value) || 0)}
+              className="h-9 w-24 rounded-lg text-sm"
+            />
+            <span className="text-sm text-muted-foreground">g/ml</span>
+          </div>
+
+          {/* Calculated values */}
+          {amount > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}g/ml:</p>
+              <div className="grid grid-cols-5 gap-1 text-center">
+                <NutrientMini label="K" value={Math.round((n.potassium_mg ?? 0) * factor)} unit="mg" />
+                <NutrientMini label="F" value={Math.round((n.phosphorus_mg ?? 0) * factor)} unit="mg" />
+                <NutrientMini label="Na" value={Math.round((n.sodium_mg ?? 0) * factor)} unit="mg" />
+                <NutrientMini label="E" value={Math.round((n.proteins_g ?? 0) * factor * 10) / 10} unit="g" />
+                <NutrientMini label="V" value={Math.round((n.water_ml ?? 0) * factor)} unit="ml" />
+              </div>
+            </div>
+          )}
+
+          {/* Add button */}
+          <div className="flex gap-3">
+            <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
+              Opnieuw scannen
+            </Button>
+            <Button
+              onClick={onAdd}
+              disabled={saving || amount <= 0}
+              className="h-12 flex-1 rounded-xl text-base font-semibold"
+            >
+              {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
+              Toevoegen
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Incomplete product warning */}
+          <div className="rounded-lg bg-warning/10 border border-warning/30 p-3">
+            <p className="text-sm font-medium text-warning">
+              Dit product kan niet worden toegevoegd omdat niet alle benodigde voedingswaarden beschikbaar zijn.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ontbrekend: {product.missingFields.join(', ')}
+            </p>
+          </div>
+          <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
+            Ander product scannen
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NutrientMiniBarcode({ label, value, unit }: { label: string; value: number | null; unit: string }) {
+  return (
+    <div className={`rounded-md px-1 py-1.5 ${value != null ? 'bg-muted' : 'bg-warning/10'}`}>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="text-xs font-bold text-foreground">
+        {value != null ? `${Math.round(value)}` : '—'}
+      </p>
+    </div>
+  );
+}
