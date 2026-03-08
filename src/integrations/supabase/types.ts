@@ -72,6 +72,7 @@ export type Database = {
           dialysis_risk_label: string | null
           fluid_ml: number
           id: string
+          keywords: string[] | null
           name: string
           phosphate_mg: number
           portion_description: string
@@ -87,6 +88,7 @@ export type Database = {
           dialysis_risk_label?: string | null
           fluid_ml?: number
           id?: string
+          keywords?: string[] | null
           name: string
           phosphate_mg?: number
           portion_description: string
@@ -102,6 +104,7 @@ export type Database = {
           dialysis_risk_label?: string | null
           fluid_ml?: number
           id?: string
+          keywords?: string[] | null
           name?: string
           phosphate_mg?: number
           portion_description?: string
@@ -162,6 +165,56 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_most_used_foods: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          aliases: string[] | null
+          category: string
+          created_at: string
+          dialysis_risk_label: string | null
+          fluid_ml: number
+          id: string
+          keywords: string[] | null
+          name: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          sodium_mg: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "foods"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_recent_foods: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          aliases: string[] | null
+          category: string
+          created_at: string
+          dialysis_risk_label: string | null
+          fluid_ml: number
+          id: string
+          keywords: string[] | null
+          name: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          sodium_mg: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "foods"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       search_foods: {
         Args: { page_offset?: number; page_size?: number; search_query: string }
         Returns: {
@@ -171,6 +224,7 @@ export type Database = {
           dialysis_risk_label: string | null
           fluid_ml: number
           id: string
+          keywords: string[] | null
           name: string
           phosphate_mg: number
           portion_description: string
@@ -200,6 +254,32 @@ export type Database = {
           dialysis_risk_label: string | null
           fluid_ml: number
           id: string
+          keywords: string[] | null
+          name: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          sodium_mg: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "foods"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      search_foods_ranked: {
+        Args: { page_offset?: number; page_size?: number; search_query: string }
+        Returns: {
+          aliases: string[] | null
+          category: string
+          created_at: string
+          dialysis_risk_label: string | null
+          fluid_ml: number
+          id: string
+          keywords: string[] | null
           name: string
           phosphate_mg: number
           portion_description: string
