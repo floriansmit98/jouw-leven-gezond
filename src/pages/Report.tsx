@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FileText, Download, Calendar, Share2 } from 'lucide-react';
+import { FileText, Download, Calendar, Share2, ExternalLink } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
