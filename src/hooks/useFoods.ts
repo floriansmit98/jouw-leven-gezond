@@ -93,12 +93,16 @@ export function useTodayEntries() {
   const fetchEntries = async () => {
     if (!user) { setEntries([]); setLoading(false); return; }
 
-    const today = new Date().toISOString().split('T')[0];
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
     const { data, error } = await supabase
       .from('food_entries')
       .select('*')
-      .gte('logged_at', `${today}T00:00:00`)
-      .lt('logged_at', `${today}T23:59:59.999`)
+      .gte('logged_at', startOfDay.toISOString())
+      .lte('logged_at', endOfDay.toISOString())
       .order('logged_at', { ascending: false });
 
     if (!error) setEntries((data ?? []) as FoodEntryRow[]);
