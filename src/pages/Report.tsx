@@ -232,35 +232,90 @@ export default function Report() {
 
   const limits = getLimits();
 
-  const handleDownload = () => {
+  const generateReportBlob = () => {
+    const text = generateReportText(days, foods, symptoms, sessions, limits);
+    return new Blob([text], { type: 'text/plain;charset=utf-8' });
+  };
+
+  const handleDownload = async () => {
     setGenerating(true);
     try {
-      const text = generateReportText(days, foods, symptoms, sessions, limits);
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const blob = generateReportBlob();
       const dateStr = new Date().toISOString().split('T')[0];
-      a.download = `dialyse-rapport-${dateStr}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast({ title: 'Rapport gedownload', description: 'Het rapport is succesvol aangemaakt.' });
-    } catch {
-      toast({ title: 'Fout', description: 'Er ging iets mis bij het genereren.', variant: 'destructive' });
+      const fileName = `dialyse-rapport-${dateStr}.txt`;
+
+      if (isMobile && navigator.share) {
+        // Mobile: use native share with file attachment
+        const file = new File([blob], fileName, { type: 'text/plain;charset=utf-8' });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ title: 'Dialyse Rapport', files: [file] });
+          toast({ title: 'Rapport gedeeld', description: 'Het rapport is succesvol verstuurd.' });
+        } else {
+          // Fallback: open in new tab
+          openInNewTab(blob);
+        }
+      } else {
+        // Desktop: direct download via anchor
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast({ title: 'Rapport gedownload', description: 'Het rapport is succesvol aangemaakt.' });
+      }
+    } catch (err) {
+      // Don't show error if user cancelled the share dialog
+      if (err instanceof Error && err.name === 'AbortError') return;
+      toast({ title: 'Fout', description: 'Het rapport kon niet worden gedownload. Probeer "Open rapport" of "Delen".', variant: 'destructive' });
     } finally {
       setGenerating(false);
     }
   };
 
-  const handleShare = async () => {
-    const text = generateReportText(days, foods, symptoms, sessions, limits);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Dialyse Rapport', text });
-      } catch { /* cancelled */ }
+  const openInNewTab = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (!win) {
+      toast({ title: 'Geblokkeerd', description: 'Uw browser blokkeert het openen van het rapport. Gebruik "Delen" om het rapport te versturen.', variant: 'destructive' });
+      URL.revokeObjectURL(url);
     } else {
-      await navigator.clipboard.writeText(text);
-      toast({ title: 'Gekopieerd', description: 'Het rapport is naar het klembord gekopieerd.' });
+      toast({ title: 'Rapport geopend', description: 'Het rapport is geopend in een nieuw tabblad.' });
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+  };
+
+  const handleOpenReport = () => {
+    try {
+      const blob = generateReportBlob();
+      openInNewTab(blob);
+    } catch {
+      toast({ title: 'Fout', description: 'Er ging iets mis bij het genereren.', variant: 'destructive' });
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const blob = generateReportBlob();
+      const dateStr = new Date().toISOString().split('T')[0];
+      const fileName = `dialyse-rapport-${dateStr}.txt`;
+      const file = new File([blob], fileName, { type: 'text/plain;charset=utf-8' });
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title: 'Dialyse Rapport', files: [file] });
+      } else if (navigator.share) {
+        const text = generateReportText(days, foods, symptoms, sessions, limits);
+        await navigator.share({ title: 'Dialyse Rapport', text });
+      } else {
+        const text = generateReportText(days, foods, symptoms, sessions, limits);
+        await navigator.clipboard.writeText(text);
+        toast({ title: 'Gekopieerd', description: 'Het rapport is naar het klembord gekopieerd.' });
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      toast({ title: 'Fout', description: 'Het rapport kon niet worden gedeeld.', variant: 'destructive' });
     }
   };
 
