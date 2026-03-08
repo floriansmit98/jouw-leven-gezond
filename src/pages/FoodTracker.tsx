@@ -156,8 +156,12 @@ export default function FoodTracker() {
 
   const handleBarcodeScan = useCallback(async (barcode: string) => {
     setStep('barcode-result');
-    setBarcodeAmount(100);
-    await barcodeLookup.lookup(barcode);
+    const barcodeResult = await barcodeLookup.lookup(barcode);
+    if (barcodeResult?.nevoMatch) {
+      setBarcodeAmount(barcodeResult.nevoMatch.portion_grams || 100);
+    } else {
+      setBarcodeAmount(100);
+    }
   }, [barcodeLookup]);
 
   const handleAddBarcodeProduct = async () => {
