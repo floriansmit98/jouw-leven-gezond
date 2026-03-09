@@ -124,6 +124,8 @@ const DAILY_THRESHOLDS = { letop: 0.7, hoog: 0.9 };
 
 export interface DailyWarning {
   level: RiskLevel;
+  title: string;
+  subtitle: string;
   message: string;
 }
 
@@ -140,7 +142,14 @@ export function analyzeDailyWarnings(totals: {
   const l = limits || getLimits();
   const warnings: DailyWarning[] = [];
 
-  const checks: { name: string; current: number; limit: number; isGoal?: boolean }[] = [
+  const LABELS: Record<string, string> = {
+    kalium: 'Kalium',
+    fosfaat: 'Fosfaat',
+    natrium: 'Natrium',
+    vocht: 'Vocht',
+  };
+
+  const checks: { name: string; current: number; limit: number }[] = [
     { name: 'kalium', current: totals.potassium, limit: l.potassium },
     { name: 'fosfaat', current: totals.phosphate, limit: l.phosphate },
     { name: 'natrium', current: totals.sodium, limit: l.sodium },
@@ -149,15 +158,20 @@ export function analyzeDailyWarnings(totals: {
 
   for (const c of checks) {
     const ratio = c.current / c.limit;
+    const pct = `${Math.round(ratio * 100)}% van limiet`;
     if (ratio >= DAILY_THRESHOLDS.hoog) {
       warnings.push({
         level: 'hoog',
-        message: `Waarschuwing: uw ${c.name}inname is vandaag hoog (${Math.round(ratio * 100)}% van uw limiet).`,
+        title: `${LABELS[c.name]} te hoog`,
+        subtitle: pct,
+        message: `${LABELS[c.name]} te hoog (${pct})`,
       });
     } else if (ratio >= DAILY_THRESHOLDS.letop) {
       warnings.push({
         level: 'letop',
-        message: `Let op: uw ${c.name}inname loopt op (${Math.round(ratio * 100)}% van uw limiet).`,
+        title: `${LABELS[c.name]} let op`,
+        subtitle: pct,
+        message: `${LABELS[c.name]} let op (${pct})`,
       });
     }
   }
@@ -167,7 +181,9 @@ export function analyzeDailyWarnings(totals: {
   if (proteinRatio < 0.4) {
     warnings.push({
       level: 'letop',
-      message: 'Tip: uw eiwitinname is nog laag vandaag. Probeer eiwitrijke producten toe te voegen.',
+      title: 'Eiwit te laag',
+      subtitle: `${Math.round(proteinRatio * 100)}% van doel`,
+      message: `Eiwit te laag (${Math.round(proteinRatio * 100)}% van doel)`,
     });
   }
 

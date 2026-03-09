@@ -41,12 +41,15 @@ export default function RiskAlerts() {
         return (
           <div
             key={i}
-            className={`flex items-start gap-3 rounded-xl border p-4 ${s.bg} ${s.border}`}
+            className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${s.bg} ${s.border}`}
           >
-            <div className={`mt-0.5 rounded-lg p-1.5 ${s.bg}`}>
+            <div className={`rounded-lg p-1.5 ${s.bg}`}>
               <Icon className={`h-4 w-4 shrink-0 ${s.text}`} />
             </div>
-            <p className="text-sm font-medium text-foreground">{warning.message}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">{warning.title}</p>
+              <p className="text-xs text-muted-foreground">{warning.subtitle}</p>
+            </div>
           </div>
         );
       })}
