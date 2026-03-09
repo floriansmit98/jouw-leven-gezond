@@ -991,3 +991,96 @@ function DailyTotalWarnings({ entries }: { entries: { potassium_mg: number; phos
   );
 }
 
+/** Meal history panel with favorites and recent meals */
+function MealHistoryPanel({ onBack, onRefresh }: { onBack: () => void; onRefresh: () => void }) {
+  const { user } = useAuth();
+  const { meals: favoriteMeals, loading: favLoading, refetch: refetchFav } = useFavoriteMeals();
+  const { meals: recentMeals, loading: recentLoading } = useRecentMeals();
+  const [tab, setTab] = useState<'favorieten' | 'recent'>('favorieten');
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+
+  const handleQuickAdd = async (meal: MealWithItems) => {
+    if (!user) return;
+    setDuplicating(meal.id);
+    try {
+      await duplicateMeal(user.id, meal);
+      toast.success(`${meal.name} opnieuw gelogd!`);
+      onRefresh();
+    } catch {
+      toast.error('Kon maaltijd niet dupliceren.');
+    }
+    setDuplicating(null);
+  };
+
+  const meals = tab === 'favorieten' ? favoriteMeals : recentMeals;
+  const loading = tab === 'favorieten' ? favLoading : recentLoading;
+
+  return (
+    <div className="mb-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={onBack}>← Terug</Button>
+        <h2 className="font-display text-lg font-semibold text-foreground">Maaltijden</h2>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setTab('favorieten')}
+          className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            tab === 'favorieten' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+          }`}
+        >
+          <Star className="h-3.5 w-3.5" />
+          Favorieten
+        </button>
+        <button
+          onClick={() => setTab('recent')}
+          className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            tab === 'recent' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+          }`}
+        >
+          <Clock className="h-3.5 w-3.5" />
+          Recent
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      )}
+
+      {!loading && meals.length === 0 && (
+        <div className="rounded-xl border border-border bg-card p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            {tab === 'favorieten'
+              ? 'Nog geen favoriete maaltijden. Sla een maaltijd op als favoriet om deze hier te zien.'
+              : 'Nog geen maaltijden gelogd.'}
+          </p>
+        </div>
+      )}
+
+      {!loading && meals.length > 0 && (
+        <div className="space-y-2">
+          {meals.map(meal => (
+            <div key={meal.id} className="space-y-1">
+              <MealCard meal={meal} onRefresh={() => { refetchFav(); onRefresh(); }} />
+              {tab === 'favorieten' && (
+                <Button
+                  onClick={() => handleQuickAdd(meal)}
+                  disabled={duplicating === meal.id}
+                  size="sm"
+                  className="w-full rounded-lg text-xs"
+                >
+                  {duplicating === meal.id ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />}
+                  Opnieuw loggen met één tik
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
