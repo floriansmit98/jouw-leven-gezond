@@ -495,6 +495,25 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      search_all_foods: {
+        Args: { page_offset?: number; page_size?: number; search_query: string }
+        Returns: {
+          brand: string
+          category: string
+          display_name: string
+          fluid_ml: number
+          food_id: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          rank_score: number
+          result_id: string
+          result_type: string
+          sodium_mg: number
+        }[]
+      }
       search_foods: {
         Args: { page_offset?: number; page_size?: number; search_query: string }
         Returns: {
@@ -589,6 +608,25 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      unified_food_search: {
+        Args: { page_offset?: number; page_size?: number; search_query: string }
+        Returns: {
+          brand: string
+          category: string
+          display_name: string
+          fluid_ml: number
+          food_id: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          rank_score: number
+          result_id: string
+          result_type: string
+          sodium_mg: number
+        }[]
       }
     }
     Enums: {
