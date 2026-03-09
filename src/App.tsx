@@ -63,7 +63,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <ProtectedRoutes />
+          <PremiumProvider>
+            <ProtectedRoutes />
+          </PremiumProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

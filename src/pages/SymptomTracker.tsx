@@ -70,6 +70,7 @@ function getPeriodStart(days: number) {
 export default function SymptomTracker() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { isPremium } = usePremium();
   const [selected, setSelected] = useState<string | null>(null);
   const [severity, setSeverity] = useState(3);
   const [notes, setNotes] = useState('');
