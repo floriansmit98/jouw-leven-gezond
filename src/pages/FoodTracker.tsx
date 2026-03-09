@@ -886,7 +886,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             return (
               <div className="space-y-4">
                 {/* Beste match highlight */}
-                {bestMatch && !aiResult?.is_compound && (
+                {bestMatch && !aiResult?.is_compound && !hasMealPattern && (
                   <SearchResultCard
                     result={bestMatch}
                     isBestMatch
