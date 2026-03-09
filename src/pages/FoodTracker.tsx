@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History } from 'lucide-react';
-import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
+import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
