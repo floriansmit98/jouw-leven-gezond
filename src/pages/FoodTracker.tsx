@@ -1224,8 +1224,10 @@ function SearchResultCard({
         <div className="mt-1.5">
           <SuggestedMealBuilder
             query={result.display_name}
-            components={mealComponentItems.map((item, i) => ({
+            components={mealComponentItems.map((item) => ({
               name: item.food.display_name || item.food.name,
+              search_terms: [item.food.name],
+              is_drink: item.food.category === 'dranken',
               match: item.food,
             }))}
             displayMessage={result.display_name}
