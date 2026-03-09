@@ -223,7 +223,7 @@ export default function FoodTracker() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Voeding & Vocht"
-          mascotMessage={step === 'capture' ? 'Maak een foto van uw maaltijd!' : step === 'confirm' ? 'Controleer de herkende voedingsmiddelen.' : 'Even geduld...'}
+          mascotMessage={step === 'capture' ? 'Maak een foto van uw maaltijd!' : step === 'confirm' ? 'Controleer de herkende voedingsmiddelen.' : undefined}
         />
 
         {/* Hidden file inputs */}
@@ -1201,9 +1201,6 @@ function SearchResultCard({
               {isMeal ? 'Maaltijd' : isBranded ? (result.brand || 'Merk') : 'Product'}
             </span>
             <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
-            {result._debugScore !== undefined && (
-              <span className="text-[9px] font-mono text-orange-500 bg-orange-100 px-1 rounded">score:{result._debugScore}</span>
-            )}
           </div>
         </div>
 
