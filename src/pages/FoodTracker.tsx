@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History } from 'lucide-react';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,9 @@ import { useBarcodeLookup, type BarcodeResult } from '@/hooks/useBarcodeLookup';
 import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
 import { getLimits } from '@/lib/store';
+import MealComposer from '@/components/MealComposer';
+import MealCard from '@/components/MealCard';
+import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type MealWithItems } from '@/hooks/useMeals';
 
 interface DetectedFood {
   naam: string;
