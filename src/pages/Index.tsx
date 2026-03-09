@@ -121,6 +121,9 @@ export default function Index() {
           </div>
         </div>
 
+        {/* Ad banner for free users */}
+        <AdBanner className="mb-5" />
+
         {/* Fluid schedule */}
         <div className="mb-6">
           <FluidScheduleSection totalLimit={limits.fluid} consumed={totals.fluid} />
