@@ -20,6 +20,7 @@ export type Database = {
           food_id: string | null
           id: string
           logged_at: string
+          meal_id: string | null
           name: string
           phosphate_mg: number
           portions: number
@@ -33,6 +34,7 @@ export type Database = {
           food_id?: string | null
           id?: string
           logged_at?: string
+          meal_id?: string | null
           name: string
           phosphate_mg?: number
           portions?: number
@@ -46,6 +48,7 @@ export type Database = {
           food_id?: string | null
           id?: string
           logged_at?: string
+          meal_id?: string | null
           name?: string
           phosphate_mg?: number
           portions?: number
@@ -60,6 +63,13 @@ export type Database = {
             columns: ["food_id"]
             isOneToOne: false
             referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "food_entries_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
             referencedColumns: ["id"]
           },
         ]
@@ -115,6 +125,39 @@ export type Database = {
           potassium_mg?: number
           protein_g?: number
           sodium_mg?: number
+        }
+        Relationships: []
+      }
+      meals: {
+        Row: {
+          created_at: string
+          favorite_name: string | null
+          id: string
+          is_favorite: boolean
+          logged_at: string
+          meal_type: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          favorite_name?: string | null
+          id?: string
+          is_favorite?: boolean
+          logged_at?: string
+          meal_type?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          favorite_name?: string | null
+          id?: string
+          is_favorite?: boolean
+          logged_at?: string
+          meal_type?: string
+          name?: string
+          user_id?: string
         }
         Relationships: []
       }
