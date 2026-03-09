@@ -632,9 +632,12 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
+  const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [mealItems, setMealItems] = useState<Record<string, any[]>>({});
   
   const { user: searchUser } = useAuth();
   const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query, searchUser?.id);
+  const { results: unifiedResults, loading: unifiedLoading } = useUnifiedSearch(query);
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
@@ -642,10 +645,9 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
 
   const showResults = query.trim().length > 0;
   
-  const displayResults = aiResult?.matches && aiResult.matches.length > 0
-    ? aiResult.matches
-    : nevoResults;
-  const isLoading = aiLoading || (nevoLoading && !aiResult);
+  // Merge: show unified results (meals, branded, foods) first, then AI/NEVO fallback
+  const hasUnifiedResults = unifiedResults.length > 0;
+  const isLoading = unifiedLoading || aiLoading || (nevoLoading && !aiResult && !hasUnifiedResults);
 
   const handleSelectFood = (food: FoodRow) => {
     addSearch(query);
