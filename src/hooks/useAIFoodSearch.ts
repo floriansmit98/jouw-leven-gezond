@@ -9,13 +9,48 @@ export interface AIFoodResult {
   nevo_search_terms: string[];
   display_message: string;
   matches: FoodRow[];
+  match_quality: 'exact' | 'alias' | 'weak' | 'none';
   loading: boolean;
   error: string | null;
 }
 
 const DEBOUNCE_MS = 600;
 
-export function useAIFoodSearch(query: string) {
+async function logSearch(query: string, matched: boolean, matchQuality: string, matchedFoodId?: string, userId?: string) {
+  try {
+    await supabase.from('search_logs').insert({
+      query: query.trim().toLowerCase(),
+      matched,
+      match_quality: matchQuality,
+      matched_food_id: matchedFoodId || null,
+      user_id: userId || null,
+    } as any);
+  } catch {
+    // Silent fail - logging should never break the app
+  }
+}
+
+function determineMatchQuality(query: string, matches: FoodRow[]): 'exact' | 'alias' | 'weak' | 'none' {
+  if (matches.length === 0) return 'none';
+  const q = query.trim().toLowerCase();
+  const first = matches[0];
+  
+  // Check exact match on display_name or name
+  if (
+    (first.display_name && first.display_name.toLowerCase() === q) ||
+    first.name.toLowerCase() === q
+  ) return 'exact';
+  
+  // Check if query appears in display_name/name as substring
+  if (
+    (first.display_name && first.display_name.toLowerCase().includes(q)) ||
+    first.name.toLowerCase().includes(q)
+  ) return 'exact';
+
+  return 'alias';
+}
+
+export function useAIFoodSearch(query: string, userId?: string) {
   const [result, setResult] = useState<AIFoodResult | null>(null);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -43,6 +78,8 @@ export function useAIFoodSearch(query: string) {
         if (cancelled) return;
 
         if (aiError || aiData?.error) {
+          // Log failed search
+          logSearch(query, false, 'none', undefined, userId);
           setResult(null);
           setLoading(false);
           return;
@@ -70,6 +107,17 @@ export function useAIFoodSearch(query: string) {
 
         if (cancelled) return;
 
+        const matchQuality = determineMatchQuality(query, matches);
+        
+        // Log the search result
+        logSearch(
+          query,
+          matches.length > 0,
+          matchQuality,
+          matches.length > 0 ? matches[0].id : undefined,
+          userId
+        );
+
         setResult({
           brand: brand || '',
           product_type,
@@ -77,6 +125,7 @@ export function useAIFoodSearch(query: string) {
           nevo_search_terms: terms,
           display_message,
           matches,
+          match_quality: matchQuality,
           loading: false,
           error: matches.length === 0 ? 'Geen betrouwbare voedingswaarden gevonden voor dit product.' : null,
         });
@@ -84,6 +133,7 @@ export function useAIFoodSearch(query: string) {
       } catch (err) {
         if (!cancelled) {
           console.error('[AI Food Search] Error:', err);
+          logSearch(query, false, 'none', undefined, userId);
           setResult(null);
           setLoading(false);
         }
@@ -94,7 +144,7 @@ export function useAIFoodSearch(query: string) {
       cancelled = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query]);
+  }, [query, userId]);
 
   return { result, loading };
 }
