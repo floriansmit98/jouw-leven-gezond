@@ -378,16 +378,19 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_premium: boolean
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           id: string
+          is_premium?: boolean
         }
         Update: {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_premium?: boolean
         }
         Relationships: []
       }
