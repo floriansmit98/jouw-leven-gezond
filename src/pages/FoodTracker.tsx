@@ -628,7 +628,22 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
-  const { foods: searchResults, loading: searchLoading } = useFoodSearch(query);
+  const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
+  const { products: offResults, loading: offLoading, noResults: offNoResults } = useOFFSearch(query, false);
+
+  // Merge NEVO (priority) + OFF results, deduplicate by id
+  const searchResults = useMemo(() => {
+    const seen = new Set(nevoResults.map(f => f.id));
+    const merged = [...nevoResults];
+    for (const off of offResults) {
+      if (!seen.has(off.id)) {
+        seen.add(off.id);
+        merged.push(off);
+      }
+    }
+    return merged;
+  }, [nevoResults, offResults]);
+  const searchLoading = nevoLoading || offLoading;
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
 
