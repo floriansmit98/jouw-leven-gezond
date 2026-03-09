@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot } from 'lucide-react';
+import SuggestedMealBuilder from '@/components/SuggestedMealBuilder';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
 import { useUnifiedSearch, fetchCommonMealItems, logMissingSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
@@ -807,41 +808,32 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
       {/* Search results */}
       {showResults && !isLoading && (
         <div className="space-y-1.5">
-          {/* Compound food: show components separately */}
+          {/* Suggested meal builder for compound queries */}
           {aiResult?.is_compound && aiResult.components.length > 0 && aiResult.components.some(c => c.match) && (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 text-primary shrink-0" />
-                <p className="text-sm font-medium text-foreground">Stel samen uit componenten:</p>
-              </div>
-              <div className="space-y-1.5">
-                {aiResult.components.map((comp, i) => (
-                  comp.match ? (
-                    <button
-                      key={`comp-${i}`}
-                      onClick={() => handleSelectFood(comp.match!)}
-                      className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:bg-secondary/50"
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
-                          {i + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(comp.match)}</p>
-                          <p className="text-xs text-muted-foreground">{comp.name} · {comp.match.portion_description}</p>
-                        </div>
-                      </div>
-                      <Plus className="h-4 w-4 shrink-0 text-primary ml-2" />
-                    </button>
-                  ) : (
-                    <div key={`comp-${i}`} className="rounded-lg border border-border/50 bg-card/50 p-2.5 opacity-60">
-                      <p className="text-sm text-muted-foreground">{comp.name} — niet gevonden</p>
-                    </div>
-                  )
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">Voeg elk onderdeel apart toe voor nauwkeurige voedingswaarden.</p>
-            </div>
+            <SuggestedMealBuilder
+              query={query}
+              components={aiResult.components}
+              displayMessage={aiResult.display_message}
+              onAddAll={async (items) => {
+                if (onAddFoodDirect) {
+                  for (const item of items) {
+                    await onAddFoodDirect(item.food, item.amountGrams);
+                  }
+                } else if (onAddFood) {
+                  for (const item of items) {
+                    onAddFood(item.food);
+                  }
+                }
+              }}
+              onAddSingle={(food, amount) => {
+                if (onAddFoodDirect) {
+                  onAddFoodDirect(food, amount);
+                } else if (onAddFood) {
+                  onAddFood(food);
+                }
+              }}
+              saving={saving}
+            />
           )}
 
           {/* Unified search results grouped by type */}
