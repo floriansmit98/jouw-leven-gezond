@@ -852,26 +852,42 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
 
             // Re-rank: boost results matching more query words, penalize weak single-word matches
             const queryWords = query.trim().toLowerCase().split(/\s+/).filter(w => w.length > 1);
-            const reranked = [...filteredResults].sort((a, b) => {
-              const nameA = a.display_name.toLowerCase();
-              const nameB = b.display_name.toLowerCase();
-              const matchesA = queryWords.filter(w => nameA.includes(w)).length;
-              const matchesB = queryWords.filter(w => nameB.includes(w)).length;
-              // Exact full match bonus
-              const exactA = nameA === query.trim().toLowerCase() ? 1000 : 0;
-              const exactB = nameB === query.trim().toLowerCase() ? 1000 : 0;
-              // All-words bonus: big boost if ALL query words match
-              const allWordsA = matchesA === queryWords.length ? 500 : 0;
-              const allWordsB = matchesB === queryWords.length ? 500 : 0;
-              // Penalty: if multi-word query but only 1 word matches, heavily penalize
-              const penaltyA = queryWords.length > 1 && matchesA <= 1 ? -200 : 0;
-              const penaltyB = queryWords.length > 1 && matchesB <= 1 ? -200 : 0;
-              const scoreA = exactA + allWordsA + matchesA * 100 + penaltyA + (a.rank_score || 0);
-              const scoreB = exactB + allWordsB + matchesB * 100 + penaltyB + (b.rank_score || 0);
-              return scoreB - scoreA;
+            const isMultiWord = queryWords.length > 1;
+
+            // Compute debug scores
+            const scoredResults = filteredResults.map(r => {
+              const name = r.display_name.toLowerCase();
+              const matchCount = queryWords.filter(w => name.includes(w)).length;
+              const exactBonus = name === query.trim().toLowerCase() ? 1000 : 0;
+              const allWordsBonus = matchCount === queryWords.length ? 500 : 0;
+              // For multi-word queries, heavily penalize single-word-only matches
+              const penalty = isMultiWord && matchCount <= 1 ? -500 : 0;
+              // Also check meal items for keyword matches (if loaded)
+              let itemsBonus = 0;
+              if (r.result_type === 'meal' && mealItems[r.result_id]) {
+                const itemNames = mealItems[r.result_id]
+                  .filter((item: any) => item.food)
+                  .map((item: any) => (item.food.display_name || item.food.name || '').toLowerCase());
+                const itemMatches = queryWords.filter(w => itemNames.some((n: string) => n.includes(w))).length;
+                itemsBonus = itemMatches * 80;
+              }
+              const finalScore = exactBonus + allWordsBonus + matchCount * 100 + penalty + itemsBonus + (r.rank_score || 0);
+              return { ...r, _debugScore: finalScore };
             });
 
-            const mealResults = reranked.filter(r => r.result_type === 'meal');
+            // Sort by computed score
+            const reranked = scoredResults.sort((a, b) => b._debugScore - a._debugScore);
+
+            // For multi-word queries with a pattern match, filter out meals matching only 1 word
+            const mealResults = reranked.filter(r => {
+              if (r.result_type !== 'meal') return false;
+              if (isMultiWord && hasMealPattern) {
+                const name = r.display_name.toLowerCase();
+                const matchCount = queryWords.filter(w => name.includes(w)).length;
+                if (matchCount <= 1) return false;
+              }
+              return true;
+            });
             const productResults = reranked.filter(r => r.result_type !== 'meal');
             // Deduplicate meals by display_name
             const seenMealNames = new Set<string>();
@@ -1136,7 +1152,7 @@ function SearchResultCard({
   onAddFood,
   saving,
 }: {
-  result: UnifiedSearchResult;
+  result: UnifiedSearchResult & { _debugScore?: number };
   isBestMatch?: boolean;
   expandedMeal: string | null;
   mealItems: Record<string, any[]>;
@@ -1218,6 +1234,9 @@ function SearchResultCard({
               {isMeal ? 'Maaltijd' : isBranded ? (result.brand || 'Merk') : 'Product'}
             </span>
             <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
+            {result._debugScore !== undefined && (
+              <span className="text-[9px] font-mono text-orange-500 bg-orange-100 px-1 rounded">score:{result._debugScore}</span>
+            )}
           </div>
         </div>
 
