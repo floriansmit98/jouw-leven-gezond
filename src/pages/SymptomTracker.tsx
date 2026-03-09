@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { SYMPTOM_LABELS, type SymptomType } from '@/lib/store';
+import { Input } from '@/components/ui/input';
+import { SYMPTOM_LABELS, EXTENDED_SYMPTOMS, type SymptomType } from '@/lib/store';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,8 +11,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
+import { ChevronDown, ArrowLeft, Search, X } from 'lucide-react';
 
-const SYMPTOM_ICONS: Record<SymptomType, string> = {
+const QUICK_SYMPTOM_ICONS: Record<SymptomType, string> = {
   vermoeidheid: '😴',
   misselijkheid: '🤢',
   jeuk: '🤚',
@@ -20,13 +22,22 @@ const SYMPTOM_ICONS: Record<SymptomType, string> = {
   krampen: '⚡',
 };
 
-const SEVERITY_COLORS: Record<number, string> = {
-  1: 'hsl(var(--safe))',
-  2: 'hsl(var(--safe))',
-  3: 'hsl(var(--warning))',
-  4: 'hsl(var(--danger))',
-  5: 'hsl(var(--danger))',
+// Build a combined lookup for labels and emojis (quick + extended)
+const ALL_SYMPTOM_LABELS: Record<string, string> = {
+  ...SYMPTOM_LABELS,
+  ...Object.fromEntries(EXTENDED_SYMPTOMS.map(s => [s.key, s.label])),
 };
+
+const ALL_SYMPTOM_EMOJIS: Record<string, string> = {
+  ...QUICK_SYMPTOM_ICONS,
+  ...Object.fromEntries(EXTENDED_SYMPTOMS.map(s => [s.key, s.emoji])),
+};
+
+const CHART_COLORS_LIST = [
+  'hsl(205, 75%, 48%)', 'hsl(145, 60%, 40%)', 'hsl(35, 90%, 55%)',
+  'hsl(250, 60%, 55%)', 'hsl(0, 70%, 55%)', 'hsl(50, 80%, 50%)',
+  'hsl(180, 60%, 40%)', 'hsl(300, 50%, 50%)', 'hsl(90, 60%, 40%)',
+];
 
 interface SymptomRecord {
   id: string;
@@ -56,15 +67,15 @@ function getPeriodStart(days: number) {
 export default function SymptomTracker() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState<SymptomType | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const [severity, setSeverity] = useState(3);
   const [notes, setNotes] = useState('');
-  const [chartFilter, setChartFilter] = useState<SymptomType | 'all'>('all');
+  const [chartFilter, setChartFilter] = useState<string>('all');
   const [period, setPeriod] = useState<Period>('7');
+  const [showMore, setShowMore] = useState(false);
+  const [moreSearch, setMoreSearch] = useState('');
 
   const days = parseInt(period, 10);
-  const periodStart = getPeriodStart(days);
-  const periodStartIso = periodStart.toISOString();
 
   const { data: entries = [] } = useQuery({
     queryKey: ['symptom_entries', user?.id, days],
@@ -113,6 +124,21 @@ export default function SymptomTracker() {
     });
   }
 
+  function handleSelectSymptom(key: string) {
+    setSelected(key);
+    setShowMore(false);
+    setMoreSearch('');
+  }
+
+  // Filter extended symptoms by search
+  const filteredExtended = useMemo(() => {
+    if (!moreSearch.trim()) return EXTENDED_SYMPTOMS;
+    const q = moreSearch.toLowerCase();
+    return EXTENDED_SYMPTOMS.filter(s =>
+      s.label.toLowerCase().includes(q) || s.key.toLowerCase().includes(q)
+    );
+  }, [moreSearch]);
+
   const chartData = useMemo(() => {
     const filtered = chartFilter === 'all'
       ? entries
@@ -142,20 +168,78 @@ export default function SymptomTracker() {
 
   const activeSymptoms = useMemo(() => {
     if (chartFilter === 'all') {
-      const names = new Set(entries.map(e => e.symptom_name));
-      return Array.from(names) as SymptomType[];
+      return Array.from(new Set(entries.map(e => e.symptom_name)));
     }
-    return [chartFilter] as SymptomType[];
+    return [chartFilter];
   }, [entries, chartFilter]);
 
-  const CHART_COLORS: Record<SymptomType, string> = {
-    vermoeidheid: 'hsl(205, 75%, 48%)',
-    misselijkheid: 'hsl(145, 60%, 40%)',
-    jeuk: 'hsl(35, 90%, 55%)',
-    zwelling: 'hsl(250, 60%, 55%)',
-    duizeligheid: 'hsl(0, 70%, 55%)',
-    krampen: 'hsl(50, 80%, 50%)',
-  };
+  // All unique symptom names from entries for chart filter
+  const loggedSymptomNames = useMemo(() => {
+    return Array.from(new Set(entries.map(e => e.symptom_name)));
+  }, [entries]);
+
+  function getChartColor(symptom: string, index: number) {
+    return CHART_COLORS_LIST[index % CHART_COLORS_LIST.length];
+  }
+
+  // "Meer symptomen" full-screen overlay
+  if (showMore) {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <div className="mx-auto max-w-lg px-4 pt-6">
+          {/* Header */}
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              onClick={() => { setShowMore(false); setMoreSearch(''); }}
+              className="rounded-xl p-2 text-foreground hover:bg-muted transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <h1 className="font-display text-xl font-bold text-foreground">Meer symptomen</h1>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-5">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={moreSearch}
+              onChange={e => setMoreSearch(e.target.value)}
+              placeholder="Zoek symptoom"
+              className="h-12 rounded-xl pl-10 text-base"
+              autoFocus
+            />
+            {moreSearch && (
+              <button
+                onClick={() => setMoreSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Symptom list */}
+          <div className="space-y-2">
+            {filteredExtended.map(s => (
+              <button
+                key={s.key}
+                onClick={() => handleSelectSymptom(s.key)}
+                className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/30 hover:bg-accent/50"
+              >
+                <span className="text-xl">{s.emoji}</span>
+                <span className="text-sm font-semibold text-foreground">{s.label}</span>
+              </button>
+            ))}
+            {filteredExtended.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Geen symptomen gevonden.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24">
@@ -165,8 +249,8 @@ export default function SymptomTracker() {
           mascotMessage="Houd hier uw klachten bij."
         />
 
-        {/* Symptom buttons */}
-        <div className="mb-6 grid grid-cols-2 gap-3">
+        {/* Quick-access symptom buttons */}
+        <div className="mb-3 grid grid-cols-2 gap-3">
           {(Object.keys(SYMPTOM_LABELS) as SymptomType[]).map(type => (
             <button
               key={type}
@@ -177,14 +261,30 @@ export default function SymptomTracker() {
                   : 'border-border bg-card hover:border-primary/30'
               }`}
             >
-              <span className="text-2xl">{SYMPTOM_ICONS[type]}</span>
+              <span className="text-2xl">{QUICK_SYMPTOM_ICONS[type]}</span>
               <span className="text-sm font-semibold text-foreground">{SYMPTOM_LABELS[type]}</span>
             </button>
           ))}
         </div>
 
+        {/* More symptoms button */}
+        <button
+          onClick={() => setShowMore(true)}
+          className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+        >
+          <ChevronDown className="h-4 w-4" />
+          Meer symptomen
+        </button>
+
+        {/* Severity + submit form */}
         {selected && (
           <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">{ALL_SYMPTOM_EMOJIS[selected] || '❓'}</span>
+              <span className="text-sm font-semibold text-foreground">
+                {ALL_SYMPTOM_LABELS[selected] || selected}
+              </span>
+            </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-foreground">
                 Hoe erg? ({severity}/5)
@@ -257,17 +357,17 @@ export default function SymptomTracker() {
               >
                 Alles
               </button>
-              {(Object.keys(SYMPTOM_LABELS) as SymptomType[]).map(type => (
+              {loggedSymptomNames.map(name => (
                 <button
-                  key={type}
-                  onClick={() => setChartFilter(type)}
+                  key={name}
+                  onClick={() => setChartFilter(name)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                    chartFilter === type
+                    chartFilter === name
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  {SYMPTOM_ICONS[type]} {SYMPTOM_LABELS[type]}
+                  {ALL_SYMPTOM_EMOJIS[name] || '❓'} {ALL_SYMPTOM_LABELS[name] || name}
                 </button>
               ))}
             </div>
@@ -288,17 +388,17 @@ export default function SymptomTracker() {
                       }}
                       formatter={(value: number, name: string) => [
                         `${value}/5`,
-                        SYMPTOM_LABELS[name as SymptomType] || name,
+                        ALL_SYMPTOM_LABELS[name] || name,
                       ]}
                     />
-                    {activeSymptoms.map(symptom => (
+                    {activeSymptoms.map((symptom, idx) => (
                       <Line
                         key={symptom}
                         type="monotone"
                         dataKey={symptom}
-                        stroke={CHART_COLORS[symptom]}
+                        stroke={getChartColor(symptom, idx)}
                         strokeWidth={2}
-                        dot={{ r: 4, fill: CHART_COLORS[symptom] }}
+                        dot={{ r: 4, fill: getChartColor(symptom, idx) }}
                         connectNulls={false}
                         name={symptom}
                       />
@@ -313,10 +413,10 @@ export default function SymptomTracker() {
 
               {chartFilter === 'all' && activeSymptoms.length > 1 && (
                 <div className="mt-3 flex flex-wrap gap-3">
-                  {activeSymptoms.map(s => (
+                  {activeSymptoms.map((s, idx) => (
                     <div key={s} className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full" style={{ background: CHART_COLORS[s] }} />
-                      <span className="text-xs text-muted-foreground">{SYMPTOM_LABELS[s]}</span>
+                      <div className="h-2.5 w-2.5 rounded-full" style={{ background: getChartColor(s, idx) }} />
+                      <span className="text-xs text-muted-foreground">{ALL_SYMPTOM_LABELS[s] || s}</span>
                     </div>
                   ))}
                 </div>
@@ -338,12 +438,12 @@ export default function SymptomTracker() {
                   className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
                 >
                   <span className="text-xl">
-                    {SYMPTOM_ICONS[entry.symptom_name as SymptomType] || '❓'}
+                    {ALL_SYMPTOM_EMOJIS[entry.symptom_name] || '❓'}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-foreground">
-                        {SYMPTOM_LABELS[entry.symptom_name as SymptomType] || entry.symptom_name}
+                        {ALL_SYMPTOM_LABELS[entry.symptom_name] || entry.symptom_name}
                       </span>
                       <span
                         className={`rounded-md px-1.5 py-0.5 text-xs font-bold ${
