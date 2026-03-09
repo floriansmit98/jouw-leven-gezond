@@ -18,6 +18,7 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import { useBarcodeLookup, type BarcodeResult } from '@/hooks/useBarcodeLookup';
 import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
+import { getFoodFlags, SearchWarningBadges, SearchWarningDetail } from '@/components/SearchNutrientWarning';
 import { getLimits } from '@/lib/store';
 import MealComposer from '@/components/MealComposer';
 import MealCard from '@/components/MealCard';
