@@ -933,6 +933,9 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
                                 });
                               }
                             }}
+                            onAddFoodDirect={onAddFoodDirect}
+                            onAddFood={onAddFood}
+                            saving={saving}
                           />
                         )
                       ))}
