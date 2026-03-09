@@ -91,6 +91,7 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          simplified_name: string | null
           sodium_mg: number
         }
         Insert: {
@@ -109,6 +110,7 @@ export type Database = {
           portion_grams?: number
           potassium_mg?: number
           protein_g?: number
+          simplified_name?: string | null
           sodium_mg?: number
         }
         Update: {
@@ -127,6 +129,7 @@ export type Database = {
           portion_grams?: number
           potassium_mg?: number
           protein_g?: number
+          simplified_name?: string | null
           sodium_mg?: number
         }
         Relationships: []
@@ -271,6 +274,7 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          simplified_name: string | null
           sodium_mg: number
         }[]
         SetofOptions: {
@@ -298,6 +302,7 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          simplified_name: string | null
           sodium_mg: number
         }[]
         SetofOptions: {
@@ -325,6 +330,7 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          simplified_name: string | null
           sodium_mg: number
         }[]
         SetofOptions: {
@@ -357,6 +363,7 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          simplified_name: string | null
           sodium_mg: number
         }[]
         SetofOptions: {
@@ -384,6 +391,7 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          simplified_name: string | null
           sodium_mg: number
         }[]
         SetofOptions: {
