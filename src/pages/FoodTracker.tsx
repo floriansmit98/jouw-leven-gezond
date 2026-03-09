@@ -632,10 +632,10 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
   const { products: offResults, loading: offLoading, noResults: offNoResults } = useOFFSearch(query, false);
 
-  // Merge NEVO (priority) + OFF results, deduplicate by id
+  // Merge NEVO (priority) + OFF NEVO-matched results, deduplicate by id
   const searchResults = useMemo(() => {
     const seen = new Set(nevoResults.map(f => f.id));
-    const merged = [...nevoResults];
+    const merged: (FoodRow & { nevoMatched?: boolean })[] = [...nevoResults];
     for (const off of offResults) {
       if (!seen.has(off.id)) {
         seen.add(off.id);
