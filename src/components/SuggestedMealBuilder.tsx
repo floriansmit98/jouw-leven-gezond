@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { CookingPot, X, Check, Loader2, Plus, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AmountInput from '@/components/AmountInput';
 import { foodDisplayName, useFoodSearch, type FoodRow } from '@/hooks/useFoods';
 import type { AIFoodComponent } from '@/hooks/useAIFoodSearch';
+import type { MealPatternMatch } from '@/hooks/useMealPatterns';
 import { analyzeFoodWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges } from '@/components/NutrientWarnings';
 
@@ -17,7 +18,10 @@ interface MealIngredient {
 
 interface SuggestedMealBuilderProps {
   query: string;
-  components: AIFoodComponent[];
+  /** AI-detected components */
+  components?: AIFoodComponent[];
+  /** Pattern-matched meal */
+  patternMatch?: MealPatternMatch;
   displayMessage?: string;
   onAddAll: (items: { food: FoodRow; amountGrams: number }[]) => Promise<void>;
   onAddSingle: (food: FoodRow, amountGrams: number) => void;
