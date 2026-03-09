@@ -30,6 +30,34 @@ export const SYMPTOM_LABELS: Record<SymptomType, string> = {
   krampen: 'Krampen',
 };
 
+export const EXTENDED_SYMPTOMS: { key: string; label: string; emoji: string }[] = [
+  { key: 'hoofdpijn', label: 'Hoofdpijn', emoji: '🤕' },
+  { key: 'kortademigheid', label: 'Kortademigheid', emoji: '😮‍💨' },
+  { key: 'spierzwakte', label: 'Spierzwakte', emoji: '💪' },
+  { key: 'verminderde_eetlust', label: 'Verminderde eetlust', emoji: '🍽️' },
+  { key: 'slaapproblemen', label: 'Slaapproblemen', emoji: '🌙' },
+  { key: 'rusteloze_benen', label: 'Rusteloze benen', emoji: '🦵' },
+  { key: 'hartkloppingen', label: 'Hartkloppingen', emoji: '💓' },
+  { key: 'droge_mond', label: 'Droge mond', emoji: '👄' },
+  { key: 'metaalsmaak', label: 'Metaalsmaak in de mond', emoji: '🪙' },
+  { key: 'concentratieproblemen', label: 'Concentratieproblemen', emoji: '🧠' },
+  { key: 'geheugenproblemen', label: 'Geheugenproblemen', emoji: '💭' },
+  { key: 'pijn_op_de_borst', label: 'Pijn op de borst', emoji: '🫁' },
+  { key: 'spierpijn', label: 'Spierpijn', emoji: '🦴' },
+  { key: 'botpijn', label: 'Botpijn', emoji: '🩻' },
+  { key: 'tintelingen', label: 'Tintelingen', emoji: '✨' },
+  { key: 'doof_gevoel', label: 'Doof gevoel in handen of voeten', emoji: '🤲' },
+  { key: 'koude_rillingen', label: 'Koude rillingen', emoji: '🥶' },
+  { key: 'koortsgevoel', label: 'Koortsgevoel', emoji: '🤒' },
+  { key: 'overmatig_zweten', label: 'Overmatig zweten', emoji: '💦' },
+  { key: 'angstgevoel', label: 'Angstgevoel', emoji: '😰' },
+  { key: 'somberheid', label: 'Somberheid', emoji: '😔' },
+  { key: 'prikkelbaarheid', label: 'Prikkelbaarheid', emoji: '😤' },
+  { key: 'buikpijn', label: 'Buikpijn', emoji: '🤰' },
+  { key: 'diarree', label: 'Diarree', emoji: '🚽' },
+  { key: 'obstipatie', label: 'Obstipatie', emoji: '😣' },
+];
+
 export interface DialysisSession {
   id: string;
   date: string;
