@@ -902,6 +902,9 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
                         });
                       }
                     }}
+                    onAddFoodDirect={onAddFoodDirect}
+                    onAddFood={onAddFood}
+                    saving={saving}
                   />
                 )}
 
@@ -930,6 +933,9 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
                                 });
                               }
                             }}
+                            onAddFoodDirect={onAddFoodDirect}
+                            onAddFood={onAddFood}
+                            saving={saving}
                           />
                         )
                       ))}
@@ -962,6 +968,9 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
                                 });
                               }
                             }}
+                            onAddFoodDirect={onAddFoodDirect}
+                            onAddFood={onAddFood}
+                            saving={saving}
                           />
                         )
                       ))}
@@ -1123,6 +1132,9 @@ function SearchResultCard({
   mealItems,
   onSelectFood,
   onToggleMeal,
+  onAddFoodDirect,
+  onAddFood,
+  saving,
 }: {
   result: UnifiedSearchResult;
   isBestMatch?: boolean;
@@ -1130,6 +1142,9 @@ function SearchResultCard({
   mealItems: Record<string, any[]>;
   onSelectFood: (food: FoodRow) => void;
   onToggleMeal: (mealId: string) => void;
+  onAddFoodDirect?: (food: FoodRow, amountGrams: number) => Promise<void>;
+  onAddFood?: (food: FoodRow) => void;
+  saving?: boolean;
 }) {
   const isMeal = result.result_type === 'meal';
   const isBranded = result.result_type === 'branded_product';
@@ -1138,6 +1153,16 @@ function SearchResultCard({
   const portionLabel = result.portion_description
     ? `${result.portion_description}${result.portion_grams ? ` (${result.portion_grams} g)` : ''}`
     : `per 100 g`;
+
+  // Build meal components for SuggestedMealBuilder when expanded
+  const mealComponentItems = isExpanded && mealItems[result.result_id]
+    ? mealItems[result.result_id]
+        .filter((item: any) => item.food)
+        .map((item: any) => ({
+          food: item.food as FoodRow,
+          amountGrams: item.amount_grams || item.food.portion_grams || 100,
+        }))
+    : [];
 
   return (
     <div>
@@ -1203,29 +1228,38 @@ function SearchResultCard({
         )}
       </button>
 
-      {isMeal && isExpanded && mealItems[result.result_id] && (
-        <div className="ml-4 mt-1.5 rounded-lg border border-primary/15 bg-primary/5 p-2.5 space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Onderdelen:</p>
-          {mealItems[result.result_id].map((item: any, i: number) => (
-            item.food ? (
-              <button
-                key={item.id}
-                onClick={() => onSelectFood(item.food as FoodRow)}
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-2 text-left transition-colors hover:bg-secondary/50"
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary shrink-0">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground text-xs truncate">{item.food.display_name || item.food.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{item.amount_grams}g</p>
-                  </div>
-                </div>
-                <Plus className="h-3.5 w-3.5 shrink-0 text-primary ml-2" />
-              </button>
-            ) : null
-          ))}
+      {/* Expanded meal: show full editable component builder */}
+      {isMeal && isExpanded && mealItems[result.result_id] && mealComponentItems.length > 0 && (
+        <div className="mt-1.5">
+          <SuggestedMealBuilder
+            query={result.display_name}
+            components={mealComponentItems.map((item) => ({
+              name: item.food.display_name || item.food.name,
+              search_terms: [item.food.name],
+              is_drink: item.food.category === 'dranken',
+              match: item.food,
+            }))}
+            displayMessage={result.display_name}
+            onAddAll={async (items) => {
+              if (onAddFoodDirect) {
+                for (const item of items) {
+                  await onAddFoodDirect(item.food, item.amountGrams);
+                }
+              } else if (onAddFood) {
+                for (const item of items) {
+                  onAddFood(item.food);
+                }
+              }
+            }}
+            onAddSingle={(food, amount) => {
+              if (onAddFoodDirect) {
+                onAddFoodDirect(food, amount);
+              } else if (onAddFood) {
+                onAddFood(food);
+              }
+            }}
+            saving={saving}
+          />
         </div>
       )}
     </div>
