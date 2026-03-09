@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import type { FoodRow } from './useFoods';
 
 const PAGE_SIZE = 20;
@@ -10,6 +11,15 @@ export interface OFFProduct {
   brands: string;
   nutriments: Record<string, number | undefined>;
   categories_tags?: string[];
+  generic_name?: string;
+}
+
+/** Extended FoodRow that tracks whether it was matched to NEVO */
+export interface OFFMatchedFood extends FoodRow {
+  /** true = nutrition from NEVO, false = no reliable data */
+  nevoMatched: boolean;
+  /** Original OFF branded name for display */
+  offBrandedName: string;
 }
 
 function isDrinkProduct(product: OFFProduct): boolean {
@@ -23,56 +33,148 @@ function isDrinkProduct(product: OFFProduct): boolean {
 }
 
 /**
- * Check if an OFF product has all required nutrition values for dialysis tracking:
- * potassium, phosphorus, sodium, protein, and water/fluid content.
+ * Map of common branded product terms to NEVO generic names.
+ * Used as search queries to find the best NEVO match.
  */
-function hasCompleteNutrition(product: OFFProduct): boolean {
-  const n = product.nutriments || {};
-  const hasPotassium = (n.potassium_100g ?? n.potassium_value) !== undefined;
-  const hasPhosphorus = (n.phosphorus_100g ?? n.phosphorus_value) !== undefined;
-  const hasSodium = (n.sodium_100g ?? n.sodium_value) !== undefined;
-  const hasProtein = (n.proteins_100g ?? n.proteins_value) !== undefined;
-  // OFF uses "water" for fluid/water content
-  const hasWater = (n.water_100g ?? n.water_value) !== undefined;
-  return hasPotassium && hasPhosphorus && hasSodium && hasProtein && hasWater;
+const BRAND_TO_GENERIC: Record<string, string> = {
+  'pindakaas': 'pindakaas',
+  'peanut butter': 'pindakaas',
+  'tortilla chips': 'tortillachips',
+  'tortillachips': 'tortillachips',
+  'nacho': 'tortillachips',
+  'cola': 'cola',
+  'coca-cola': 'cola',
+  'coca cola': 'cola',
+  'pepsi': 'cola',
+  'fanta': 'frisdrank sinaasappel',
+  'sprite': 'frisdrank citroen',
+  '7up': 'frisdrank citroen',
+  'ice tea': 'ijsthee',
+  'ice-tea': 'ijsthee',
+  'lipton': 'ijsthee',
+  'chocomel': 'chocolademelk',
+  'chocolademelk': 'chocolademelk',
+  'mayo': 'mayonaise',
+  'mayonaise': 'mayonaise',
+  'mayonnaise': 'mayonaise',
+  'ketchup': 'ketchup',
+  'curry': 'currysaus',
+  'mosterd': 'mosterd',
+  'hagelslag': 'hagelslag',
+  'hagel': 'hagelslag',
+  'nutella': 'chocoladepasta',
+  'jam': 'jam',
+  'boter': 'boter',
+  'margarine': 'margarine',
+  'yoghurt': 'yoghurt',
+  'kwark': 'kwark',
+  'chips': 'chips',
+  'cornflakes': 'cornflakes',
+  'muesli': 'muesli',
+  'crackers': 'crackers',
+  'biscuit': 'biscuit',
+  'koek': 'koek',
+  'kaas': 'kaas',
+  'worst': 'worst',
+  'ham': 'ham',
+  'tonijn': 'tonijn',
+  'zalm': 'zalm',
+  'soep': 'soep',
+  'noodles': 'noedels',
+  'pasta': 'pasta',
+  'rijst': 'rijst',
+  'brood': 'brood',
+  'beschuit': 'beschuit',
+  'cracker': 'cracker',
+  'roomboter': 'roomboter',
+  'halvarine': 'halvarine',
+  'leverworst': 'leverworst',
+  'filet americain': 'filet americain',
+  'hummus': 'hummus',
+  'sap': 'vruchtensap',
+  'jus': 'vruchtensap',
+  'appelsap': 'appelsap',
+  'sinaasappelsap': 'sinaasappelsap',
+  'tomatensap': 'tomatensap',
+  'energy drink': 'energiedrank',
+  'red bull': 'energiedrank',
+  'monster': 'energiedrank',
+};
+
+/**
+ * Extract a generic search term from an OFF product for NEVO matching.
+ * Uses: generic_name, product_name (without brand), and keyword lookup.
+ */
+function extractGenericTerms(product: OFFProduct): string[] {
+  const terms: string[] = [];
+  const brandLower = (product.brands || '').toLowerCase().trim();
+  const nameLower = (product.product_name || '').toLowerCase().trim();
+  const genericLower = (product.generic_name || '').toLowerCase().trim();
+
+  // 1. Use generic_name if available (e.g. "Pindakaas")
+  if (genericLower && genericLower.length > 2) {
+    terms.push(genericLower);
+  }
+
+  // 2. Product name without brand prefix
+  let cleanName = nameLower;
+  if (brandLower && cleanName.startsWith(brandLower)) {
+    cleanName = cleanName.slice(brandLower.length).trim();
+  }
+  // Also remove brand anywhere in name
+  if (brandLower) {
+    cleanName = cleanName.replace(new RegExp(brandLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+  }
+  if (cleanName.length > 2) {
+    terms.push(cleanName);
+  }
+
+  // 3. Check brand-to-generic mapping
+  const allText = `${nameLower} ${genericLower}`;
+  for (const [keyword, generic] of Object.entries(BRAND_TO_GENERIC)) {
+    if (allText.includes(keyword)) {
+      terms.push(generic);
+    }
+  }
+
+  // 4. Use brand itself as last resort (e.g. "Nesquik" might match in NEVO aliases)
+  if (brandLower && brandLower.length > 2) {
+    terms.push(brandLower);
+  }
+
+  // Deduplicate
+  return [...new Set(terms)];
 }
 
-function offToFoodRow(product: OFFProduct): FoodRow {
-  const n = product.nutriments || {};
+/**
+ * Try to find a NEVO match for an OFF product.
+ * Returns the best-matching FoodRow or null.
+ */
+async function findNevoMatch(product: OFFProduct, isDrink: boolean): Promise<FoodRow | null> {
+  const terms = extractGenericTerms(product);
+  
+  for (const term of terms) {
+    const { data } = await supabase.rpc(
+      isDrink ? 'search_foods_by_type' : 'search_foods_ranked',
+      isDrink
+        ? { search_query: term, is_drink: true, page_size: 3, page_offset: 0 }
+        : { search_query: term, page_size: 3, page_offset: 0 }
+    );
+    if (data && data.length > 0) {
+      return data[0] as FoodRow;
+    }
+  }
+  return null;
+}
 
-  const toMg = (valG: number | undefined): number => {
-    if (valG === undefined || valG === null) return 0;
-    // OFF stores in g; if < 10 it's grams, convert to mg
-    return valG < 10 ? Math.round(valG * 1000) : Math.round(valG);
-  };
-
-  const sodiumMg = toMg(n.sodium_100g ?? n.sodium_value);
-  const potassiumMg = toMg(n.potassium_100g ?? n.potassium_value);
-  const phosphorusMg = toMg(n.phosphorus_100g ?? n.phosphorus_value);
-  const proteinG = n.proteins_100g ?? n.proteins_value ?? 0;
-  const waterMl = Math.round((n.water_100g ?? n.water_value ?? 0) * 10) / 10;
-
-  const brand = product.brands ? ` (${product.brands.split(',')[0].trim()})` : '';
-
-  const displayName = `${product.product_name || 'Onbekend'}${brand}`;
-  return {
-    id: `off-${product.code}`,
-    name: displayName,
-    display_name: displayName,
-    category: isDrinkProduct(product) ? 'dranken' : 'supermarkt',
-    portion_description: 'per 100g',
-    portion_grams: 100,
-    potassium_mg: potassiumMg,
-    phosphate_mg: phosphorusMg,
-    sodium_mg: sodiumMg,
-    protein_g: Math.round(proteinG * 10) / 10,
-    fluid_ml: waterMl,
-    dialysis_risk_label: potassiumMg > 300 ? 'hoog' : potassiumMg > 150 ? 'gemiddeld' : 'laag',
-  };
+function buildBrandedName(product: OFFProduct): string {
+  const brand = product.brands ? product.brands.split(',')[0].trim() : '';
+  const name = product.product_name || 'Onbekend';
+  return brand ? `${name} (${brand})` : name;
 }
 
 export function useOFFSearch(search: string, filterDrinks?: boolean) {
-  const [products, setProducts] = useState<FoodRow[]>([]);
+  const [products, setProducts] = useState<OFFMatchedFood[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -92,7 +194,6 @@ export function useOFFSearch(search: string, filterDrinks?: boolean) {
       return;
     }
 
-    // Show loading immediately but debounce the actual fetch
     setLoading(true);
     setNoResults(false);
 
@@ -100,58 +201,103 @@ export function useOFFSearch(search: string, filterDrinks?: boolean) {
 
     let cancelled = false;
 
-    debounceRef.current = setTimeout(() => {
-      const params = new URLSearchParams({
-        search_terms: search.trim(),
-        search_simple: '1',
-        action: 'process',
-        json: '1',
-        page_size: String(PAGE_SIZE),
-        page: String(page),
-        fields: 'code,product_name,brands,nutriments,categories_tags',
-        lc: 'nl',
-      });
-
-      fetch(`https://world.openfoodfacts.org/cgi/search.pl?${params}`)
-        .then(res => res.json())
-        .then(data => {
-          if (cancelled) return;
-          console.log('[OFF] Search results for:', search, '→', data.count, 'total,', (data.products || []).length, 'on page');
-          const rawProducts = (data.products || []) as OFFProduct[];
-
-          // Only keep products with a name AND all required nutrition values
-          let filtered = rawProducts.filter(p => p.product_name && p.product_name.trim() !== '' && hasCompleteNutrition(p));
-          console.log('[OFF] Complete products:', filtered.length, 'of', rawProducts.length, 'total');
-
-          // Optionally filter by drink/food category
-          if (filterDrinks === true) {
-            filtered = filtered.filter(p => isDrinkProduct(p));
-          } else if (filterDrinks === false) {
-            filtered = filtered.filter(p => !isDrinkProduct(p));
-          }
-
-          const rows = filtered.map(offToFoodRow);
-
-          if (page === 1) {
-            setProducts(rows);
-            setNoResults(rows.length === 0);
-          } else {
-            setProducts(prev => {
-              const combined = [...prev, ...rows];
-              setNoResults(combined.length === 0);
-              return combined;
-            });
-          }
-          setHasMore(rawProducts.length === PAGE_SIZE);
-          setLoading(false);
-        })
-        .catch((err) => {
-          if (!cancelled) {
-            console.error('[OFF] API error:', err);
-            setLoading(false);
-            setNoResults(true);
-          }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({
+          search_terms: search.trim(),
+          search_simple: '1',
+          action: 'process',
+          json: '1',
+          page_size: String(PAGE_SIZE),
+          page: String(page),
+          fields: 'code,product_name,brands,nutriments,categories_tags,generic_name',
+          lc: 'nl',
         });
+
+        const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?${params}`);
+        const data = await res.json();
+        if (cancelled) return;
+
+        const rawProducts = (data.products || []) as OFFProduct[];
+
+        // Filter: must have a name
+        let filtered = rawProducts.filter(p => p.product_name && p.product_name.trim() !== '');
+
+        // Optionally filter by drink/food category
+        if (filterDrinks === true) {
+          filtered = filtered.filter(p => isDrinkProduct(p));
+        } else if (filterDrinks === false) {
+          filtered = filtered.filter(p => !isDrinkProduct(p));
+        }
+
+        // Deduplicate by product name + brand
+        const seen = new Set<string>();
+        filtered = filtered.filter(p => {
+          const key = `${(p.product_name || '').toLowerCase()}-${(p.brands || '').toLowerCase()}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // For each product, try to find a NEVO match
+        const matched = await Promise.all(
+          filtered.slice(0, 10).map(async (product): Promise<OFFMatchedFood> => {
+            const isDrink = isDrinkProduct(product);
+            const nevoMatch = await findNevoMatch(product, isDrink);
+            const brandedName = buildBrandedName(product);
+
+            if (nevoMatch) {
+              // Use NEVO nutrition + branded display name
+              return {
+                ...nevoMatch,
+                id: `off-${product.code}`,
+                display_name: brandedName,
+                nevoMatched: true,
+                offBrandedName: brandedName,
+              };
+            } else {
+              // No NEVO match — show but mark as unusable
+              return {
+                id: `off-${product.code}`,
+                name: brandedName,
+                display_name: brandedName,
+                category: isDrink ? 'dranken' : 'supermarkt',
+                portion_description: 'per 100g',
+                portion_grams: 100,
+                potassium_mg: 0,
+                phosphate_mg: 0,
+                sodium_mg: 0,
+                protein_g: 0,
+                fluid_ml: 0,
+                dialysis_risk_label: 'onbekend',
+                nevoMatched: false,
+                offBrandedName: brandedName,
+              };
+            }
+          })
+        );
+
+        if (cancelled) return;
+
+        if (page === 1) {
+          setProducts(matched);
+          setNoResults(matched.length === 0);
+        } else {
+          setProducts(prev => {
+            const combined = [...prev, ...matched];
+            setNoResults(combined.length === 0);
+            return combined;
+          });
+        }
+        setHasMore(rawProducts.length === PAGE_SIZE);
+        setLoading(false);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[OFF] API error:', err);
+          setLoading(false);
+          setNoResults(true);
+        }
+      }
     }, DEBOUNCE_MS);
 
     return () => {

@@ -317,19 +317,27 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
 
       {showResults ? (
         <div className="space-y-1.5">
-          {searchResults.map(food => (
-            <button
-              key={food.id}
-              onClick={() => { setSelectedFood(food); setAmount(food.portion_grams || 100); }}
-              className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-secondary/50"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
-                <p className="text-xs text-muted-foreground">{food.portion_description} · {food.category}</p>
-              </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
-            </button>
-          ))}
+          {searchResults.map(food => {
+            const isUnmatched = (food as any).nevoMatched === false;
+            return (
+              <button
+                key={food.id}
+                onClick={() => { if (!isUnmatched) { setSelectedFood(food); setAmount(food.portion_grams || 100); } }}
+                disabled={isUnmatched}
+                className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm ${
+                  isUnmatched ? 'border-border/50 opacity-60 cursor-not-allowed' : 'border-border hover:bg-secondary/50'
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isUnmatched ? '⚠️ Geen betrouwbare voedingswaarden' : `${food.portion_description} · ${food.category}`}
+                  </p>
+                </div>
+                {!isUnmatched && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />}
+              </button>
+            );
+          })}
           {loading && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
           {!loading && searchResults.length === 0 && (
             <div className="rounded-xl border border-border bg-card p-6 text-center">

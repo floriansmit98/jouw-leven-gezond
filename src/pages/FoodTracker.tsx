@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History } from 'lucide-react';
-import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
+import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -632,10 +632,10 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
   const { products: offResults, loading: offLoading, noResults: offNoResults } = useOFFSearch(query, false);
 
-  // Merge NEVO (priority) + OFF results, deduplicate by id
+  // Merge NEVO (priority) + OFF NEVO-matched results, deduplicate by id
   const searchResults = useMemo(() => {
     const seen = new Set(nevoResults.map(f => f.id));
-    const merged = [...nevoResults];
+    const merged: (FoodRow & { nevoMatched?: boolean })[] = [...nevoResults];
     for (const off of offResults) {
       if (!seen.has(off.id)) {
         seen.add(off.id);
@@ -816,17 +816,26 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   );
 }
 
-function FoodSearchResult({ food, onSelect }: { food: FoodRow; onSelect: (f: FoodRow) => void }) {
+function FoodSearchResult({ food, onSelect }: { food: FoodRow & { nevoMatched?: boolean }; onSelect: (f: FoodRow) => void }) {
+  const isUnmatched = food.nevoMatched === false;
   return (
     <button
-      onClick={() => onSelect(food)}
-      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
+      onClick={() => !isUnmatched && onSelect(food)}
+      disabled={isUnmatched}
+      className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-colors ${
+        isUnmatched ? 'border-border/50 opacity-60 cursor-not-allowed' : 'border-border hover:bg-secondary/50'
+      }`}
     >
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
-        <p className="text-xs text-muted-foreground">{food.portion_description} · {food.category}</p>
+        <p className="text-xs text-muted-foreground">
+          {isUnmatched
+            ? '⚠️ Geen betrouwbare voedingswaarden beschikbaar'
+            : `${food.portion_description} · ${food.category}`
+          }
+        </p>
       </div>
-      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
+      {!isUnmatched && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />}
     </button>
   );
 }

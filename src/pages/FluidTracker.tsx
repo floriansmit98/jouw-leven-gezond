@@ -113,9 +113,18 @@ export default function FluidTracker() {
                   <ShoppingCart className="h-3.5 w-3.5" />
                   Supermarktproducten
                 </p>
-                {offDrinks.length > 0 && offDrinks.map(drink => (
-                  <DrinkListItem key={drink.id} drink={drink} onClick={() => selectDrink(drink, true)} isSupermarket />
-                ))}
+                {offDrinks.length > 0 && offDrinks.map(drink => {
+                  const isUnmatched = (drink as any).nevoMatched === false;
+                  return (
+                    <DrinkListItem
+                      key={drink.id}
+                      drink={drink}
+                      onClick={() => !isUnmatched && selectDrink(drink, true)}
+                      isSupermarket
+                      disabled={isUnmatched}
+                    />
+                  );
+                })}
                 {offHasMore && !offLoading && (
                   <Button variant="outline" onClick={offLoadMore} className="w-full rounded-xl text-sm">
                     Meer supermarktproducten...
@@ -210,22 +219,27 @@ export default function FluidTracker() {
   );
 }
 
-function DrinkListItem({ drink, onClick, isSupermarket }: { drink: FoodRow; onClick: () => void; isSupermarket?: boolean }) {
+function DrinkListItem({ drink, onClick, isSupermarket, disabled }: { drink: FoodRow; onClick: () => void; isSupermarket?: boolean; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-secondary/50"
+      disabled={disabled}
+      className={`flex w-full items-center justify-between rounded-xl border bg-card p-4 text-left shadow-sm transition-colors ${
+        disabled ? 'border-border/50 opacity-60 cursor-not-allowed' : 'border-border hover:bg-secondary/50'
+      }`}
     >
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <p className="font-semibold text-foreground">{foodDisplayName(drink)}</p>
-          {isSupermarket && (
+          {isSupermarket && !disabled && (
             <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-accent/20">OFF</Badge>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">per 100ml</p>
+        <p className="text-xs text-muted-foreground">
+          {disabled ? '⚠️ Geen betrouwbare voedingswaarden' : 'per 100ml'}
+        </p>
       </div>
-      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+      {!disabled && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
     </button>
   );
 }
