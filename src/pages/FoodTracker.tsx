@@ -1126,6 +1126,123 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   );
 }
 
+// --- Grouped Search Result Card ---
+function SearchResultCard({
+  result,
+  isBestMatch,
+  expandedMeal,
+  mealItems,
+  onSelectFood,
+  onToggleMeal,
+}: {
+  result: UnifiedSearchResult;
+  isBestMatch?: boolean;
+  expandedMeal: string | null;
+  mealItems: Record<string, any[]>;
+  onSelectFood: (food: FoodRow) => void;
+  onToggleMeal: (mealId: string) => void;
+}) {
+  const isMeal = result.result_type === 'meal';
+  const isBranded = result.result_type === 'branded_product';
+  const isExpanded = expandedMeal === result.result_id;
+
+  const portionLabel = result.portion_description
+    ? `${result.portion_description}${result.portion_grams ? ` (${result.portion_grams} g)` : ''}`
+    : `per 100 g`;
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          if (isMeal && !result.food_id) {
+            onToggleMeal(result.result_id);
+          } else {
+            const foodRow: FoodRow = {
+              id: result.food_id || result.result_id,
+              name: result.display_name,
+              display_name: result.display_name,
+              category: result.category,
+              portion_description: result.portion_description,
+              portion_grams: result.portion_grams || 100,
+              potassium_mg: result.potassium_mg,
+              phosphate_mg: result.phosphate_mg,
+              sodium_mg: result.sodium_mg,
+              protein_g: result.protein_g,
+              fluid_ml: result.fluid_ml,
+              dialysis_risk_label: '',
+            };
+            onSelectFood(foodRow);
+          }
+        }}
+        className={`flex w-full items-center gap-3 rounded-xl border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50 ${
+          isBestMatch ? 'border-primary/30 bg-primary/5' : 'border-border'
+        }`}
+      >
+        <div className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${
+          isMeal ? 'bg-primary/10' : isBranded ? 'bg-accent/20' : 'bg-muted'
+        }`}>
+          {isMeal ? (
+            <CookingPot className="h-4 w-4 text-primary" />
+          ) : isBranded ? (
+            <ShoppingBag className="h-4 w-4 text-accent-foreground" />
+          ) : (
+            <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            {isBestMatch && (
+              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">Beste match</span>
+            )}
+            <p className="font-semibold text-foreground text-sm truncate">{result.display_name}</p>
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+              isMeal ? 'bg-primary/10 text-primary' : isBranded ? 'bg-accent/10 text-accent-foreground' : 'bg-muted text-muted-foreground'
+            }`}>
+              {isMeal ? 'Maaltijd' : isBranded ? (result.brand || 'Merk') : 'Product'}
+            </span>
+            <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
+          </div>
+        </div>
+
+        {isMeal && !result.food_id ? (
+          <ChevronRight className={`h-5 w-5 shrink-0 text-primary ml-2 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+        ) : (
+          <Plus className="h-5 w-5 shrink-0 text-primary ml-2" />
+        )}
+      </button>
+
+      {isMeal && isExpanded && mealItems[result.result_id] && (
+        <div className="ml-4 mt-1.5 rounded-lg border border-primary/15 bg-primary/5 p-2.5 space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground mb-1">Onderdelen:</p>
+          {mealItems[result.result_id].map((item: any, i: number) => (
+            item.food ? (
+              <button
+                key={item.id}
+                onClick={() => onSelectFood(item.food as FoodRow)}
+                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-2 text-left transition-colors hover:bg-secondary/50"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary shrink-0">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground text-xs truncate">{item.food.display_name || item.food.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.amount_grams}g</p>
+                  </div>
+                </div>
+                <Plus className="h-3.5 w-3.5 shrink-0 text-primary ml-2" />
+              </button>
+            ) : null
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FoodSearchResult({ food, onSelect }: { food: FoodRow & { nevoMatched?: boolean }; onSelect: (f: FoodRow) => void }) {
   const isUnmatched = food.nevoMatched === false;
   return (
