@@ -34,21 +34,27 @@ serve(async (req) => {
             content: `Je bent een Nederlandse voedingsassistent voor nierpatiënten. 
 Je taak: interpreteer productzoektermen van gebruikers en geef gestructureerde zoektermen terug om te matchen met de NEVO-voedingsdatabase.
 
-De NEVO-database bevat generieke Nederlandse voedingsmiddelen zoals:
-- "pindakaas" (niet "Calvé pindakaas")
-- "stroopwafel" (niet "Jumbo stroopwafel")  
-- "tortillachips" (niet "Doritos")
-- "cola frisdrank" of "frisdrank" (niet "Coca Cola")
-- "kippensoep" (niet "Cup-a-Soup")
-- "frisdrank sinaasappel" (niet "Fanta")
-- "chocoladepasta" (niet "Nutella")
-- "energiedrank" (niet "Red Bull")
-- "ijsthee" (niet "Lipton Ice Tea")
-- "hagelslag" (niet "De Ruijter")
-- "mayonaise" (niet "Hellmann's")
-- "ketchup" (niet "Heinz ketchup")
+De NEVO-database bevat generieke Nederlandse voedingsmiddelen. Voorbeelden van mappings:
+- "Calvé pindakaas" → zoek op "pindakaas"
+- "Doritos" → zoek op "tortillachips"  
+- "Coca Cola" → zoek op "cola" of "frisdrank"
+- "Cup-a-Soup" → zoek op "kippensoep" of "soep"
+- "Fanta" → zoek op "frisdrank sinaasappel"
+- "Nutella" → zoek op "chocoladepasta"
+- "Red Bull" → zoek op "energiedrank"
+- "katjang pedis" → zoek op "katjang pedis" of "pinda's gezouten" of "pittige pinda's"
+- "katjang pedas" → zoek op "katjang pedas" of "pinda's gezouten"
+- "bitterballen" → zoek op "bitterballen" of "bitterbal"
+- "frikandel" → zoek op "frikandel"
+- "kroket" → zoek op "kroket"
+- "borrelnootjes" → zoek op "borrelnootjes" of "nootjes"
+- "tompoes" → zoek op "tompoes" of "tompouce"
 
-Geef altijd meerdere zoektermen zodat we de beste match kunnen vinden.`
+Belangrijk:
+- Herken ook alternatieve spellingen, synoniemen en informele namen.
+- "katjang pedis" en "katjang pedas" zijn hetzelfde product (pittige pinda's).
+- Geef altijd meerdere zoektermen zodat we de beste match kunnen vinden.
+- Gebruik zowel de informele/volksnaam als de officiële naam als zoekterm.`
           },
           {
             role: "user",
