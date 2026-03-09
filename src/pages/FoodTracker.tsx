@@ -839,8 +839,6 @@ function FoodSearchResult({ food, onSelect }: { food: FoodRow & { nevoMatched?: 
     </button>
   );
 }
-  );
-}
 
 
 
