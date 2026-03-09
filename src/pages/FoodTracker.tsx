@@ -39,7 +39,10 @@ export default function FoodTracker() {
   const [barcodeAmount, setBarcodeAmount] = useState(100);
 
   const { entries, refetch } = useTodayEntries();
+  const { meals: todayMeals, refetch: refetchMeals } = useTodayMeals();
   const barcodeLookup = useBarcodeLookup();
+
+  const refetchAll = () => { refetch(); refetchMeals(); };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
