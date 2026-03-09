@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AmountInput from '@/components/AmountInput';
 import { useFoodSearch, useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
+import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
 import { type MealDraftItem, draftTotals, saveMeal, type MealWithItems } from '@/hooks/useMeals';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
