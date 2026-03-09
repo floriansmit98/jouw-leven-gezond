@@ -951,38 +951,6 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             );
           })()}
 
-          {/* Expanded common meal items */}
-          {expandedMeal && mealItems[expandedMeal] && (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
-              <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                <CookingPot className="h-4 w-4 text-primary" />
-                Onderdelen van deze maaltijd:
-              </p>
-              <div className="space-y-1.5">
-                {mealItems[expandedMeal].map((item: any, i: number) => (
-                  item.food ? (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelectFood(item.food as FoodRow)}
-                      className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:bg-secondary/50"
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
-                          {i + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-foreground text-sm truncate">{item.food.display_name || item.food.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.amount_grams}g · {item.food.portion_description}</p>
-                        </div>
-                      </div>
-                      <Plus className="h-4 w-4 shrink-0 text-primary ml-2" />
-                    </button>
-                  ) : null
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">Voeg elk onderdeel apart toe.</p>
-            </div>
-          )}
 
           {/* Fallback: AI results not in unified */}
           {!hasUnifiedResults && aiResult?.matches && aiResult.matches.length > 0 && aiResult.matches.map((food, idx) => {
