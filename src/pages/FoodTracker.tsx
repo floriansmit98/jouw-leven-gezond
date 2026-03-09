@@ -223,7 +223,7 @@ export default function FoodTracker() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Voeding & Vocht"
-          mascotMessage={step === 'capture' ? 'Maak een foto van uw maaltijd!' : step === 'confirm' ? 'Controleer de herkende voedingsmiddelen.' : undefined}
+          mascotMessage="Wat heeft u gegeten?"
         />
 
         {/* Hidden file inputs */}
