@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings, LogOut, Clock, Sparkles, Search } from 'lucide-react';
+import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings, LogOut, Clock, Sparkles, Search, Crown } from 'lucide-react';
+import AdBanner from '@/components/AdBanner';
+import { usePremium } from '@/contexts/PremiumContext';
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
@@ -60,6 +62,12 @@ export default function Index() {
           action={
             <div className="flex gap-2">
               <button
+                onClick={() => navigate('/premium')}
+                className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
+              >
+                <Crown className="h-5 w-5" />
+              </button>
+              <button
                 onClick={() => navigate('/instellingen')}
                 className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
               >
@@ -112,6 +120,9 @@ export default function Index() {
             )}
           </div>
         </div>
+
+        {/* Ad banner for free users */}
+        <AdBanner className="mb-5" />
 
         {/* Fluid schedule */}
         <div className="mb-6">

@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { generateReportPdf, type FoodRecord, type SymptomRecord } from '@/lib/generateReportPdf';
 import type { jsPDF } from 'jspdf';
+import { usePremium } from '@/contexts/PremiumContext';
+import PremiumBanner from '@/components/PremiumBanner';
 
 type Period = '1' | '7' | '14' | '30';
 
@@ -22,11 +24,26 @@ function getPeriodStart(days: number) {
 }
 
 export default function Report() {
+  const { isPremium } = usePremium();
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
+
+  if (!isPremium) {
+    return (
+      <div className="min-h-screen pb-24">
+        <div className="mx-auto max-w-lg px-4 pt-6">
+          <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
+          <PremiumBanner
+            title="Rapporten exporteren"
+            description="Met Premium kunt u uw voedings-, symptoom- en dialysegegevens exporteren als PDF voor uw arts."
+          />
+        </div>
+      </div>
+    );
+  }
 
   const days = parseInt(period, 10);
   const periodStart = getPeriodStart(days);

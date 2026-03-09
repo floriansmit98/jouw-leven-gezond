@@ -12,6 +12,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { ChevronDown, ArrowLeft, Search, X } from 'lucide-react';
+import { usePremium } from '@/contexts/PremiumContext';
+import PremiumBanner from '@/components/PremiumBanner';
+import AdBanner from '@/components/AdBanner';
 
 const QUICK_SYMPTOM_ICONS: Record<SymptomType, string> = {
   vermoeidheid: '😴',
@@ -67,6 +70,7 @@ function getPeriodStart(days: number) {
 export default function SymptomTracker() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { isPremium } = usePremium();
   const [selected, setSelected] = useState<string | null>(null);
   const [severity, setSeverity] = useState(3);
   const [notes, setNotes] = useState('');
@@ -324,18 +328,27 @@ export default function SymptomTracker() {
         {/* Period selector */}
         <div className="mb-4">
           <div className="grid grid-cols-4 gap-2">
-            {(Object.entries(PERIOD_LABELS) as [Period, string][]).map(([key, label]) => (
-              <Button
-                key={key}
-                variant={period === key ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPeriod(key)}
-                className="text-sm"
-              >
-                {label}
-              </Button>
-            ))}
+            {(Object.entries(PERIOD_LABELS) as [Period, string][]).map(([key, label]) => {
+              const locked = !isPremium && key !== '1';
+              return (
+                <Button
+                  key={key}
+                  variant={period === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => locked ? undefined : setPeriod(key)}
+                  className={`text-sm ${locked ? 'opacity-50' : ''}`}
+                  disabled={locked}
+                >
+                  {label} {locked ? '🔒' : ''}
+                </Button>
+              );
+            })}
           </div>
+          {!isPremium && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Meerdaagse trends zijn beschikbaar met <button onClick={() => window.location.href = '/premium'} className="font-semibold text-primary underline">Premium</button>.
+            </p>
+          )}
         </div>
 
         {/* Chart section */}

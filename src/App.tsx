@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { PremiumProvider } from "@/contexts/PremiumContext";
 import Index from "./pages/Index";
+import Premium from "./pages/Premium";
 import FoodTracker from "./pages/FoodTracker";
 import FluidTracker from "./pages/FluidTracker";
 import SymptomTracker from "./pages/SymptomTracker";
@@ -45,6 +47,7 @@ function ProtectedRoutes() {
         <Route path="/recepten" element={<Recipes />} />
         <Route path="/scanner" element={<Navigate to="/voeding" replace />} />
         <Route path="/rapport" element={<Report />} />
+        <Route path="/premium" element={<Premium />} />
         <Route path="/instellingen" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -60,7 +63,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <ProtectedRoutes />
+          <PremiumProvider>
+            <ProtectedRoutes />
+          </PremiumProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
