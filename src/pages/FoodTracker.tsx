@@ -649,6 +649,18 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const hasUnifiedResults = unifiedResults.length > 0;
   const isLoading = unifiedLoading || aiLoading || (nevoLoading && !aiResult && !hasUnifiedResults);
 
+  // Log missing/weak searches for database improvement
+  useEffect(() => {
+    if (!showResults || isLoading) return;
+    const noResults = !hasUnifiedResults && (!aiResult?.matches || aiResult.matches.length === 0) && (!aiResult?.is_compound || !aiResult.components.every(c => !c.match));
+    const weakMatch = hasUnifiedResults && unifiedResults[0]?.rank_score < 60;
+    if (noResults) {
+      logMissingSearch(query, 'not_found', undefined, searchUser?.id);
+    } else if (weakMatch) {
+      logMissingSearch(query, 'weak_match', unifiedResults[0]?.display_name, searchUser?.id);
+    }
+  }, [showResults, isLoading, hasUnifiedResults, query]);
+
   const handleSelectFood = (food: FoodRow) => {
     addSearch(query);
     if (onAddFood) {
