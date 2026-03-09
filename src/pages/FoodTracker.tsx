@@ -427,8 +427,33 @@ export default function FoodTracker() {
           </div>
         )}
 
-        {/* Today's entries with daily warnings */}
-        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && (
+        {/* Step: Meal composer */}
+        {step === 'meal-compose' && (
+          <MealComposer
+            onSaved={() => { handleReset(); refetchAll(); }}
+            onCancel={() => setStep('capture')}
+          />
+        )}
+
+        {/* Step: Meal history */}
+        {step === 'meal-history' && (
+          <MealHistoryPanel onBack={() => setStep('capture')} onRefresh={refetchAll} />
+        )}
+
+        {/* Today's meals */}
+        {todayMeals.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
+          <div className="mb-4">
+            <h2 className="mb-3 font-display text-lg font-semibold">Maaltijden vandaag</h2>
+            <div className="space-y-2">
+              {todayMeals.map(meal => (
+                <MealCard key={meal.id} meal={meal} onRefresh={refetchAll} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Today's individual entries with daily warnings */}
+        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
           <div>
             <h2 className="mb-3 font-display text-lg font-semibold">Vandaag gegeten</h2>
 
@@ -437,7 +462,6 @@ export default function FoodTracker() {
 
             <div className="space-y-2">
               {entries.map(entry => {
-                // Build per-entry warning badges from stored values
                 const entryWarnings = analyzeFoodWarnings(
                   { potassium_mg: entry.potassium_mg / entry.portions, phosphate_mg: entry.phosphate_mg / entry.portions, sodium_mg: entry.sodium_mg / entry.portions, protein_g: entry.protein_g / entry.portions, fluid_ml: entry.fluid_ml / entry.portions, portion_grams: 100, portion_description: '', name: entry.name, display_name: null, id: entry.id, category: '', dialysis_risk_label: '' } as FoodRow,
                   entry.portions * 100
