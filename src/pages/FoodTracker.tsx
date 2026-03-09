@@ -850,20 +850,24 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               return !isComponent;
             });
 
-            // Re-rank: boost results matching more query words
+            // Re-rank: boost results matching more query words, penalize weak single-word matches
             const queryWords = query.trim().toLowerCase().split(/\s+/).filter(w => w.length > 1);
             const reranked = [...filteredResults].sort((a, b) => {
               const nameA = a.display_name.toLowerCase();
               const nameB = b.display_name.toLowerCase();
-              // Count how many query words each result matches
               const matchesA = queryWords.filter(w => nameA.includes(w)).length;
               const matchesB = queryWords.filter(w => nameB.includes(w)).length;
               // Exact full match bonus
               const exactA = nameA === query.trim().toLowerCase() ? 1000 : 0;
               const exactB = nameB === query.trim().toLowerCase() ? 1000 : 0;
-              // Score: exact bonus + word coverage * 100 + original rank_score
-              const scoreA = exactA + matchesA * 100 + (a.rank_score || 0);
-              const scoreB = exactB + matchesB * 100 + (b.rank_score || 0);
+              // All-words bonus: big boost if ALL query words match
+              const allWordsA = matchesA === queryWords.length ? 500 : 0;
+              const allWordsB = matchesB === queryWords.length ? 500 : 0;
+              // Penalty: if multi-word query but only 1 word matches, heavily penalize
+              const penaltyA = queryWords.length > 1 && matchesA <= 1 ? -200 : 0;
+              const penaltyB = queryWords.length > 1 && matchesB <= 1 ? -200 : 0;
+              const scoreA = exactA + allWordsA + matchesA * 100 + penaltyA + (a.rank_score || 0);
+              const scoreB = exactB + allWordsB + matchesB * 100 + penaltyB + (b.rank_score || 0);
               return scoreB - scoreA;
             });
 
@@ -882,7 +886,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             return (
               <div className="space-y-4">
                 {/* Beste match highlight */}
-                {bestMatch && !aiResult?.is_compound && (
+                {bestMatch && !aiResult?.is_compound && !hasMealPattern && (
                   <SearchResultCard
                     result={bestMatch}
                     isBestMatch
