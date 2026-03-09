@@ -31,21 +31,43 @@ interface SuggestedMealBuilderProps {
 export default function SuggestedMealBuilder({
   query,
   components,
+  patternMatch,
   displayMessage,
   onAddAll,
   onAddSingle,
   saving,
 }: SuggestedMealBuilderProps) {
-  const [ingredients, setIngredients] = useState<MealIngredient[]>(() =>
-    components
-      .filter(c => c.match)
-      .map((c, i) => ({
-        id: `${i}-${c.name}`,
-        name: c.name,
-        food: c.match!,
-        amountGrams: c.match!.portion_grams || 100,
-      }))
-  );
+  // Build initial ingredients from either pattern match or AI components
+  const buildIngredients = (): MealIngredient[] => {
+    if (patternMatch) {
+      return patternMatch.components
+        .filter(c => c.food)
+        .map((c, i) => ({
+          id: `pat-${i}-${c.name}`,
+          name: c.name,
+          food: c.food!,
+          amountGrams: c.defaultGrams,
+        }));
+    }
+    if (components) {
+      return components
+        .filter(c => c.match)
+        .map((c, i) => ({
+          id: `ai-${i}-${c.name}`,
+          name: c.name,
+          food: c.match!,
+          amountGrams: c.match!.portion_grams || 100,
+        }));
+    }
+    return [];
+  };
+
+  const [ingredients, setIngredients] = useState<MealIngredient[]>(buildIngredients);
+
+  // Re-initialize when pattern or components change
+  useEffect(() => {
+    setIngredients(buildIngredients());
+  }, [patternMatch?.patternId, components?.length]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replacingId, setReplacingId] = useState<string | null>(null);
   const [replaceQuery, setReplaceQuery] = useState('');
