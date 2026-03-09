@@ -259,6 +259,33 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_patterns: {
+        Row: {
+          created_at: string
+          default_portions: number[]
+          food_components: string[]
+          id: string
+          normalized_pattern: string
+          pattern_name: string
+        }
+        Insert: {
+          created_at?: string
+          default_portions?: number[]
+          food_components?: string[]
+          id?: string
+          normalized_pattern: string
+          pattern_name: string
+        }
+        Update: {
+          created_at?: string
+          default_portions?: number[]
+          food_components?: string[]
+          id?: string
+          normalized_pattern?: string
+          pattern_name?: string
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           created_at: string
