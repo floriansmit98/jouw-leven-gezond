@@ -844,84 +844,112 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             </div>
           )}
 
-          {/* Unified search results (meals, branded, foods) */}
-          {hasUnifiedResults && (
-            <div className="space-y-1.5">
-              {unifiedResults.map((result, idx) => {
-                const isComponent = aiResult?.is_compound && aiResult.components.some(c => c.match?.id === result.food_id);
-                if (isComponent) return null;
-                
-                const typeIcon = result.result_type === 'meal' 
-                  ? <CookingPot className="h-3.5 w-3.5 text-primary" />
-                  : result.result_type === 'branded_product' 
-                    ? <ShoppingBag className="h-3.5 w-3.5 text-accent-foreground" />
-                    : null;
-                
-                const typeLabel = result.result_type === 'meal' ? 'Maaltijd' 
-                  : result.result_type === 'branded_product' ? (result.brand || 'Merk') 
-                  : result.category;
-                
-                return (
-                  <button
-                    key={`${result.result_type}-${result.result_id}`}
-                    onClick={() => {
-                      if (result.result_type === 'food' || result.food_id) {
-                        // For foods and branded products with a linked food, select the food
-                        const foodRow: FoodRow = {
-                          id: result.food_id || result.result_id,
-                          name: result.display_name,
-                          display_name: result.display_name,
-                          category: result.category,
-                          portion_description: result.portion_description,
-                          portion_grams: result.portion_grams || 100,
-                          potassium_mg: result.potassium_mg,
-                          phosphate_mg: result.phosphate_mg,
-                          sodium_mg: result.sodium_mg,
-                          protein_g: result.protein_g,
-                          fluid_ml: result.fluid_ml,
-                          dialysis_risk_label: '',
-                        };
-                        handleSelectFood(foodRow);
-                      } else if (result.result_type === 'meal') {
-                        // For common meals, expand to show components
-                        if (expandedMeal === result.result_id) {
-                          setExpandedMeal(null);
-                        } else {
-                          setExpandedMeal(result.result_id);
-                          if (!mealItems[result.result_id]) {
-                            fetchCommonMealItems(result.result_id).then(items => {
-                              setMealItems(prev => ({ ...prev, [result.result_id]: items }));
-                            });
-                          }
-                        }
+          {/* Unified search results grouped by type */}
+          {hasUnifiedResults && (() => {
+            const filteredResults = unifiedResults.filter(r => {
+              const isComponent = aiResult?.is_compound && aiResult.components.some(c => c.match?.id === r.food_id);
+              return !isComponent;
+            });
+            const mealResults = filteredResults.filter(r => r.result_type === 'meal');
+            const productResults = filteredResults.filter(r => r.result_type !== 'meal');
+            // Deduplicate meals by display_name
+            const seenMealNames = new Set<string>();
+            const uniqueMeals = mealResults.filter(r => {
+              const key = r.display_name.toLowerCase();
+              if (seenMealNames.has(key)) return false;
+              seenMealNames.add(key);
+              return true;
+            });
+            const bestMatch = filteredResults[0];
+
+            return (
+              <div className="space-y-4">
+                {/* Beste match highlight */}
+                {bestMatch && !aiResult?.is_compound && (
+                  <SearchResultCard
+                    result={bestMatch}
+                    isBestMatch
+                    expandedMeal={expandedMeal}
+                    mealItems={mealItems}
+                    onSelectFood={handleSelectFood}
+                    onToggleMeal={(id) => {
+                      if (expandedMeal === id) { setExpandedMeal(null); return; }
+                      setExpandedMeal(id);
+                      if (!mealItems[id]) {
+                        fetchCommonMealItems(id).then(items => {
+                          setMealItems(prev => ({ ...prev, [id]: items }));
+                        });
                       }
                     }}
-                    className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50 ${
-                      idx === 0 && !aiResult?.is_compound ? 'border-primary/30 bg-primary/5' : 'border-border'
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        {idx === 0 && !aiResult?.is_compound && (
-                          <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">Beste match</span>
-                        )}
-                        {typeIcon}
-                        <p className="font-semibold text-foreground text-sm truncate">{result.display_name}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {typeLabel}{result.portion_description ? ` · ${result.portion_description}` : ''}
-                      </p>
+                  />
+                )}
+
+                {/* Maaltijden section */}
+                {uniqueMeals.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CookingPot className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-semibold text-foreground">Maaltijden</h3>
                     </div>
-                    {result.result_type === 'meal' ? (
-                      <CookingPot className="h-5 w-5 shrink-0 text-primary ml-2" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                    <div className="space-y-1.5">
+                      {uniqueMeals.map(result => (
+                        result === bestMatch ? null : (
+                          <SearchResultCard
+                            key={`meal-${result.result_id}`}
+                            result={result}
+                            expandedMeal={expandedMeal}
+                            mealItems={mealItems}
+                            onSelectFood={handleSelectFood}
+                            onToggleMeal={(id) => {
+                              if (expandedMeal === id) { setExpandedMeal(null); return; }
+                              setExpandedMeal(id);
+                              if (!mealItems[id]) {
+                                fetchCommonMealItems(id).then(items => {
+                                  setMealItems(prev => ({ ...prev, [id]: items }));
+                                });
+                              }
+                            }}
+                          />
+                        )
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Producten section */}
+                {productResults.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="text-sm font-semibold text-foreground">Producten</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      {productResults.map(result => (
+                        result === bestMatch ? null : (
+                          <SearchResultCard
+                            key={`prod-${result.result_id}`}
+                            result={result}
+                            expandedMeal={expandedMeal}
+                            mealItems={mealItems}
+                            onSelectFood={handleSelectFood}
+                            onToggleMeal={(id) => {
+                              if (expandedMeal === id) { setExpandedMeal(null); return; }
+                              setExpandedMeal(id);
+                              if (!mealItems[id]) {
+                                fetchCommonMealItems(id).then(items => {
+                                  setMealItems(prev => ({ ...prev, [id]: items }));
+                                });
+                              }
+                            }}
+                          />
+                        )
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Expanded common meal items */}
           {expandedMeal && mealItems[expandedMeal] && (
