@@ -234,18 +234,66 @@ export default function FoodTracker() {
         {/* Step 1: Capture */}
         {step === 'capture' && (
           <>
-            {!preview ? (
-              <div className="mb-6 grid grid-cols-2 gap-3">
-                <Button onClick={() => cameraInputRef.current?.click()} variant="outline" className="h-28 flex-col gap-2 rounded-xl border-2 border-dashed text-base">
-                  <Camera className="h-10 w-10 text-primary" />
-                  <span className="text-sm font-medium">Foto maken</span>
-                </Button>
-                <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="h-28 flex-col gap-2 rounded-xl border-2 border-dashed text-base">
-                  <Upload className="h-10 w-10 text-primary" />
-                  <span className="text-sm font-medium">Foto kiezen</span>
-                </Button>
+            {/* Primary action: Slim zoeken */}
+            <button
+              onClick={() => setStep('manual')}
+              className="mb-5 flex w-full items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
+            >
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/20">
+                <Search className="h-7 w-7" />
               </div>
-            ) : (
+              <div className="text-left">
+                <span className="text-lg font-bold font-display">Slim zoeken</span>
+                <p className="text-sm text-primary-foreground/75">Zoek voeding of maaltijden</p>
+              </div>
+              <ChevronRight className="ml-auto h-5 w-5 text-primary-foreground/60" />
+            </button>
+
+            {/* Secondary actions row */}
+            <div className="mb-4 grid grid-cols-3 gap-2">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+              >
+                <Camera className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Foto</span>
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+              >
+                <Upload className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Galerij</span>
+              </button>
+              <button
+                onClick={() => setStep('barcode')}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+              >
+                <ScanBarcode className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Barcode</span>
+              </button>
+            </div>
+
+            {/* Additional actions */}
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setStep('meal-compose')}
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+              >
+                <UtensilsCrossed className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium">Maaltijd samenstellen</span>
+              </button>
+              <button
+                onClick={() => setStep('meal-history')}
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+              >
+                <History className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium">Geschiedenis</span>
+              </button>
+            </div>
+
+            {/* Photo preview (when captured) */}
+            {preview && (
               <div className="mb-6">
                 <div className="overflow-hidden rounded-xl border border-border shadow-sm">
                   <img src={preview} alt="Maaltijd foto" className="w-full object-cover" />
@@ -261,44 +309,6 @@ export default function FoodTracker() {
                 </div>
               </div>
             )}
-
-            {/* Manual search and barcode buttons */}
-            <div className="mb-4 grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setStep('manual')}
-                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-              >
-                <Sparkles className="h-4 w-4 text-primary" />
-                Slim zoeken
-              </button>
-              <button
-                onClick={() => setStep('barcode')}
-                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-              >
-                <ScanBarcode className="h-4 w-4" />
-                Barcode scannen
-              </button>
-            </div>
-
-            {/* Meal buttons */}
-            <div className="mb-4 grid grid-cols-2 gap-3">
-              <Button
-                onClick={() => setStep('meal-compose')}
-                variant="outline"
-                className="h-14 flex-col gap-1 rounded-xl border-2 border-dashed"
-              >
-                <UtensilsCrossed className="h-5 w-5 text-primary" />
-                <span className="text-xs font-medium">Maaltijd samenstellen</span>
-              </Button>
-              <Button
-                onClick={() => setStep('meal-history')}
-                variant="outline"
-                className="h-14 flex-col gap-1 rounded-xl border-2 border-dashed"
-              >
-                <History className="h-5 w-5 text-primary" />
-                <span className="text-xs font-medium">Maaltijdgeschiedenis</span>
-              </Button>
-            </div>
           </>
         )}
 
