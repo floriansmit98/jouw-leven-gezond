@@ -12,6 +12,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { ChevronDown, ArrowLeft, Search, X } from 'lucide-react';
+import { usePremium } from '@/contexts/PremiumContext';
+import PremiumBanner from '@/components/PremiumBanner';
+import AdBanner from '@/components/AdBanner';
 
 const QUICK_SYMPTOM_ICONS: Record<SymptomType, string> = {
   vermoeidheid: '😴',
