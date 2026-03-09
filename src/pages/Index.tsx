@@ -62,6 +62,12 @@ export default function Index() {
           action={
             <div className="flex gap-2">
               <button
+                onClick={() => navigate('/premium')}
+                className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
+              >
+                <Crown className="h-5 w-5" />
+              </button>
+              <button
                 onClick={() => navigate('/instellingen')}
                 className="rounded-lg bg-primary-foreground/20 p-2 text-primary-foreground transition-colors hover:bg-primary-foreground/30"
               >
