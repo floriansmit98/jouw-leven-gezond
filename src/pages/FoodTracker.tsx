@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History } from 'lucide-react';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,9 @@ import { useBarcodeLookup, type BarcodeResult } from '@/hooks/useBarcodeLookup';
 import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
 import { getLimits } from '@/lib/store';
+import MealComposer from '@/components/MealComposer';
+import MealCard from '@/components/MealCard';
+import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type MealWithItems } from '@/hooks/useMeals';
 
 interface DetectedFood {
   naam: string;
@@ -24,7 +27,7 @@ interface DetectedFood {
   confirmed: boolean;
 }
 
-type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result';
+type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result' | 'meal-compose' | 'meal-history';
 
 export default function FoodTracker() {
   const { user } = useAuth();
@@ -36,7 +39,10 @@ export default function FoodTracker() {
   const [barcodeAmount, setBarcodeAmount] = useState(100);
 
   const { entries, refetch } = useTodayEntries();
+  const { meals: todayMeals, refetch: refetchMeals } = useTodayMeals();
   const barcodeLookup = useBarcodeLookup();
+
+  const refetchAll = () => { refetch(); refetchMeals(); };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -250,7 +256,7 @@ export default function FoodTracker() {
               </div>
             )}
 
-            {/* Manual search fallback */}
+            {/* Manual search and barcode buttons */}
             <div className="mb-4 grid grid-cols-2 gap-3">
               <button
                 onClick={() => setStep('manual')}
@@ -266,6 +272,26 @@ export default function FoodTracker() {
                 <ScanBarcode className="h-4 w-4" />
                 Barcode scannen
               </button>
+            </div>
+
+            {/* Meal buttons */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => setStep('meal-compose')}
+                variant="outline"
+                className="h-14 flex-col gap-1 rounded-xl border-2 border-dashed"
+              >
+                <UtensilsCrossed className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Maaltijd samenstellen</span>
+              </Button>
+              <Button
+                onClick={() => setStep('meal-history')}
+                variant="outline"
+                className="h-14 flex-col gap-1 rounded-xl border-2 border-dashed"
+              >
+                <History className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Maaltijdgeschiedenis</span>
+              </Button>
             </div>
           </>
         )}
@@ -401,8 +427,33 @@ export default function FoodTracker() {
           </div>
         )}
 
-        {/* Today's entries with daily warnings */}
-        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && (
+        {/* Step: Meal composer */}
+        {step === 'meal-compose' && (
+          <MealComposer
+            onSaved={() => { handleReset(); refetchAll(); }}
+            onCancel={() => setStep('capture')}
+          />
+        )}
+
+        {/* Step: Meal history */}
+        {step === 'meal-history' && (
+          <MealHistoryPanel onBack={() => setStep('capture')} onRefresh={refetchAll} />
+        )}
+
+        {/* Today's meals */}
+        {todayMeals.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
+          <div className="mb-4">
+            <h2 className="mb-3 font-display text-lg font-semibold">Maaltijden vandaag</h2>
+            <div className="space-y-2">
+              {todayMeals.map(meal => (
+                <MealCard key={meal.id} meal={meal} onRefresh={refetchAll} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Today's individual entries with daily warnings */}
+        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
           <div>
             <h2 className="mb-3 font-display text-lg font-semibold">Vandaag gegeten</h2>
 
@@ -411,7 +462,6 @@ export default function FoodTracker() {
 
             <div className="space-y-2">
               {entries.map(entry => {
-                // Build per-entry warning badges from stored values
                 const entryWarnings = analyzeFoodWarnings(
                   { potassium_mg: entry.potassium_mg / entry.portions, phosphate_mg: entry.phosphate_mg / entry.portions, sodium_mg: entry.sodium_mg / entry.portions, protein_g: entry.protein_g / entry.portions, fluid_ml: entry.fluid_ml / entry.portions, portion_grams: 100, portion_description: '', name: entry.name, display_name: null, id: entry.id, category: '', dialysis_risk_label: '' } as FoodRow,
                   entry.portions * 100
@@ -937,6 +987,99 @@ function DailyTotalWarnings({ entries }: { entries: { potassium_mg: number; phos
   return (
     <div className="mb-3">
       <DailyWarningAlerts warnings={warnings} />
+    </div>
+  );
+}
+
+/** Meal history panel with favorites and recent meals */
+function MealHistoryPanel({ onBack, onRefresh }: { onBack: () => void; onRefresh: () => void }) {
+  const { user } = useAuth();
+  const { meals: favoriteMeals, loading: favLoading, refetch: refetchFav } = useFavoriteMeals();
+  const { meals: recentMeals, loading: recentLoading } = useRecentMeals();
+  const [tab, setTab] = useState<'favorieten' | 'recent'>('favorieten');
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+
+  const handleQuickAdd = async (meal: MealWithItems) => {
+    if (!user) return;
+    setDuplicating(meal.id);
+    try {
+      await duplicateMeal(user.id, meal);
+      toast.success(`${meal.name} opnieuw gelogd!`);
+      onRefresh();
+    } catch {
+      toast.error('Kon maaltijd niet dupliceren.');
+    }
+    setDuplicating(null);
+  };
+
+  const meals = tab === 'favorieten' ? favoriteMeals : recentMeals;
+  const loading = tab === 'favorieten' ? favLoading : recentLoading;
+
+  return (
+    <div className="mb-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={onBack}>← Terug</Button>
+        <h2 className="font-display text-lg font-semibold text-foreground">Maaltijden</h2>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setTab('favorieten')}
+          className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            tab === 'favorieten' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+          }`}
+        >
+          <Star className="h-3.5 w-3.5" />
+          Favorieten
+        </button>
+        <button
+          onClick={() => setTab('recent')}
+          className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            tab === 'recent' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+          }`}
+        >
+          <Clock className="h-3.5 w-3.5" />
+          Recent
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      )}
+
+      {!loading && meals.length === 0 && (
+        <div className="rounded-xl border border-border bg-card p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            {tab === 'favorieten'
+              ? 'Nog geen favoriete maaltijden. Sla een maaltijd op als favoriet om deze hier te zien.'
+              : 'Nog geen maaltijden gelogd.'}
+          </p>
+        </div>
+      )}
+
+      {!loading && meals.length > 0 && (
+        <div className="space-y-2">
+          {meals.map(meal => (
+            <div key={meal.id} className="space-y-1">
+              <MealCard meal={meal} onRefresh={() => { refetchFav(); onRefresh(); }} />
+              {tab === 'favorieten' && (
+                <Button
+                  onClick={() => handleQuickAdd(meal)}
+                  disabled={duplicating === meal.id}
+                  size="sm"
+                  className="w-full rounded-lg text-xs"
+                >
+                  {duplicating === meal.id ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />}
+                  Opnieuw loggen met één tik
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
