@@ -51,7 +51,6 @@ export default function DialysisLog() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Dialyse"
-          mascotMood="neutral"
           mascotMessage="Log hier uw dialyse sessies."
           action={
             <Button

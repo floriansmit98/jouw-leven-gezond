@@ -77,7 +77,7 @@ export default function FluidTracker() {
   return (
     <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
-        <PageHeader title="Vocht" mascotMood="neutral" mascotMessage="Houd uw vochtinname bij!" />
+        <PageHeader title="Vocht" mascotMessage="Houd uw vochtinname bij!" />
 
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />

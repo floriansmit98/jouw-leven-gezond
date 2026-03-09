@@ -72,7 +72,7 @@ export default function Recipes() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
-        <PageHeader title="Recepten" mascotMood="happy" mascotMessage="Ontdek niervriendelijke recepten!" />
+        <PageHeader title="Recepten" mascotMessage="Ontdek niervriendelijke recepten!" />
         <div className="space-y-3">
           {RECIPES.map(r => (
             <button
