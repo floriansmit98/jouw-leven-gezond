@@ -25,6 +25,11 @@ function getPeriodStart(days: number) {
 
 export default function Report() {
   const { isPremium } = usePremium();
+  const { user } = useAuth();
+  const [period, setPeriod] = useState<Period>('7');
+  const [generating, setGenerating] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
 
   if (!isPremium) {
     return (
@@ -39,11 +44,6 @@ export default function Report() {
       </div>
     );
   }
-  const { user } = useAuth();
-  const [period, setPeriod] = useState<Period>('7');
-  const [generating, setGenerating] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
 
   const days = parseInt(period, 10);
   const periodStart = getPeriodStart(days);
