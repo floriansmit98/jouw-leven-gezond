@@ -4,6 +4,7 @@ import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, 
 import SuggestedMealBuilder from '@/components/SuggestedMealBuilder';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
+import { useMealPatterns } from '@/hooks/useMealPatterns';
 import { useUnifiedSearch, fetchCommonMealItems, logMissingSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
@@ -638,6 +639,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   
   const { user: searchUser } = useAuth();
   const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query, searchUser?.id);
+  const { match: patternMatch, loading: patternLoading } = useMealPatterns(query);
   const { results: unifiedResults, loading: unifiedLoading } = useUnifiedSearch(query);
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
   const { foods: recentFoods } = useRecentFoods();
@@ -648,7 +650,8 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   
   // Merge: show unified results (meals, branded, foods) first, then AI/NEVO fallback
   const hasUnifiedResults = unifiedResults.length > 0;
-  const isLoading = unifiedLoading || aiLoading || (nevoLoading && !aiResult && !hasUnifiedResults);
+  const hasMealPattern = !!patternMatch && patternMatch.components.some(c => c.food);
+  const isLoading = unifiedLoading || patternLoading || aiLoading || (nevoLoading && !aiResult && !hasUnifiedResults);
 
   // Log missing/weak searches for database improvement
   useEffect(() => {
@@ -808,12 +811,16 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
       {/* Search results */}
       {showResults && !isLoading && (
         <div className="space-y-1.5">
-          {/* Suggested meal builder for compound queries */}
-          {aiResult?.is_compound && aiResult.components.length > 0 && aiResult.components.some(c => c.match) && (
+          {/* Suggested meal builder: prefer meal_patterns, fallback to AI compound */}
+          {(hasMealPattern || (aiResult?.is_compound && aiResult.components.length > 0 && aiResult.components.some(c => c.match))) && (
             <SuggestedMealBuilder
               query={query}
-              components={aiResult.components}
-              displayMessage={aiResult.display_message}
+              patternMatch={hasMealPattern ? patternMatch! : undefined}
+              components={!hasMealPattern && aiResult?.is_compound ? aiResult.components : undefined}
+              displayMessage={hasMealPattern
+                ? `Voorgestelde maaltijd: ${patternMatch!.patternName}`
+                : aiResult?.display_message
+              }
               onAddAll={async (items) => {
                 if (onAddFoodDirect) {
                   for (const item of items) {
