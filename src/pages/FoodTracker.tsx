@@ -878,26 +878,19 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             // Sort by computed score
             const reranked = scoredResults.sort((a, b) => b._debugScore - a._debugScore);
 
-            // For multi-word queries with a pattern match, filter out meals matching only 1 word
-            const mealResults = reranked.filter(r => {
-              if (r.result_type !== 'meal') return false;
-              if (isMultiWord && hasMealPattern) {
-                const name = r.display_name.toLowerCase();
-                const matchCount = queryWords.filter(w => name.includes(w)).length;
-                if (matchCount <= 1) return false;
+            // Filter out meal results — hide unreliable meal section for now
+            // Only keep a meal if it's an exact match for the query
+            const queryLower = query.trim().toLowerCase();
+            const allResults = reranked.filter(r => {
+              if (r.result_type === 'meal') {
+                // Only show meal if exact name match
+                return r.display_name.toLowerCase() === queryLower;
               }
               return true;
             });
-            const productResults = reranked.filter(r => r.result_type !== 'meal');
-            // Deduplicate meals by display_name
-            const seenMealNames = new Set<string>();
-            const uniqueMeals = mealResults.filter(r => {
-              const key = r.display_name.toLowerCase();
-              if (seenMealNames.has(key)) return false;
-              seenMealNames.add(key);
-              return true;
-            });
-            const bestMatch = reranked[0];
+
+            const bestMatch = allResults[0];
+            const restResults = allResults.slice(1);
 
             return (
               <div className="space-y-4">
@@ -924,71 +917,34 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
                   />
                 )}
 
-                {/* Maaltijden section */}
-                {uniqueMeals.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <CookingPot className="h-4 w-4 text-primary" />
-                      <h3 className="text-sm font-semibold text-foreground">Maaltijden</h3>
-                    </div>
-                    <div className="space-y-1.5">
-                      {uniqueMeals.map(result => (
-                        result === bestMatch ? null : (
-                          <SearchResultCard
-                            key={`meal-${result.result_id}`}
-                            result={result}
-                            expandedMeal={expandedMeal}
-                            mealItems={mealItems}
-                            onSelectFood={handleSelectFood}
-                            onToggleMeal={(id) => {
-                              if (expandedMeal === id) { setExpandedMeal(null); return; }
-                              setExpandedMeal(id);
-                              if (!mealItems[id]) {
-                                fetchCommonMealItems(id).then(items => {
-                                  setMealItems(prev => ({ ...prev, [id]: items }));
-                                });
-                              }
-                            }}
-                            onAddFoodDirect={onAddFoodDirect}
-                            onAddFood={onAddFood}
-                            saving={saving}
-                          />
-                        )
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Producten section */}
-                {productResults.length > 0 && (
+                {/* Producten */}
+                {restResults.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                       <h3 className="text-sm font-semibold text-foreground">Producten</h3>
                     </div>
                     <div className="space-y-1.5">
-                      {productResults.map(result => (
-                        result === bestMatch ? null : (
-                          <SearchResultCard
-                            key={`prod-${result.result_id}`}
-                            result={result}
-                            expandedMeal={expandedMeal}
-                            mealItems={mealItems}
-                            onSelectFood={handleSelectFood}
-                            onToggleMeal={(id) => {
-                              if (expandedMeal === id) { setExpandedMeal(null); return; }
-                              setExpandedMeal(id);
-                              if (!mealItems[id]) {
-                                fetchCommonMealItems(id).then(items => {
-                                  setMealItems(prev => ({ ...prev, [id]: items }));
-                                });
-                              }
-                            }}
-                            onAddFoodDirect={onAddFoodDirect}
-                            onAddFood={onAddFood}
-                            saving={saving}
-                          />
-                        )
+                      {restResults.map(result => (
+                        <SearchResultCard
+                          key={`${result.result_type}-${result.result_id}`}
+                          result={result}
+                          expandedMeal={expandedMeal}
+                          mealItems={mealItems}
+                          onSelectFood={handleSelectFood}
+                          onToggleMeal={(id) => {
+                            if (expandedMeal === id) { setExpandedMeal(null); return; }
+                            setExpandedMeal(id);
+                            if (!mealItems[id]) {
+                              fetchCommonMealItems(id).then(items => {
+                                setMealItems(prev => ({ ...prev, [id]: items }));
+                              });
+                            }
+                          }}
+                          onAddFoodDirect={onAddFoodDirect}
+                          onAddFood={onAddFood}
+                          saving={saving}
+                        />
                       ))}
                     </div>
                   </div>
