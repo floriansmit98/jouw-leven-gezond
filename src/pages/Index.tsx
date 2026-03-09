@@ -75,22 +75,17 @@ export default function Index() {
           }
         />
 
-        {/* Search bar */}
-        <button
-          onClick={() => navigate('/voeding')}
-          className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-left shadow-sm transition-colors hover:bg-accent/50"
-        >
-          <Search className="h-5 w-5 text-muted-foreground" />
-          <span className="text-muted-foreground">Wat heeft u gegeten?</span>
-        </button>
-
-        {/* Action buttons */}
-        <div className="mb-5 grid grid-cols-2 gap-3">
-          <Button onClick={() => navigate('/voeding')} className="h-12 gap-2 rounded-xl bg-primary text-primary-foreground font-semibold shadow-md">
-            <Plus className="h-5 w-5" /> Voeding loggen
-          </Button>
-          <Button onClick={() => navigate('/dialyse')} variant="outline" className="h-12 gap-2 rounded-xl font-semibold">
-            <Droplets className="h-5 w-5" /> Dialyse loggen
+        {/* Search bar + dialyse action */}
+        <div className="mb-5 flex gap-3">
+          <button
+            onClick={() => navigate('/voeding')}
+            className="flex flex-1 items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-left shadow-sm transition-colors hover:bg-accent/50"
+          >
+            <Search className="h-5 w-5 text-muted-foreground" />
+            <span className="text-muted-foreground">Wat heeft u gegeten?</span>
+          </button>
+          <Button onClick={() => navigate('/dialyse')} variant="outline" className="h-auto shrink-0 gap-2 rounded-2xl px-4 font-semibold">
+            <Droplets className="h-5 w-5" /> Dialyse
           </Button>
         </div>
 
