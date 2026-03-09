@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.import-nevo]
 verify_jwt = false
+
+[functions.ai-food-search]
+verify_jwt = false
