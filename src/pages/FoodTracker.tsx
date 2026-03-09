@@ -811,12 +811,16 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
       {/* Search results */}
       {showResults && !isLoading && (
         <div className="space-y-1.5">
-          {/* Suggested meal builder for compound queries */}
-          {aiResult?.is_compound && aiResult.components.length > 0 && aiResult.components.some(c => c.match) && (
+          {/* Suggested meal builder: prefer meal_patterns, fallback to AI compound */}
+          {(hasMealPattern || (aiResult?.is_compound && aiResult.components.length > 0 && aiResult.components.some(c => c.match))) && (
             <SuggestedMealBuilder
               query={query}
-              components={aiResult.components}
-              displayMessage={aiResult.display_message}
+              patternMatch={hasMealPattern ? patternMatch! : undefined}
+              components={!hasMealPattern && aiResult?.is_compound ? aiResult.components : undefined}
+              displayMessage={hasMealPattern
+                ? `Voorgestelde maaltijd: ${patternMatch!.patternName}`
+                : aiResult?.display_message
+              }
               onAddAll={async (items) => {
                 if (onAddFoodDirect) {
                   for (const item of items) {
