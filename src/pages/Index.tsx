@@ -55,7 +55,6 @@ export default function Index() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Goedendag 👋"
-          mascotMood="greeting"
           mascotMessage="Welkom terug!"
           action={
             <div className="flex gap-2">

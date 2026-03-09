@@ -72,7 +72,6 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Instellingen"
-          mascotMood="neutral"
           mascotMessage="Pas hier uw limieten en doelen aan."
         />
 

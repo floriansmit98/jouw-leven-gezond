@@ -162,7 +162,6 @@ export default function SymptomTracker() {
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Symptomen"
-          mascotMood="neutral"
           mascotMessage="Houd hier uw klachten bij."
         />
 

@@ -178,7 +178,7 @@ export default function Report() {
   return (
     <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
-        <PageHeader title="Rapport" mascotMood="neutral" mascotMessage="Exporteer uw gegevens voor uw arts." />
+        <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
 
         <Card className="mb-4">
           <CardHeader className="pb-3">
