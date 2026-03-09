@@ -113,9 +113,18 @@ export default function FluidTracker() {
                   <ShoppingCart className="h-3.5 w-3.5" />
                   Supermarktproducten
                 </p>
-                {offDrinks.length > 0 && offDrinks.map(drink => (
-                  <DrinkListItem key={drink.id} drink={drink} onClick={() => selectDrink(drink, true)} isSupermarket />
-                ))}
+                {offDrinks.length > 0 && offDrinks.map(drink => {
+                  const isUnmatched = (drink as any).nevoMatched === false;
+                  return (
+                    <DrinkListItem
+                      key={drink.id}
+                      drink={drink}
+                      onClick={() => !isUnmatched && selectDrink(drink, true)}
+                      isSupermarket
+                      disabled={isUnmatched}
+                    />
+                  );
+                })}
                 {offHasMore && !offLoading && (
                   <Button variant="outline" onClick={offLoadMore} className="w-full rounded-xl text-sm">
                     Meer supermarktproducten...
