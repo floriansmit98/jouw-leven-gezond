@@ -632,7 +632,8 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const [amount, setAmount] = useState(100);
   
   // AI-powered search
-  const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query);
+  const { user: searchUser } = useAuth();
+  const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query, searchUser?.id);
   
   // Traditional search as instant fallback
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
