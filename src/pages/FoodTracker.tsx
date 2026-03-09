@@ -1201,9 +1201,6 @@ function SearchResultCard({
               {isMeal ? 'Maaltijd' : isBranded ? (result.brand || 'Merk') : 'Product'}
             </span>
             <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
-            {result._debugScore !== undefined && (
-              <span className="text-[9px] font-mono text-orange-500 bg-orange-100 px-1 rounded">score:{result._debugScore}</span>
-            )}
           </div>
         </div>
 
