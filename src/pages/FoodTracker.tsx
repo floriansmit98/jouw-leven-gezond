@@ -264,8 +264,8 @@ export default function FoodTracker() {
                 onClick={() => setStep('manual')}
                 className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
               >
-                <Search className="h-4 w-4" />
-                Handmatig zoeken
+                <Sparkles className="h-4 w-4 text-primary" />
+                Slim zoeken
               </button>
               <button
                 onClick={() => setStep('barcode')}
