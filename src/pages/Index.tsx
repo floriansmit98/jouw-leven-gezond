@@ -88,6 +88,11 @@ export default function Index() {
           </Button>
         </div>
 
+        {/* Daily risk score */}
+        <div className="mb-5">
+          <DailyRiskScore />
+        </div>
+
         {/* Warnings */}
         <div className="mb-5">
           <RiskAlerts />
