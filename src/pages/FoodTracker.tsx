@@ -849,8 +849,26 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               const isComponent = aiResult?.is_compound && aiResult.components.some(c => c.match?.id === r.food_id);
               return !isComponent;
             });
-            const mealResults = filteredResults.filter(r => r.result_type === 'meal');
-            const productResults = filteredResults.filter(r => r.result_type !== 'meal');
+
+            // Re-rank: boost results matching more query words
+            const queryWords = query.trim().toLowerCase().split(/\s+/).filter(w => w.length > 1);
+            const reranked = [...filteredResults].sort((a, b) => {
+              const nameA = a.display_name.toLowerCase();
+              const nameB = b.display_name.toLowerCase();
+              // Count how many query words each result matches
+              const matchesA = queryWords.filter(w => nameA.includes(w)).length;
+              const matchesB = queryWords.filter(w => nameB.includes(w)).length;
+              // Exact full match bonus
+              const exactA = nameA === query.trim().toLowerCase() ? 1000 : 0;
+              const exactB = nameB === query.trim().toLowerCase() ? 1000 : 0;
+              // Score: exact bonus + word coverage * 100 + original rank_score
+              const scoreA = exactA + matchesA * 100 + (a.rank_score || 0);
+              const scoreB = exactB + matchesB * 100 + (b.rank_score || 0);
+              return scoreB - scoreA;
+            });
+
+            const mealResults = reranked.filter(r => r.result_type === 'meal');
+            const productResults = reranked.filter(r => r.result_type !== 'meal');
             // Deduplicate meals by display_name
             const seenMealNames = new Set<string>();
             const uniqueMeals = mealResults.filter(r => {
@@ -859,7 +877,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               seenMealNames.add(key);
               return true;
             });
-            const bestMatch = filteredResults[0];
+            const bestMatch = reranked[0];
 
             return (
               <div className="space-y-4">
