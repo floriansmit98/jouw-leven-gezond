@@ -57,7 +57,6 @@ export const EXTENDED_SYMPTOMS: { key: string; label: string; emoji: string }[] 
   { key: 'diarree', label: 'Diarree', emoji: '🚽' },
   { key: 'obstipatie', label: 'Obstipatie', emoji: '😣' },
 ];
-};
 
 export interface DialysisSession {
   id: string;
