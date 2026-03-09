@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot } from 'lucide-react';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
+import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -263,8 +264,8 @@ export default function FoodTracker() {
                 onClick={() => setStep('manual')}
                 className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
               >
-                <Search className="h-4 w-4" />
-                Handmatig zoeken
+                <Sparkles className="h-4 w-4 text-primary" />
+                Slim zoeken
               </button>
               <button
                 onClick={() => setStep('barcode')}
@@ -619,7 +620,7 @@ function DetectedFoodCard({
   );
 }
 
-// --- Manual Search Panel with recent/most-used ---
+// --- AI-Assisted Smart Search Panel ---
 function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   onAddFood?: (food: FoodRow) => void;
   onAddFoodDirect?: (food: FoodRow, amountGrams: number) => Promise<void>;
@@ -629,33 +630,28 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
+  
+  // AI-powered search
+  const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query);
+  
+  // Traditional search as instant fallback
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
-  const { products: offResults, loading: offLoading, noResults: offNoResults } = useOFFSearch(query, false);
-
-  // Merge NEVO (priority) + OFF NEVO-matched results, deduplicate by id
-  const searchResults = useMemo(() => {
-    const seen = new Set(nevoResults.map(f => f.id));
-    const merged: (FoodRow & { nevoMatched?: boolean })[] = [...nevoResults];
-    for (const off of offResults) {
-      if (!seen.has(off.id)) {
-        seen.add(off.id);
-        merged.push(off);
-      }
-    }
-    return merged;
-  }, [nevoResults, offResults]);
-  const searchLoading = nevoLoading || offLoading;
+  
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
 
   const showResults = query.trim().length > 0;
+  
+  // Use AI results if available, otherwise fall back to traditional NEVO search
+  const displayResults = aiResult?.matches && aiResult.matches.length > 0
+    ? aiResult.matches
+    : nevoResults;
+  const isLoading = aiLoading || (nevoLoading && !aiResult);
 
   const handleSelectFood = (food: FoodRow) => {
     if (onAddFood) {
-      // Quick-add mode (from confirm step)
       onAddFood(food);
     } else {
-      // Direct-save mode: show amount picker
       setSelectedFood(food);
       setAmount(food.portion_grams || 100);
     }
@@ -682,6 +678,14 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
           </Button>
           <h2 className="font-display text-lg font-semibold text-foreground">Hoeveelheid</h2>
         </div>
+
+        {/* AI context message */}
+        {aiResult?.display_message && (
+          <div className="flex items-start gap-2.5 rounded-xl bg-primary/5 border border-primary/20 p-3">
+            <Bot className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <p className="text-sm text-foreground">{aiResult.display_message}</p>
+          </div>
+        )}
 
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div>
@@ -733,14 +737,17 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
         <Button variant="ghost" size="sm" onClick={onBack}>
           ← Terug
         </Button>
-        <h2 className="font-display text-lg font-semibold text-foreground">Zoeken</h2>
+        <h2 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          Slim zoeken
+        </h2>
       </div>
 
       {/* Search input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+        <Sparkles className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
         <Input
-          placeholder="Zoek voedingsmiddel of drank..."
+          placeholder="Bijv. Calvé pindakaas, Doritos, stroopwafel..."
           value={query}
           onChange={e => setQuery(e.target.value)}
           className="h-12 rounded-xl pl-10 pr-10 text-base"
@@ -756,21 +763,59 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
         )}
       </div>
 
+      {/* AI insight message */}
+      {showResults && aiResult?.display_message && (
+        <div className="flex items-start gap-2.5 rounded-xl bg-primary/5 border border-primary/20 p-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <Bot className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-foreground">{aiResult.display_message}</p>
+            {aiResult.brand && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Merk: {aiResult.brand} → {aiResult.product_type}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {showResults && isLoading && (
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Even denken...</p>
+            <p className="text-xs text-muted-foreground">Ik zoek het beste resultaat voor u</p>
+          </div>
+        </div>
+      )}
+
       {/* Search results */}
-      {showResults && (
+      {showResults && !isLoading && (
         <div className="space-y-1.5">
-          {searchResults.map(food => (
-            <FoodSearchResult key={food.id} food={food} onSelect={handleSelectFood} />
+          {displayResults.map(food => (
+            <button
+              key={food.id}
+              onClick={() => handleSelectFood(food)}
+              className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {food.portion_description} · {food.category}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
+            </button>
           ))}
-          {searchLoading && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          )}
-          {!searchLoading && searchResults.length === 0 && (
-            <div className="rounded-xl border border-border bg-card p-6 text-center">
-              <p className="text-sm text-muted-foreground">Geen resultaten voor "{query}"</p>
-              <p className="mt-1 text-xs text-muted-foreground">Probeer een andere zoekterm</p>
+          {displayResults.length === 0 && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-border bg-card p-4">
+              <Bot className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Geen betrouwbare voedingswaarden gevonden</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Probeer een andere zoekterm, zoals het generieke productnaam (bijv. "chips" in plaats van een merknaam)
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -779,6 +824,14 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
       {/* When not searching: show recent & most used */}
       {!showResults && (
         <>
+          {/* Hint */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 border border-border p-3">
+            <Bot className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              Typ een product zoals je het kent — ook met merknaam. Ik zoek automatisch de juiste voedingswaarden.
+            </p>
+          </div>
+
           {mostUsedFoods.length > 0 && (
             <div>
               <h3 className="mb-2 text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -786,7 +839,17 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               </h3>
               <div className="space-y-1.5">
                 {mostUsedFoods.map(food => (
-                  <FoodSearchResult key={food.id} food={food} onSelect={handleSelectFood} />
+                  <button
+                    key={food.id}
+                    onClick={() => handleSelectFood(food)}
+                    className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-secondary/50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
+                      <p className="text-xs text-muted-foreground">{food.portion_description}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
+                  </button>
                 ))}
               </div>
             </div>
@@ -799,7 +862,17 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               </h3>
               <div className="space-y-1.5">
                 {recentFoods.map(food => (
-                  <FoodSearchResult key={food.id} food={food} onSelect={handleSelectFood} />
+                  <button
+                    key={food.id}
+                    onClick={() => handleSelectFood(food)}
+                    className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-secondary/50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
+                      <p className="text-xs text-muted-foreground">{food.portion_description}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
+                  </button>
                 ))}
               </div>
             </div>
