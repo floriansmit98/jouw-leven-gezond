@@ -746,6 +746,13 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               <WarningMessages warnings={warnings} />
             </div>
           )}
+
+          <SearchWarningDetail flags={getFoodFlags({
+            potassium_mg: selectedFood.potassium_mg,
+            phosphate_mg: selectedFood.phosphate_mg,
+            sodium_mg: selectedFood.sodium_mg,
+            portion_grams: amount,
+          })} />
         </div>
 
         <Button
