@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot } from 'lucide-react';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
+import { useUnifiedSearch, fetchCommonMealItems, logMissingSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
