@@ -1203,6 +1203,14 @@ function SearchResultCard({
             </span>
             <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
           </div>
+          {!isMeal && (
+            <SearchWarningBadges flags={getFoodFlags({
+              potassium_mg: result.potassium_mg,
+              phosphate_mg: result.phosphate_mg,
+              sodium_mg: result.sodium_mg,
+              portion_grams: result.portion_grams,
+            })} />
+          )}
         </div>
 
         {isMeal && !result.food_id ? (
