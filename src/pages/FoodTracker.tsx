@@ -18,6 +18,7 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import { useBarcodeLookup, type BarcodeResult } from '@/hooks/useBarcodeLookup';
 import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
+import { getFoodFlags, SearchWarningBadges, SearchWarningDetail } from '@/components/SearchNutrientWarning';
 import { getLimits } from '@/lib/store';
 import MealComposer from '@/components/MealComposer';
 import MealCard from '@/components/MealCard';
@@ -745,6 +746,13 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               <WarningMessages warnings={warnings} />
             </div>
           )}
+
+          <SearchWarningDetail flags={getFoodFlags({
+            potassium_mg: selectedFood.potassium_mg,
+            phosphate_mg: selectedFood.phosphate_mg,
+            sodium_mg: selectedFood.sodium_mg,
+            portion_grams: amount,
+          })} />
         </div>
 
         <Button
@@ -1202,6 +1210,14 @@ function SearchResultCard({
             </span>
             <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
           </div>
+          {!isMeal && (
+            <SearchWarningBadges flags={getFoodFlags({
+              potassium_mg: result.potassium_mg,
+              phosphate_mg: result.phosphate_mg,
+              sodium_mg: result.sodium_mg,
+              portion_grams: result.portion_grams,
+            })} />
+          )}
         </div>
 
         {isMeal && !result.food_id ? (

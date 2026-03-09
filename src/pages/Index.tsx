@@ -4,6 +4,7 @@ import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings, LogOut, Clock, Spa
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
+import DailyRiskScore from '@/components/DailyRiskScore';
 import PageHeader from '@/components/PageHeader';
 import { getLimits, getStatusColor, getGoalStatus } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -86,6 +87,11 @@ export default function Index() {
           <Button onClick={() => navigate('/dialyse')} variant="outline" className="h-auto shrink-0 gap-2 rounded-2xl px-4 font-semibold">
             <Droplets className="h-5 w-5" /> Dialyse
           </Button>
+        </div>
+
+        {/* Daily risk score */}
+        <div className="mb-5">
+          <DailyRiskScore />
         </div>
 
         {/* Warnings */}
