@@ -208,6 +208,10 @@ export function analyzeMealImpactWarnings(
     fluid: currentTotals.fluid + food.fluid_ml * factor,
   };
 
+  const LABELS: Record<string, string> = {
+    kalium: 'Kalium', fosfaat: 'Fosfaat', natrium: 'Natrium', vocht: 'Vocht',
+  };
+
   const checks: { name: string; newVal: number; limit: number }[] = [
     { name: 'kalium', newVal: newTotals.potassium, limit: l.potassium },
     { name: 'fosfaat', newVal: newTotals.phosphate, limit: l.phosphate },
@@ -217,15 +221,20 @@ export function analyzeMealImpactWarnings(
 
   for (const c of checks) {
     const ratio = c.newVal / c.limit;
+    const pct = `${Math.round(ratio * 100)}% van limiet`;
     if (ratio >= 0.9) {
       warnings.push({
         level: 'hoog',
-        message: `Na toevoegen: uw ${c.name}inname komt op ${Math.round(ratio * 100)}% van uw limiet.`,
+        title: `${LABELS[c.name]} te hoog`,
+        subtitle: pct,
+        message: `${LABELS[c.name]} te hoog (${pct})`,
       });
     } else if (ratio >= 0.7) {
       warnings.push({
         level: 'letop',
-        message: `Na toevoegen: uw ${c.name}inname komt op ${Math.round(ratio * 100)}% van uw limiet.`,
+        title: `${LABELS[c.name]} let op`,
+        subtitle: pct,
+        message: `${LABELS[c.name]} let op (${pct})`,
       });
     }
   }
