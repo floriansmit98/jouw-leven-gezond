@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings, LogOut, Clock, Sparkles, Search } from 'lucide-react';
+import { Beaker, Droplets, Flame, Waves, Plus, Egg, Settings, LogOut, Clock, Sparkles, Search, Crown } from 'lucide-react';
+import AdBanner from '@/components/AdBanner';
+import { usePremium } from '@/contexts/PremiumContext';
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
