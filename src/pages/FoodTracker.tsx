@@ -4,6 +4,7 @@ import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, 
 import SuggestedMealBuilder from '@/components/SuggestedMealBuilder';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
+import { useMealPatterns } from '@/hooks/useMealPatterns';
 import { useUnifiedSearch, fetchCommonMealItems, logMissingSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
