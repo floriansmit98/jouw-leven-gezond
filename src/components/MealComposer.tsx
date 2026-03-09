@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AmountInput from '@/components/AmountInput';
 import { useFoodSearch, useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
+import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
 import { type MealDraftItem, draftTotals, saveMeal, type MealWithItems } from '@/hooks/useMeals';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -240,7 +241,17 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
-  const { foods: searchResults, loading } = useFoodSearch(query);
+  const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
+  const { products: offResults, loading: offLoading } = useOFFSearch(query, false);
+  const searchResults = useMemo(() => {
+    const seen = new Set(nevoResults.map(f => f.id));
+    const merged = [...nevoResults];
+    for (const off of offResults) {
+      if (!seen.has(off.id)) { seen.add(off.id); merged.push(off); }
+    }
+    return merged;
+  }, [nevoResults, offResults]);
+  const loading = nevoLoading || offLoading;
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
 

@@ -77,6 +77,7 @@ export type Database = {
       foods: {
         Row: {
           aliases: string[] | null
+          brand: string | null
           category: string
           created_at: string
           dialysis_risk_label: string | null
@@ -94,6 +95,7 @@ export type Database = {
         }
         Insert: {
           aliases?: string[] | null
+          brand?: string | null
           category?: string
           created_at?: string
           dialysis_risk_label?: string | null
@@ -111,6 +113,7 @@ export type Database = {
         }
         Update: {
           aliases?: string[] | null
+          brand?: string | null
           category?: string
           created_at?: string
           dialysis_risk_label?: string | null
@@ -216,6 +219,7 @@ export type Database = {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
           aliases: string[] | null
+          brand: string | null
           category: string
           created_at: string
           dialysis_risk_label: string | null
@@ -242,6 +246,7 @@ export type Database = {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
           aliases: string[] | null
+          brand: string | null
           category: string
           created_at: string
           dialysis_risk_label: string | null
@@ -268,6 +273,7 @@ export type Database = {
         Args: { page_offset?: number; page_size?: number; search_query: string }
         Returns: {
           aliases: string[] | null
+          brand: string | null
           category: string
           created_at: string
           dialysis_risk_label: string | null
@@ -299,6 +305,7 @@ export type Database = {
         }
         Returns: {
           aliases: string[] | null
+          brand: string | null
           category: string
           created_at: string
           dialysis_risk_label: string | null
@@ -325,6 +332,7 @@ export type Database = {
         Args: { page_offset?: number; page_size?: number; search_query: string }
         Returns: {
           aliases: string[] | null
+          brand: string | null
           category: string
           created_at: string
           dialysis_risk_label: string | null
