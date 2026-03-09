@@ -47,6 +47,7 @@ function ProtectedRoutes() {
         <Route path="/recepten" element={<Recipes />} />
         <Route path="/scanner" element={<Navigate to="/voeding" replace />} />
         <Route path="/rapport" element={<Report />} />
+        <Route path="/premium" element={<Premium />} />
         <Route path="/instellingen" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
