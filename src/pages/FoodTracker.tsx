@@ -1127,14 +1127,16 @@ function SearchResultCard({
     : `per 100 g`;
 
   // Build meal components for SuggestedMealBuilder when expanded
-  const mealComponentItems = isExpanded && mealItems[result.result_id]
-    ? mealItems[result.result_id]
+  const loadedItems = mealItems[result.result_id];
+  const mealComponentItems = isExpanded && loadedItems
+    ? loadedItems
         .filter((item: any) => item.food)
         .map((item: any) => ({
           food: item.food as FoodRow,
           amountGrams: item.amount_grams || item.food.portion_grams || 100,
         }))
     : [];
+  const isMealLoading = isMeal && isExpanded && !loadedItems;
 
   return (
     <div>
@@ -1203,38 +1205,79 @@ function SearchResultCard({
         )}
       </button>
 
-      {/* Expanded meal: show full editable component builder */}
-      {isMeal && isExpanded && mealItems[result.result_id] && mealComponentItems.length > 0 && (
+      {/* Expanded meal content */}
+      {isMeal && isExpanded && (
         <div className="mt-1.5">
-          <SuggestedMealBuilder
-            query={result.display_name}
-            components={mealComponentItems.map((item) => ({
-              name: item.food.display_name || item.food.name,
-              search_terms: [item.food.name],
-              is_drink: item.food.category === 'dranken',
-              match: item.food,
-            }))}
-            displayMessage={result.display_name}
-            onAddAll={async (items) => {
-              if (onAddFoodDirect) {
-                for (const item of items) {
-                  await onAddFoodDirect(item.food, item.amountGrams);
+          {isMealLoading && (
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Onderdelen laden...</p>
+            </div>
+          )}
+
+          {loadedItems && mealComponentItems.length > 0 && (
+            <SuggestedMealBuilder
+              query={result.display_name}
+              components={mealComponentItems.map((item) => ({
+                name: item.food.display_name || item.food.name,
+                search_terms: [item.food.name],
+                is_drink: item.food.category === 'dranken',
+                match: item.food,
+              }))}
+              displayMessage={result.display_name}
+              onAddAll={async (items) => {
+                if (onAddFoodDirect) {
+                  for (const item of items) {
+                    await onAddFoodDirect(item.food, item.amountGrams);
+                  }
+                } else if (onAddFood) {
+                  for (const item of items) {
+                    onAddFood(item.food);
+                  }
                 }
-              } else if (onAddFood) {
-                for (const item of items) {
-                  onAddFood(item.food);
+              }}
+              onAddSingle={(food, amount) => {
+                if (onAddFoodDirect) {
+                  onAddFoodDirect(food, amount);
+                } else if (onAddFood) {
+                  onAddFood(food);
                 }
-              }
-            }}
-            onAddSingle={(food, amount) => {
-              if (onAddFoodDirect) {
-                onAddFoodDirect(food, amount);
-              } else if (onAddFood) {
-                onAddFood(food);
-              }
-            }}
-            saving={saving}
-          />
+              }}
+              saving={saving}
+            />
+          )}
+
+          {/* Fallback: meal loaded but has no components — show simple add button */}
+          {loadedItems && mealComponentItems.length === 0 && (
+            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Deze maaltijd heeft geen bewerkbare onderdelen.
+              </p>
+              <Button
+                onClick={() => {
+                  const foodRow: FoodRow = {
+                    id: result.food_id || result.result_id,
+                    name: result.display_name,
+                    display_name: result.display_name,
+                    category: result.category,
+                    portion_description: result.portion_description,
+                    portion_grams: result.portion_grams || 100,
+                    potassium_mg: result.potassium_mg,
+                    phosphate_mg: result.phosphate_mg,
+                    sodium_mg: result.sodium_mg,
+                    protein_g: result.protein_g,
+                    fluid_ml: result.fluid_ml,
+                    dialysis_risk_label: '',
+                  };
+                  onSelectFood(foodRow);
+                }}
+                className="h-10 w-full rounded-xl text-sm font-semibold"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Toevoegen als enkel product
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
