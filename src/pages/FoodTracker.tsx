@@ -793,22 +793,66 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
       {/* Search results */}
       {showResults && !isLoading && (
         <div className="space-y-1.5">
-          {displayResults.map(food => (
-            <button
-              key={food.id}
-              onClick={() => handleSelectFood(food)}
-              className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {food.portion_description} · {food.category}
-                </p>
+          {/* Compound food: show components separately */}
+          {aiResult?.is_compound && aiResult.components.length > 0 && aiResult.components.some(c => c.match) && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-sm font-medium text-foreground">Stel samen uit componenten:</p>
               </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
-            </button>
-          ))}
-          {displayResults.length === 0 && (
+              <div className="space-y-1.5">
+                {aiResult.components.map((comp, i) => (
+                  comp.match ? (
+                    <button
+                      key={`comp-${i}`}
+                      onClick={() => handleSelectFood(comp.match!)}
+                      className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:bg-secondary/50"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(comp.match)}</p>
+                          <p className="text-xs text-muted-foreground">{comp.name} · {comp.match.portion_description}</p>
+                        </div>
+                      </div>
+                      <Plus className="h-4 w-4 shrink-0 text-primary ml-2" />
+                    </button>
+                  ) : (
+                    <div key={`comp-${i}`} className="rounded-lg border border-border/50 bg-card/50 p-2.5 opacity-60">
+                      <p className="text-sm text-muted-foreground">{comp.name} — niet gevonden</p>
+                    </div>
+                  )
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Voeg elk onderdeel apart toe voor nauwkeurige voedingswaarden.</p>
+            </div>
+          )}
+
+          {/* Regular single-product results */}
+          {displayResults.map(food => {
+            // Skip if already shown as a component
+            const isComponent = aiResult?.is_compound && aiResult.components.some(c => c.match?.id === food.id);
+            if (isComponent) return null;
+            return (
+              <button
+                key={food.id}
+                onClick={() => handleSelectFood(food)}
+                className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {food.portion_description} · {food.category}
+                  </p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
+              </button>
+            );
+          })}
+
+          {displayResults.length === 0 && (!aiResult?.is_compound || !aiResult.components.some(c => c.match)) && (
             <div className="flex items-start gap-2.5 rounded-xl border border-border bg-card p-4">
               <Bot className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
               <div>
@@ -819,7 +863,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               </div>
             </div>
           )}
-          {displayResults.length > 0 && aiResult?.match_quality === 'alias' && (
+          {displayResults.length > 0 && !aiResult?.is_compound && aiResult?.match_quality === 'alias' && (
             <div className="flex items-start gap-2 rounded-lg bg-muted/50 border border-border p-2.5 mt-1">
               <Bot className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
