@@ -631,25 +631,22 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
   
-  // AI-powered search
   const { user: searchUser } = useAuth();
   const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query, searchUser?.id);
-  
-  // Traditional search as instant fallback
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
-  
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
+  const { searches: recentSearches, addSearch, clearSearches } = useRecentSearches();
 
   const showResults = query.trim().length > 0;
   
-  // Use AI results if available, otherwise fall back to traditional NEVO search
   const displayResults = aiResult?.matches && aiResult.matches.length > 0
     ? aiResult.matches
     : nevoResults;
   const isLoading = aiLoading || (nevoLoading && !aiResult);
 
   const handleSelectFood = (food: FoodRow) => {
+    addSearch(query);
     if (onAddFood) {
       onAddFood(food);
     } else {
@@ -666,6 +663,10 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
     }
   };
 
+  const handleRecentSearchClick = (term: string) => {
+    setQuery(term);
+  };
+
   // If a food is selected, show the amount picker + save
   if (selectedFood && onAddFoodDirect) {
     const factor = amount / 100;
@@ -680,7 +681,6 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
           <h2 className="font-display text-lg font-semibold text-foreground">Hoeveelheid</h2>
         </div>
 
-        {/* AI context message */}
         {aiResult?.display_message && (
           <div className="flex items-start gap-2.5 rounded-xl bg-primary/5 border border-primary/20 p-3">
             <Bot className="h-5 w-5 text-primary shrink-0 mt-0.5" />
@@ -700,7 +700,6 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             onGramsChange={setAmount}
           />
 
-          {/* Nutrient preview */}
           {amount > 0 && (
             <div className="grid grid-cols-5 gap-1 text-center">
               <NutrientMini label="K" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" />
@@ -711,7 +710,6 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             </div>
           )}
 
-          {/* Warnings */}
           {warnings.length > 0 && (
             <div className="space-y-1.5">
               <WarningBadges warnings={warnings} />
@@ -746,9 +744,9 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
 
       {/* Search input */}
       <div className="relative">
-        <Sparkles className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Bijv. Calvé pindakaas, Doritos, stroopwafel..."
+          placeholder="Zoek op product, maaltijd of ingrediënt..."
           value={query}
           onChange={e => setQuery(e.target.value)}
           className="h-12 rounded-xl pl-10 pr-10 text-base"
@@ -831,19 +829,25 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
           )}
 
           {/* Regular single-product results */}
-          {displayResults.map(food => {
-            // Skip if already shown as a component
+          {displayResults.map((food, idx) => {
             const isComponent = aiResult?.is_compound && aiResult.components.some(c => c.match?.id === food.id);
             if (isComponent) return null;
             return (
               <button
                 key={food.id}
                 onClick={() => handleSelectFood(food)}
-                className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50"
+                className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50 ${
+                  idx === 0 && !aiResult?.is_compound ? 'border-primary/30 bg-primary/5' : 'border-border'
+                }`}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    {idx === 0 && !aiResult?.is_compound && (
+                      <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">Beste match</span>
+                    )}
+                    <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {food.portion_description} · {food.category}
                   </p>
                 </div>
@@ -856,32 +860,59 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             <div className="flex items-start gap-2.5 rounded-xl border border-border bg-card p-4">
               <Bot className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground">Geen betrouwbare voedingswaarden gevonden</p>
+                <p className="text-sm font-medium text-foreground">Geen resultaten gevonden</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Dit product is opgeslagen voor toekomstige verbetering. Probeer een andere zoekterm.
+                  Deze zoekopdracht is opgeslagen voor toekomstige verbetering. Probeer een andere term.
                 </p>
               </div>
             </div>
           )}
+
           {displayResults.length > 0 && !aiResult?.is_compound && aiResult?.match_quality === 'alias' && (
             <div className="flex items-start gap-2 rounded-lg bg-muted/50 border border-border p-2.5 mt-1">
               <Bot className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                Dit is het best beschikbare resultaat. Als dit niet klopt, probeer een specifiekere zoekterm.
+                Dit is het best beschikbare resultaat. Probeer een specifiekere zoekterm als dit niet klopt.
               </p>
             </div>
           )}
         </div>
       )}
 
-      {/* When not searching: show recent & most used */}
+      {/* When not searching: show recent searches, recent & most used */}
       {!showResults && (
         <>
+          {/* Recent searches */}
+          {recentSearches.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                  Recente zoekopdrachten
+                </h3>
+                <button onClick={clearSearches} className="text-xs text-muted-foreground hover:text-foreground">
+                  Wissen
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recentSearches.map((term, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleRecentSearchClick(term)}
+                    className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Hint */}
           <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 border border-border p-3">
-            <Bot className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Typ een product zoals je het kent — ook met merknaam. Ik zoek automatisch de juiste voedingswaarden.
+              Typ een product, maaltijd of ingrediënt — ook met merknaam. Probeer bijv. "broodje zalm", "tosti ham kaas" of "Calvé pindakaas".
             </p>
           </div>
 
@@ -931,9 +962,9 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             </div>
           )}
 
-          {recentFoods.length === 0 && mostUsedFoods.length === 0 && (
+          {recentFoods.length === 0 && mostUsedFoods.length === 0 && recentSearches.length === 0 && (
             <div className="rounded-xl border border-border bg-card p-6 text-center">
-              <p className="text-sm text-muted-foreground">Typ om te zoeken in 2300+ voedingsmiddelen</p>
+              <p className="text-sm text-muted-foreground">Typ om te zoeken in 2300+ voedingsmiddelen en maaltijden</p>
             </div>
           )}
         </>
