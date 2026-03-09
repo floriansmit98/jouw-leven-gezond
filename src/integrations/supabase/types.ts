@@ -182,6 +182,44 @@ export type Database = {
         }
         Relationships: []
       }
+      search_logs: {
+        Row: {
+          created_at: string
+          id: string
+          match_quality: string | null
+          matched: boolean
+          matched_food_id: string | null
+          query: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_quality?: string | null
+          matched?: boolean
+          matched_food_id?: string | null
+          query: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_quality?: string | null
+          matched?: boolean
+          matched_food_id?: string | null
+          query?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_logs_matched_food_id_fkey"
+            columns: ["matched_food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       symptom_entries: {
         Row: {
           id: string

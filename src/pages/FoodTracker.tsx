@@ -632,7 +632,8 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const [amount, setAmount] = useState(100);
   
   // AI-powered search
-  const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query);
+  const { user: searchUser } = useAuth();
+  const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query, searchUser?.id);
   
   // Traditional search as instant fallback
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
@@ -813,9 +814,17 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
               <div>
                 <p className="text-sm font-medium text-foreground">Geen betrouwbare voedingswaarden gevonden</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Probeer een andere zoekterm, zoals het generieke productnaam (bijv. "chips" in plaats van een merknaam)
+                  Dit product is opgeslagen voor toekomstige verbetering. Probeer een andere zoekterm.
                 </p>
               </div>
+            </div>
+          )}
+          {displayResults.length > 0 && aiResult?.match_quality === 'alias' && (
+            <div className="flex items-start gap-2 rounded-lg bg-muted/50 border border-border p-2.5 mt-1">
+              <Bot className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                Dit is het best beschikbare resultaat. Als dit niet klopt, probeer een specifiekere zoekterm.
+              </p>
             </div>
           )}
         </div>
