@@ -256,7 +256,7 @@ export default function FoodTracker() {
               </div>
             )}
 
-            {/* Manual search fallback */}
+            {/* Manual search and barcode buttons */}
             <div className="mb-4 grid grid-cols-2 gap-3">
               <button
                 onClick={() => setStep('manual')}
@@ -272,6 +272,26 @@ export default function FoodTracker() {
                 <ScanBarcode className="h-4 w-4" />
                 Barcode scannen
               </button>
+            </div>
+
+            {/* Meal buttons */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => setStep('meal-compose')}
+                variant="outline"
+                className="h-14 flex-col gap-1 rounded-xl border-2 border-dashed"
+              >
+                <UtensilsCrossed className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Maaltijd samenstellen</span>
+              </Button>
+              <Button
+                onClick={() => setStep('meal-history')}
+                variant="outline"
+                className="h-14 flex-col gap-1 rounded-xl border-2 border-dashed"
+              >
+                <History className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Maaltijdgeschiedenis</span>
+              </Button>
             </div>
           </>
         )}
