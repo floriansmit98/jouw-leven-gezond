@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      branded_products: {
+        Row: {
+          aliases: string[] | null
+          brand: string
+          category: string
+          created_at: string
+          display_name: string
+          generic_food_id: string | null
+          id: string
+          keywords: string[] | null
+          product_name: string
+          simplified_name: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          brand: string
+          category?: string
+          created_at?: string
+          display_name: string
+          generic_food_id?: string | null
+          id?: string
+          keywords?: string[] | null
+          product_name: string
+          simplified_name?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          brand?: string
+          category?: string
+          created_at?: string
+          display_name?: string
+          generic_food_id?: string | null
+          id?: string
+          keywords?: string[] | null
+          product_name?: string
+          simplified_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branded_products_generic_food_id_fkey"
+            columns: ["generic_food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      common_meal_items: {
+        Row: {
+          amount_grams: number | null
+          amount_ml: number | null
+          food_id: string
+          id: string
+          meal_id: string
+          portion_count: number | null
+        }
+        Insert: {
+          amount_grams?: number | null
+          amount_ml?: number | null
+          food_id: string
+          id?: string
+          meal_id: string
+          portion_count?: number | null
+        }
+        Update: {
+          amount_grams?: number | null
+          amount_ml?: number | null
+          food_id?: string
+          id?: string
+          meal_id?: string
+          portion_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "common_meal_items_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "common_meal_items_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "common_meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      common_meals: {
+        Row: {
+          aliases: string[] | null
+          category: string
+          created_at: string
+          display_name: string
+          id: string
+          keywords: string[] | null
+          simplified_name: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          category?: string
+          created_at?: string
+          display_name: string
+          id?: string
+          keywords?: string[] | null
+          simplified_name?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          category?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          keywords?: string[] | null
+          simplified_name?: string | null
+        }
+        Relationships: []
+      }
       food_entries: {
         Row: {
           fluid_ml: number
@@ -91,8 +210,10 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          search_rank: number | null
           simplified_name: string | null
           sodium_mg: number
+          source_name: string | null
         }
         Insert: {
           aliases?: string[] | null
@@ -110,8 +231,10 @@ export type Database = {
           portion_grams?: number
           potassium_mg?: number
           protein_g?: number
+          search_rank?: number | null
           simplified_name?: string | null
           sodium_mg?: number
+          source_name?: string | null
         }
         Update: {
           aliases?: string[] | null
@@ -129,8 +252,10 @@ export type Database = {
           portion_grams?: number
           potassium_mg?: number
           protein_g?: number
+          search_rank?: number | null
           simplified_name?: string | null
           sodium_mg?: number
+          source_name?: string | null
         }
         Relationships: []
       }
@@ -164,6 +289,60 @@ export type Database = {
           meal_type?: string
           name?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      missing_searches: {
+        Row: {
+          created_at: string
+          id: string
+          normalized_search_term: string
+          result_type: string
+          search_term: string
+          suggested_match: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          normalized_search_term: string
+          result_type?: string
+          search_term: string
+          suggested_match?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          normalized_search_term?: string
+          result_type?: string
+          search_term?: string
+          suggested_match?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      product_aliases: {
+        Row: {
+          alias: string
+          id: string
+          normalized_alias: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          alias: string
+          id?: string
+          normalized_alias: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          alias?: string
+          id?: string
+          normalized_alias?: string
+          target_id?: string
+          target_type?: string
         }
         Relationships: []
       }
@@ -274,8 +453,10 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          search_rank: number | null
           simplified_name: string | null
           sodium_mg: number
+          source_name: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -302,8 +483,10 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          search_rank: number | null
           simplified_name: string | null
           sodium_mg: number
+          source_name: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -311,6 +494,25 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      search_all_foods: {
+        Args: { page_offset?: number; page_size?: number; search_query: string }
+        Returns: {
+          brand: string
+          category: string
+          display_name: string
+          fluid_ml: number
+          food_id: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          rank_score: number
+          result_id: string
+          result_type: string
+          sodium_mg: number
+        }[]
       }
       search_foods: {
         Args: { page_offset?: number; page_size?: number; search_query: string }
@@ -330,8 +532,10 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          search_rank: number | null
           simplified_name: string | null
           sodium_mg: number
+          source_name: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -363,8 +567,10 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          search_rank: number | null
           simplified_name: string | null
           sodium_mg: number
+          source_name: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -391,8 +597,10 @@ export type Database = {
           portion_grams: number
           potassium_mg: number
           protein_g: number
+          search_rank: number | null
           simplified_name: string | null
           sodium_mg: number
+          source_name: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -400,6 +608,25 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      unified_food_search: {
+        Args: { page_offset?: number; page_size?: number; search_query: string }
+        Returns: {
+          brand: string
+          category: string
+          display_name: string
+          fluid_ml: number
+          food_id: string
+          phosphate_mg: number
+          portion_description: string
+          portion_grams: number
+          potassium_mg: number
+          protein_g: number
+          rank_score: number
+          result_id: string
+          result_type: string
+          sodium_mg: number
+        }[]
       }
     }
     Enums: {

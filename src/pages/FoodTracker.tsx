@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot } from 'lucide-react';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
+import { useUnifiedSearch, fetchCommonMealItems, logMissingSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
 import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -631,9 +632,12 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
+  const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [mealItems, setMealItems] = useState<Record<string, any[]>>({});
   
   const { user: searchUser } = useAuth();
   const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query, searchUser?.id);
+  const { results: unifiedResults, loading: unifiedLoading } = useUnifiedSearch(query);
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
@@ -641,10 +645,21 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
 
   const showResults = query.trim().length > 0;
   
-  const displayResults = aiResult?.matches && aiResult.matches.length > 0
-    ? aiResult.matches
-    : nevoResults;
-  const isLoading = aiLoading || (nevoLoading && !aiResult);
+  // Merge: show unified results (meals, branded, foods) first, then AI/NEVO fallback
+  const hasUnifiedResults = unifiedResults.length > 0;
+  const isLoading = unifiedLoading || aiLoading || (nevoLoading && !aiResult && !hasUnifiedResults);
+
+  // Log missing/weak searches for database improvement
+  useEffect(() => {
+    if (!showResults || isLoading) return;
+    const noResults = !hasUnifiedResults && (!aiResult?.matches || aiResult.matches.length === 0) && (!aiResult?.is_compound || !aiResult.components.every(c => !c.match));
+    const weakMatch = hasUnifiedResults && unifiedResults[0]?.rank_score < 60;
+    if (noResults) {
+      logMissingSearch(query, 'not_found', undefined, searchUser?.id);
+    } else if (weakMatch) {
+      logMissingSearch(query, 'weak_match', unifiedResults[0]?.display_name, searchUser?.id);
+    }
+  }, [showResults, isLoading, hasUnifiedResults, query]);
 
   const handleSelectFood = (food: FoodRow) => {
     addSearch(query);
@@ -829,8 +844,120 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             </div>
           )}
 
-          {/* Regular single-product results */}
-          {displayResults.map((food, idx) => {
+          {/* Unified search results (meals, branded, foods) */}
+          {hasUnifiedResults && (
+            <div className="space-y-1.5">
+              {unifiedResults.map((result, idx) => {
+                const isComponent = aiResult?.is_compound && aiResult.components.some(c => c.match?.id === result.food_id);
+                if (isComponent) return null;
+                
+                const typeIcon = result.result_type === 'meal' 
+                  ? <CookingPot className="h-3.5 w-3.5 text-primary" />
+                  : result.result_type === 'branded_product' 
+                    ? <ShoppingBag className="h-3.5 w-3.5 text-accent-foreground" />
+                    : null;
+                
+                const typeLabel = result.result_type === 'meal' ? 'Maaltijd' 
+                  : result.result_type === 'branded_product' ? (result.brand || 'Merk') 
+                  : result.category;
+                
+                return (
+                  <button
+                    key={`${result.result_type}-${result.result_id}`}
+                    onClick={() => {
+                      if (result.result_type === 'food' || result.food_id) {
+                        // For foods and branded products with a linked food, select the food
+                        const foodRow: FoodRow = {
+                          id: result.food_id || result.result_id,
+                          name: result.display_name,
+                          display_name: result.display_name,
+                          category: result.category,
+                          portion_description: result.portion_description,
+                          portion_grams: result.portion_grams || 100,
+                          potassium_mg: result.potassium_mg,
+                          phosphate_mg: result.phosphate_mg,
+                          sodium_mg: result.sodium_mg,
+                          protein_g: result.protein_g,
+                          fluid_ml: result.fluid_ml,
+                          dialysis_risk_label: '',
+                        };
+                        handleSelectFood(foodRow);
+                      } else if (result.result_type === 'meal') {
+                        // For common meals, expand to show components
+                        if (expandedMeal === result.result_id) {
+                          setExpandedMeal(null);
+                        } else {
+                          setExpandedMeal(result.result_id);
+                          if (!mealItems[result.result_id]) {
+                            fetchCommonMealItems(result.result_id).then(items => {
+                              setMealItems(prev => ({ ...prev, [result.result_id]: items }));
+                            });
+                          }
+                        }
+                      }
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50 ${
+                      idx === 0 && !aiResult?.is_compound ? 'border-primary/30 bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        {idx === 0 && !aiResult?.is_compound && (
+                          <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">Beste match</span>
+                        )}
+                        {typeIcon}
+                        <p className="font-semibold text-foreground text-sm truncate">{result.display_name}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {typeLabel}{result.portion_description ? ` · ${result.portion_description}` : ''}
+                      </p>
+                    </div>
+                    {result.result_type === 'meal' ? (
+                      <CookingPot className="h-5 w-5 shrink-0 text-primary ml-2" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Expanded common meal items */}
+          {expandedMeal && mealItems[expandedMeal] && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <CookingPot className="h-4 w-4 text-primary" />
+                Onderdelen van deze maaltijd:
+              </p>
+              <div className="space-y-1.5">
+                {mealItems[expandedMeal].map((item: any, i: number) => (
+                  item.food ? (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSelectFood(item.food as FoodRow)}
+                      className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-2.5 text-left shadow-sm transition-colors hover:bg-secondary/50"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-sm truncate">{item.food.display_name || item.food.name}</p>
+                          <p className="text-xs text-muted-foreground">{item.amount_grams}g · {item.food.portion_description}</p>
+                        </div>
+                      </div>
+                      <Plus className="h-4 w-4 shrink-0 text-primary ml-2" />
+                    </button>
+                  ) : null
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Voeg elk onderdeel apart toe.</p>
+            </div>
+          )}
+
+          {/* Fallback: AI results not in unified */}
+          {!hasUnifiedResults && aiResult?.matches && aiResult.matches.length > 0 && aiResult.matches.map((food, idx) => {
             const isComponent = aiResult?.is_compound && aiResult.components.some(c => c.match?.id === food.id);
             if (isComponent) return null;
             return (
@@ -838,26 +965,23 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
                 key={food.id}
                 onClick={() => handleSelectFood(food)}
                 className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-colors hover:bg-secondary/50 ${
-                  idx === 0 && !aiResult?.is_compound ? 'border-primary/30 bg-primary/5' : 'border-border'
+                  idx === 0 ? 'border-primary/30 bg-primary/5' : 'border-border'
                 }`}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    {idx === 0 && !aiResult?.is_compound && (
-                      <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">Beste match</span>
-                    )}
+                    {idx === 0 && <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">Beste match</span>}
                     <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {food.portion_description} · {food.category}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{food.portion_description} · {food.category}</p>
                 </div>
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
               </button>
             );
           })}
 
-          {displayResults.length === 0 && (!aiResult?.is_compound || !aiResult.components.some(c => c.match)) && (
+          {/* No results at all */}
+          {!hasUnifiedResults && (!aiResult?.matches || aiResult.matches.length === 0) && (!aiResult?.is_compound || !aiResult.components.some(c => c.match)) && (
             <div className="flex items-start gap-2.5 rounded-xl border border-border bg-card p-4">
               <Bot className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
               <div>
@@ -869,7 +993,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
             </div>
           )}
 
-          {displayResults.length > 0 && !aiResult?.is_compound && aiResult?.match_quality === 'alias' && (
+          {hasUnifiedResults && aiResult?.match_quality === 'alias' && (
             <div className="flex items-start gap-2 rounded-lg bg-muted/50 border border-border p-2.5 mt-1">
               <Bot className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
