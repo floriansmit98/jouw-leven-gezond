@@ -75,7 +75,7 @@ export default function SymptomTracker() {
   const [severity, setSeverity] = useState(3);
   const [notes, setNotes] = useState('');
   const [chartFilter, setChartFilter] = useState<string>('all');
-  const [period, setPeriod] = useState<Period>('7');
+  const [period, setPeriod] = useState<Period>(isPremium ? '7' : '1');
   const [showMore, setShowMore] = useState(false);
   const [moreSearch, setMoreSearch] = useState('');
 
