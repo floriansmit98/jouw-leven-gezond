@@ -1152,7 +1152,7 @@ function SearchResultCard({
   onAddFood,
   saving,
 }: {
-  result: UnifiedSearchResult;
+  result: UnifiedSearchResult & { _debugScore?: number };
   isBestMatch?: boolean;
   expandedMeal: string | null;
   mealItems: Record<string, any[]>;
