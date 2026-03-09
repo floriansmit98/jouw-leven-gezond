@@ -639,6 +639,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   
   const { user: searchUser } = useAuth();
   const { result: aiResult, loading: aiLoading } = useAIFoodSearch(query, searchUser?.id);
+  const { match: patternMatch, loading: patternLoading } = useMealPatterns(query);
   const { results: unifiedResults, loading: unifiedLoading } = useUnifiedSearch(query);
   const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
   const { foods: recentFoods } = useRecentFoods();
@@ -649,7 +650,8 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   
   // Merge: show unified results (meals, branded, foods) first, then AI/NEVO fallback
   const hasUnifiedResults = unifiedResults.length > 0;
-  const isLoading = unifiedLoading || aiLoading || (nevoLoading && !aiResult && !hasUnifiedResults);
+  const hasMealPattern = !!patternMatch && patternMatch.components.some(c => c.food);
+  const isLoading = unifiedLoading || patternLoading || aiLoading || (nevoLoading && !aiResult && !hasUnifiedResults);
 
   // Log missing/weak searches for database improvement
   useEffect(() => {
