@@ -34,27 +34,37 @@ serve(async (req) => {
             content: `Je bent een Nederlandse voedingsassistent voor nierpatiënten. 
 Je taak: interpreteer productzoektermen van gebruikers en geef gestructureerde zoektermen terug om te matchen met de NEVO-voedingsdatabase.
 
+BELANGRIJK - Samengestelde gerechten:
+Veel zoekopdrachten bevatten meerdere ingrediënten, bijv.:
+- "broodje zalm" → dit is GEEN enkel product, maar twee componenten: "broodje" + "zalm"
+- "boterham met kaas" → twee componenten: "brood" + "kaas"
+- "tosti ham kaas" → drie componenten: "brood" + "ham" + "kaas"
+- "wrap kip" → twee componenten: "wrap" + "kip"
+- "salade tonijn" → twee componenten: "sla" + "tonijn"
+- "yoghurt met muesli" → twee componenten: "yoghurt" + "muesli"
+- "havermout met banaan" → twee componenten: "havermout" + "banaan"
+
+Als een zoekopdracht een samengesteld gerecht beschrijft (meerdere ingrediënten), stel dan is_compound = true en geef de losse componenten terug met hun eigen zoektermen.
+
+Als het één enkel product is (bijv. "stroopwafel", "frikandel", "katjang pedis", "cola"), stel dan is_compound = false.
+
 De NEVO-database bevat generieke Nederlandse voedingsmiddelen. Voorbeelden van mappings:
 - "Calvé pindakaas" → zoek op "pindakaas"
 - "Doritos" → zoek op "tortillachips"  
-- "Coca Cola" → zoek op "cola" of "frisdrank"
+- "Coca Cola" → zoek op "cola"
 - "Cup-a-Soup" → zoek op "kippensoep" of "soep"
 - "Fanta" → zoek op "frisdrank sinaasappel"
 - "Nutella" → zoek op "chocoladepasta"
 - "Red Bull" → zoek op "energiedrank"
-- "katjang pedis" → zoek op "katjang pedis" of "pinda's gezouten" of "pittige pinda's"
-- "katjang pedas" → zoek op "katjang pedas" of "pinda's gezouten"
-- "bitterballen" → zoek op "bitterballen" of "bitterbal"
+- "katjang pedis" → zoek op "katjang pedis"
+- "bitterballen" → zoek op "bitterballen"
 - "frikandel" → zoek op "frikandel"
 - "kroket" → zoek op "kroket"
-- "borrelnootjes" → zoek op "borrelnootjes" of "nootjes"
-- "tompoes" → zoek op "tompoes" of "tompouce"
 
 Belangrijk:
 - Herken ook alternatieve spellingen, synoniemen en informele namen.
-- "katjang pedis" en "katjang pedas" zijn hetzelfde product (pittige pinda's).
 - Geef altijd meerdere zoektermen zodat we de beste match kunnen vinden.
-- Gebruik zowel de informele/volksnaam als de officiële naam als zoekterm.`
+- Bij samengestelde gerechten: geef per component de beste zoektermen.`
           },
           {
             role: "user",
@@ -72,27 +82,54 @@ Belangrijk:
                 properties: {
                   brand: {
                     type: "string",
-                    description: "Het merk als herkend (bijv. 'Calvé', 'Doritos', 'Jumbo'). Leeg als geen merk."
+                    description: "Het merk als herkend (bijv. 'Calvé', 'Doritos'). Leeg als geen merk."
                   },
                   product_type: {
                     type: "string",
-                    description: "Het producttype in het Nederlands (bijv. 'pindakaas', 'tortillachips', 'stroopwafel')"
+                    description: "Het producttype in het Nederlands (bijv. 'pindakaas', 'broodje zalm')"
                   },
                   is_drink: {
                     type: "boolean",
-                    description: "True als het een drank is (frisdrank, sap, melk, thee, koffie, water, bier, wijn, etc.)"
+                    description: "True als het een drank is"
+                  },
+                  is_compound: {
+                    type: "boolean",
+                    description: "True als de zoekopdracht een samengesteld gerecht is met meerdere ingrediënten (bijv. 'broodje zalm', 'tosti ham kaas'). False als het één enkel product is (bijv. 'stroopwafel', 'cola')."
                   },
                   nevo_search_terms: {
                     type: "array",
                     items: { type: "string" },
-                    description: "Lijst van zoektermen om in de NEVO-database te zoeken, van meest specifiek naar generiek. Bijv. ['pindakaas', 'notenpasta'] of ['tortillachips', 'chips', 'nachochips']"
+                    description: "Zoektermen voor het hele product. Bij samengestelde gerechten: zoek eerst op het volledige gerecht."
+                  },
+                  components: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: {
+                          type: "string",
+                          description: "Naam van het component (bijv. 'broodje', 'zalm')"
+                        },
+                        search_terms: {
+                          type: "array",
+                          items: { type: "string" },
+                          description: "Zoektermen voor dit component in de NEVO-database"
+                        },
+                        is_drink: {
+                          type: "boolean",
+                          description: "True als dit component een drank is"
+                        }
+                      },
+                      required: ["name", "search_terms", "is_drink"]
+                    },
+                    description: "Alleen invullen als is_compound = true. Lijst van losse ingrediënten/componenten."
                   },
                   display_message: {
                     type: "string",
-                    description: "Korte Nederlandse zin voor de gebruiker die uitlegt wat je hebt herkend. Bijv. 'Ik herken dit als pindakaas van Calvé.' of 'Dit is een stroopwafel.'"
+                    description: "Korte Nederlandse zin voor de gebruiker. Bij samengestelde gerechten: 'Ik herken: broodje + zalm'. Bij enkelvoudig: 'Dit is een stroopwafel.'"
                   }
                 },
-                required: ["product_type", "is_drink", "nevo_search_terms", "display_message"],
+                required: ["product_type", "is_drink", "is_compound", "nevo_search_terms", "display_message"],
                 additionalProperties: false
               }
             }
