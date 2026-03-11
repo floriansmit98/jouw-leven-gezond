@@ -99,9 +99,9 @@ export function useBarcodeLookup() {
 
 /**
  * Build an array of search terms to try against NEVO, from most specific to least.
- * E.g. "Stroopwafel" from brand "Lotus" → ["Stroopwafel Lotus", "Stroopwafel", "stroopwafel"]
+ * Uses product name, generic name, and OFF category tags for better matching.
  */
-function buildSearchTerms(name: string, brand: string): string[] {
+function buildSearchTerms(name: string, brand: string, genericName: string, categoryTags: string[]): string[] {
   const terms: string[] = [];
   const cleanName = name.replace(/[®™©]/g, '').trim();
 
@@ -110,11 +110,35 @@ function buildSearchTerms(name: string, brand: string): string[] {
     terms.push(`${cleanName} ${brand.split(',')[0].trim()}`);
   }
   // Try just the product name
-  terms.push(cleanName);
-  // Try first word only (for compound products like "Stroopwafel original")
-  const firstWord = cleanName.split(/\s+/)[0];
-  if (firstWord && firstWord.length >= 3 && firstWord !== cleanName) {
-    terms.push(firstWord);
+  if (cleanName) terms.push(cleanName);
+
+  // Try generic name from OFF (e.g. "Stroopwafels" instead of "AH Stroopwafels roomboter")
+  const cleanGeneric = genericName.replace(/[®™©]/g, '').trim();
+  if (cleanGeneric && cleanGeneric !== cleanName) {
+    terms.push(cleanGeneric);
   }
+
+  // Try individual meaningful words from the product name (skip short/common words)
+  const STOP_WORDS = new Set(['de', 'het', 'een', 'van', 'met', 'en', 'in', 'op', 'voor', 'uit', 'bij', 'tot', 'aan', 'om', 'als', 'maar', 'dan', 'nog', 'wel', 'niet', 'al', 'er', 'die', 'dat', 'dit', 'was', 'is', 'are', 'the', 'and', 'or', 'with', 'from', 'pure', 'original', 'naturel', 'light', 'bio', 'organic']);
+  const words = cleanName.split(/\s+/).filter(w => w.length >= 3 && !STOP_WORDS.has(w.toLowerCase()));
+  
+  // Try each significant word individually
+  for (const word of words) {
+    if (word !== cleanName && word !== cleanGeneric) {
+      terms.push(word);
+    }
+  }
+
+  // Extract Dutch food names from OFF category tags (e.g. "en:stroopwafels" → "stroopwafels")
+  for (const tag of categoryTags) {
+    const match = tag.match(/^(?:nl|en):(.+)$/);
+    if (match) {
+      const catName = match[1].replace(/-/g, ' ');
+      if (catName.length >= 3 && !terms.includes(catName)) {
+        terms.push(catName);
+      }
+    }
+  }
+
   return terms;
 }
