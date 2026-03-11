@@ -28,9 +28,9 @@ export function useBarcodeLookup() {
     setResult(null);
 
     try {
-      // Step 1: Look up barcode in Open Food Facts to get product name
+      // Step 1: Look up barcode in Open Food Facts to get product info
       const res = await fetch(
-        `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,brands,image_front_url`
+        `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,generic_name,brands,categories_tags,image_front_url`
       );
       const json = await res.json();
 
@@ -43,20 +43,22 @@ export function useBarcodeLookup() {
       const p = json.product;
       const offName = p.product_name || '';
       const offBrand = p.brands || '';
+      const genericName = p.generic_name || '';
+      const categoryTags: string[] = p.categories_tags || [];
 
-      if (!offName.trim()) {
+      if (!offName.trim() && !genericName.trim()) {
         setError('Product herkend maar geen naam beschikbaar.');
         setLoading(false);
         return null;
       }
 
-      // Step 2: Search NEVO database for this product name
-      // Try several search strategies
-      const searchTerms = buildSearchTerms(offName, offBrand);
+      // Step 2: Search NEVO database using multiple strategies
+      const searchTerms = buildSearchTerms(offName, offBrand, genericName, categoryTags);
       let nevoMatch: FoodRow | null = null;
 
       for (const term of searchTerms) {
         if (!term.trim()) continue;
+        // Try unified search first (includes branded_products), then ranked
         const { data } = await supabase.rpc('search_foods_ranked', {
           search_query: term,
           page_size: 5,
