@@ -19,7 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import FluidScheduleSection from '@/components/FluidScheduleSection';
 
-const { isPremium } = usePremium();
+export default function Index() {
+  const { isPremium } = usePremium();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const limits = getLimits();
