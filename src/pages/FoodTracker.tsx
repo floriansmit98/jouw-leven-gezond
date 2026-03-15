@@ -40,6 +40,8 @@ type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcod
 
 export default function FoodTracker() {
   const { user } = useAuth();
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>('capture');
   const [preview, setPreview] = useState<string | null>(null);
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
