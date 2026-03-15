@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      barcode_mappings: {
+        Row: {
+          barcode: string
+          brand: string | null
+          created_at: string
+          created_by: string | null
+          food_id: string
+          id: string
+          product_name: string | null
+        }
+        Insert: {
+          barcode: string
+          brand?: string | null
+          created_at?: string
+          created_by?: string | null
+          food_id: string
+          id?: string
+          product_name?: string | null
+        }
+        Update: {
+          barcode?: string
+          brand?: string | null
+          created_at?: string
+          created_by?: string | null
+          food_id?: string
+          id?: string
+          product_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "barcode_mappings_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branded_products: {
         Row: {
           aliases: string[] | null
