@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot, Crown } from 'lucide-react';
+import { usePremium } from '@/contexts/PremiumContext';
+import { useNavigate } from 'react-router-dom';
 import SuggestedMealBuilder from '@/components/SuggestedMealBuilder';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
@@ -38,6 +40,8 @@ type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcod
 
 export default function FoodTracker() {
   const { user } = useAuth();
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>('capture');
   const [preview, setPreview] = useState<string | null>(null);
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
@@ -234,43 +238,71 @@ export default function FoodTracker() {
         {/* Step 1: Capture */}
         {step === 'capture' && (
           <>
-            {/* Primary action: Slim zoeken */}
-            <button
-              onClick={() => setStep('manual')}
-              className="mb-5 flex w-full items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
-            >
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/20">
-                <Search className="h-7 w-7" />
-              </div>
-              <div className="text-left">
-                <span className="text-lg font-bold font-display">Slim zoeken</span>
-                <p className="text-sm text-primary-foreground/75">Zoek voeding of maaltijden</p>
-              </div>
-              <ChevronRight className="ml-auto h-5 w-5 text-primary-foreground/60" />
-            </button>
-
-            {/* Secondary actions row */}
-            <div className="mb-4 grid grid-cols-3 gap-2">
+            {/* Free actions: Slim zoeken & Barcode side by side */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
               <button
-                onClick={() => cameraInputRef.current?.click()}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+                onClick={() => setStep('manual')}
+                className="flex items-center gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
               >
-                <Camera className="h-5 w-5 text-primary" />
-                <span className="text-xs font-medium">Foto</span>
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
-              >
-                <Upload className="h-5 w-5 text-primary" />
-                <span className="text-xs font-medium">Galerij</span>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/20">
+                  <Search className="h-6 w-6" />
+                </div>
+                <div className="text-left">
+                  <span className="text-sm font-bold font-display">Slim zoeken</span>
+                  <p className="text-xs text-primary-foreground/75">Zoek voeding</p>
+                </div>
               </button>
               <button
                 onClick={() => setStep('barcode')}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+                className="flex items-center gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
               >
-                <ScanBarcode className="h-5 w-5 text-primary" />
-                <span className="text-xs font-medium">Barcode</span>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/20">
+                  <ScanBarcode className="h-6 w-6" />
+                </div>
+                <div className="text-left">
+                  <span className="text-sm font-bold font-display">Barcode</span>
+                  <p className="text-xs text-primary-foreground/75">Scan product</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Premium actions: Foto & Galerij */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  if (isPremium) {
+                    cameraInputRef.current?.click();
+                  } else {
+                    navigate('/premium');
+                  }
+                }}
+                className="relative flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+              >
+                {!isPremium && (
+                  <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow">
+                    <Crown className="h-3 w-3 text-primary-foreground" />
+                  </div>
+                )}
+                <Camera className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Foto maken</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (isPremium) {
+                    fileInputRef.current?.click();
+                  } else {
+                    navigate('/premium');
+                  }
+                }}
+                className="relative flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card p-3 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+              >
+                {!isPremium && (
+                  <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow">
+                    <Crown className="h-3 w-3 text-primary-foreground" />
+                  </div>
+                )}
+                <Upload className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">Galerij</span>
               </button>
             </div>
 
