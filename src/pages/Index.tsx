@@ -105,8 +105,18 @@ export default function Index() {
             <TabsTrigger value="today" className="flex-1 rounded-lg text-sm font-semibold">
               Vandaag
             </TabsTrigger>
-            <TabsTrigger value="period" className="flex-1 rounded-lg text-sm font-semibold">
+            <TabsTrigger
+              value="period"
+              className="flex-1 rounded-lg text-sm font-semibold gap-1"
+              onClick={(e) => {
+                if (!isPremium) {
+                  e.preventDefault();
+                  navigate('/premium');
+                }
+              }}
+            >
               Sinds laatste dialyse
+              {!isPremium && <Crown className="h-3.5 w-3.5 text-warning" />}
             </TabsTrigger>
           </TabsList>
 
