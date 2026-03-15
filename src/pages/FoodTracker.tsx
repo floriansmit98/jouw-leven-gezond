@@ -1649,17 +1649,31 @@ function BarcodeResultCard({
 
           {showMappingSearch ? (
             <MappingSearchPanel />
-          ) : (
+          ) : result.searchSuggestions.length > 0 ? (
             <SuggestionCards suggestions={result.searchSuggestions} title="Beste alternatieven:" />
+          ) : (
+            <div className="rounded-xl border border-dashed border-border p-4 text-center">
+              <p className="text-sm text-muted-foreground mb-3">Geen automatische suggesties gevonden.</p>
+              <Button
+                onClick={onManualSearch}
+                className="h-12 w-full rounded-xl text-base font-semibold"
+              >
+                <Search className="mr-2 h-5 w-5" />
+                Zoek een vergelijkbaar voedingsmiddel
+              </Button>
+            </div>
           )}
 
-          <button
-            onClick={onManualSearch}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-          >
-            <Search className="h-4 w-4" />
-            Handmatig zoeken
-          </button>
+          {/* Always show manual search as secondary option when suggestions exist */}
+          {result.searchSuggestions.length > 0 && (
+            <button
+              onClick={onManualSearch}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+            >
+              <Search className="h-4 w-4" />
+              Handmatig zoeken
+            </button>
+          )}
 
           <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
             Opnieuw scannen
