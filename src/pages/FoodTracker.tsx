@@ -205,13 +205,23 @@ export default function FoodTracker() {
     }
   }, [barcodeLookup]);
 
-  const handleAddBarcodeProduct = async () => {
-    if (!user || !barcodeLookup.result || !barcodeLookup.result.nevoMatch) return;
+  const handleAddBarcodeProduct = async (food?: FoodRow, saveMapping?: boolean) => {
+    if (!user) return;
+    const nevo = food || barcodeLookup.result?.nevoMatch;
+    if (!nevo) return;
     setSaving(true);
     try {
-      const nevo = barcodeLookup.result.nevoMatch;
       const factor = barcodeAmount / 100;
       await addFoodEntryDB(user.id, nevo, factor);
+      // Save barcode mapping if requested
+      if (saveMapping && barcodeLookup.result) {
+        await barcodeLookup.saveMapping(
+          barcodeLookup.result.barcode,
+          nevo.id,
+          barcodeLookup.result.offName || undefined,
+          barcodeLookup.result.offBrand || undefined
+        );
+      }
       toast.success(`${foodDisplayName(nevo)} toegevoegd!`);
       handleReset();
       refetch();
