@@ -1530,8 +1530,9 @@ function BarcodeResultCard({
   }
 
   // Check if the matched food has incomplete dialysis-relevant nutrition
+  // Any key nutrient being 0 = incomplete
   const hasIncompleteNutrition = nevo
-    ? (nevo.potassium_mg === 0 && nevo.phosphate_mg === 0 && nevo.sodium_mg === 0)
+    ? (nevo.potassium_mg === 0 || nevo.phosphate_mg === 0 || nevo.sodium_mg === 0)
     : false;
 
   // Product was found in OFF
