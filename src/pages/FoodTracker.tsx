@@ -436,53 +436,7 @@ export default function FoodTracker() {
           />
         )}
 
-        {/* Step: Barcode scanner */}
-        {step === 'barcode' && (
-          <BarcodeScanner
-            onScan={handleBarcodeScan}
-            onClose={() => setStep('capture')}
-          />
-        )}
-
-        {/* Step: Barcode result */}
-        {step === 'barcode-result' && (
-          <div className="mb-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleReset}>
-                ← Terug
-              </Button>
-              <h2 className="font-display text-lg font-semibold text-foreground">Barcode resultaat</h2>
-            </div>
-
-            {barcodeLookup.loading && (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-8">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-base font-medium text-foreground">Product opzoeken...</p>
-              </div>
-            )}
-
-            {barcodeLookup.error && (
-              <div className="rounded-xl border border-border bg-card p-6 text-center">
-                <p className="text-sm text-muted-foreground">{barcodeLookup.error}</p>
-                <Button onClick={() => setStep('barcode')} variant="outline" className="mt-4">
-                  Opnieuw scannen
-                </Button>
-              </div>
-            )}
-
-            {barcodeLookup.result && (
-              <BarcodeResultCard
-                result={barcodeLookup.result}
-                amount={barcodeAmount}
-                onAmountChange={setBarcodeAmount}
-                onAdd={handleAddBarcodeProduct}
-                onRescan={() => { barcodeLookup.reset(); setStep('barcode'); }}
-                onManualSearch={() => setStep('manual')}
-                saving={saving}
-              />
-            )}
-          </div>
-        )}
+        {/* Barcode steps disabled — scanner temporarily removed */}
 
         {/* Step: Meal composer */}
         {step === 'meal-compose' && (
