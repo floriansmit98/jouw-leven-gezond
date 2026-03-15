@@ -175,7 +175,7 @@ export function useBarcodeLookup() {
         offBrand,
         imageUrl: p.image_front_url || undefined,
         nevoMatch,
-        isUsable: nevoMatch !== null,
+        isUsable: nevoMatch !== null && !hasIncompleteNutrition,
         productFound: true,
         fromMapping: false,
         searchSuggestions,
