@@ -36,8 +36,28 @@ export default function DialysisPeriodView() {
     overallStatus,
     lastEnd,
     nextDialysis,
-    schedule,
   } = useDialysisPeriodTotals();
+
+  const nutrientCards = useMemo(() => {
+    const items = [
+      { type: 'limit' as const, key: 'potassium', label: 'Kalium', current: totals.potassium, limit: periodLimits.potassium, unit: 'mg', icon: <Beaker className="h-5 w-5" /> },
+      { type: 'limit' as const, key: 'phosphate', label: 'Fosfaat', current: totals.phosphate, limit: periodLimits.phosphate, unit: 'mg', icon: <Flame className="h-5 w-5" /> },
+      { type: 'limit' as const, key: 'sodium', label: 'Natrium', current: totals.sodium, limit: periodLimits.sodium, unit: 'mg', icon: <Waves className="h-5 w-5" /> },
+      { type: 'goal' as const, key: 'protein', label: 'Eiwit', current: totals.protein, limit: periodLimits.protein, unit: 'g', icon: <Egg className="h-5 w-5" /> },
+      { type: 'limit' as const, key: 'fluid', label: 'Vocht', current: totals.fluid, limit: periodLimits.fluid, unit: 'ml', icon: <Droplets className="h-5 w-5" /> },
+    ];
+
+    const statusScore = (item: typeof items[0]) => {
+      if (item.type === 'goal') {
+        const s = getGoalStatus(item.current, item.limit);
+        return s === 'danger' ? 2 : s === 'warning' ? 1 : 0;
+      }
+      const s = getStatusColor(item.current, item.limit);
+      return s === 'danger' ? 2 : s === 'warning' ? 1 : 0;
+    };
+
+    return [...items].sort((a, b) => statusScore(b) - statusScore(a));
+  }, [totals, periodLimits]);
 
   if (!lastEnd) {
     return (
@@ -78,27 +98,6 @@ export default function DialysisPeriodView() {
     },
   }[overallStatus];
 
-  const nutrientCards = useMemo(() => {
-    const items = [
-      { type: 'limit' as const, key: 'potassium', label: 'Kalium', current: totals.potassium, limit: periodLimits.potassium, unit: 'mg', icon: <Beaker className="h-5 w-5" /> },
-      { type: 'limit' as const, key: 'phosphate', label: 'Fosfaat', current: totals.phosphate, limit: periodLimits.phosphate, unit: 'mg', icon: <Flame className="h-5 w-5" /> },
-      { type: 'limit' as const, key: 'sodium', label: 'Natrium', current: totals.sodium, limit: periodLimits.sodium, unit: 'mg', icon: <Waves className="h-5 w-5" /> },
-      { type: 'goal' as const, key: 'protein', label: 'Eiwit', current: totals.protein, limit: periodLimits.protein, unit: 'g', icon: <Egg className="h-5 w-5" /> },
-      { type: 'limit' as const, key: 'fluid', label: 'Vocht', current: totals.fluid, limit: periodLimits.fluid, unit: 'ml', icon: <Droplets className="h-5 w-5" /> },
-    ];
-
-    const statusScore = (item: typeof items[0]) => {
-      if (item.type === 'goal') {
-        const s = getGoalStatus(item.current, item.limit);
-        return s === 'danger' ? 2 : s === 'warning' ? 1 : 0;
-      }
-      const s = getStatusColor(item.current, item.limit);
-      return s === 'danger' ? 2 : s === 'warning' ? 1 : 0;
-    };
-
-    return [...items].sort((a, b) => statusScore(b) - statusScore(a));
-  }, [totals, periodLimits]);
-
   return (
     <div className="space-y-4">
       {/* Period info */}
@@ -138,7 +137,7 @@ export default function DialysisPeriodView() {
         </div>
       </div>
 
-      {/* Nutrient cards with period limits */}
+      {/* Nutrient cards */}
       <div>
         <h2 className="mb-3 font-display text-lg font-semibold text-foreground">
           Totaal sinds laatste dialyse
