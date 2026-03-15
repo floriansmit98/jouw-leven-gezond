@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePremium } from '@/contexts/PremiumContext';
 import { Beaker, Droplets, Flame, Waves, Egg, Settings, LogOut, Clock, Sparkles, Search, Crown } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 import NutrientCard from '@/components/NutrientCard';
@@ -19,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import FluidScheduleSection from '@/components/FluidScheduleSection';
 
 export default function Index() {
+  const { isPremium } = usePremium();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const limits = getLimits();
@@ -103,8 +105,18 @@ export default function Index() {
             <TabsTrigger value="today" className="flex-1 rounded-lg text-sm font-semibold">
               Vandaag
             </TabsTrigger>
-            <TabsTrigger value="period" className="flex-1 rounded-lg text-sm font-semibold">
+            <TabsTrigger
+              value="period"
+              className="flex-1 rounded-lg text-sm font-semibold gap-1"
+              onClick={(e) => {
+                if (!isPremium) {
+                  e.preventDefault();
+                  navigate('/premium');
+                }
+              }}
+            >
               Sinds laatste dialyse
+              {!isPremium && <Crown className="h-3.5 w-3.5 text-warning" />}
             </TabsTrigger>
           </TabsList>
 
