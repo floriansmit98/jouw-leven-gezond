@@ -130,8 +130,9 @@ export function useBarcodeLookup() {
 
       // Step 3: Get search suggestions for fallback UI
       // Check if the match has incomplete dialysis-relevant nutrients
+      // Consider incomplete if ANY key nutrient (potassium, phosphate, sodium) is missing (0)
       const hasIncompleteNutrition = nevoMatch
-        ? (nevoMatch.potassium_mg === 0 && nevoMatch.phosphate_mg === 0 && nevoMatch.sodium_mg === 0)
+        ? (nevoMatch.potassium_mg === 0 || nevoMatch.phosphate_mg === 0 || nevoMatch.sodium_mg === 0)
         : true;
 
       let searchSuggestions: FoodRow[] = [];
