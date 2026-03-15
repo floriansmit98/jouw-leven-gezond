@@ -252,6 +252,8 @@ export default function SettingsPage() {
           {saved ? 'Opgeslagen ✓' : 'Opslaan'}
         </Button>
 
+        <AdBanner className="mt-6" />
+
       </div>
     </div>
   );

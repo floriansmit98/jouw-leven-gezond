@@ -275,6 +275,8 @@ export default function FoodTracker() {
               </div>
             </div>
 
+            <AdBanner className="mb-4" />
+
             {/* Premium actions: Foto & Galerij */}
             <div className="mb-4 grid grid-cols-2 gap-3">
               <button
