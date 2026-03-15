@@ -129,8 +129,13 @@ export function useBarcodeLookup() {
       }
 
       // Step 3: Get search suggestions for fallback UI
+      // Check if the match has incomplete dialysis-relevant nutrients
+      const hasIncompleteNutrition = nevoMatch
+        ? (nevoMatch.potassium_mg === 0 && nevoMatch.phosphate_mg === 0 && nevoMatch.sodium_mg === 0)
+        : true;
+
       let searchSuggestions: FoodRow[] = [];
-      if (!nevoMatch) {
+      if (!nevoMatch || hasIncompleteNutrition) {
         // Try broader search for suggestions
         const mainTerm = genericName.trim() || offName.trim();
         if (mainTerm) {
@@ -170,7 +175,7 @@ export function useBarcodeLookup() {
         offBrand,
         imageUrl: p.image_front_url || undefined,
         nevoMatch,
-        isUsable: nevoMatch !== null,
+        isUsable: nevoMatch !== null && !hasIncompleteNutrition,
         productFound: true,
         fromMapping: false,
         searchSuggestions,

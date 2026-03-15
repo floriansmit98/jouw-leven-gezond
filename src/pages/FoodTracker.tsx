@@ -1529,6 +1529,11 @@ function BarcodeResultCard({
     );
   }
 
+  // Check if the matched food has incomplete dialysis-relevant nutrition
+  const hasIncompleteNutrition = nevo
+    ? (nevo.potassium_mg === 0 && nevo.phosphate_mg === 0 && nevo.sodium_mg === 0)
+    : false;
+
   // Product was found in OFF
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
@@ -1553,9 +1558,9 @@ function BarcodeResultCard({
         </div>
       </div>
 
-      {nevo ? (
+      {nevo && !hasIncompleteNutrition && !mappingFood ? (
         <>
-          {/* Outcome 1: Complete match */}
+          {/* Outcome 1: Complete match — normal flow */}
           <div className="rounded-lg bg-safe/10 border border-safe/30 p-3">
             <p className="text-sm font-medium text-safe">
               ✓ Gekoppeld aan database: {foodDisplayName(nevo)}
@@ -1565,7 +1570,6 @@ function BarcodeResultCard({
             </p>
           </div>
 
-          {/* Nutrient values per 100g */}
           <div>
             <p className="text-sm font-medium text-foreground mb-2">Voedingswaarden per 100g:</p>
             <div className="grid grid-cols-5 gap-1 text-center">
@@ -1577,14 +1581,8 @@ function BarcodeResultCard({
             </div>
           </div>
 
-          {/* Amount input */}
-          <AmountInput
-            food={nevo}
-            grams={amount}
-            onGramsChange={onAmountChange}
-          />
+          <AmountInput food={nevo} grams={amount} onGramsChange={onAmountChange} />
 
-          {/* Calculated values + warnings */}
           {amount > 0 && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground mb-1">Berekend voor {amount}{['dranken', 'alcohol'].includes(nevo.category) ? 'ml' : 'g'}:</p>
@@ -1607,13 +1605,12 @@ function BarcodeResultCard({
             </div>
           )}
 
-          {/* Buttons */}
           <div className="flex gap-3">
             <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
               Opnieuw scannen
             </Button>
             <Button
-              onClick={() => onAdd(mappingFood || undefined, !result.fromMapping && !!mappingFood)}
+              onClick={() => onAdd(undefined, false)}
               disabled={saving || amount <= 0}
               className="h-12 flex-1 rounded-xl text-base font-semibold"
             >
@@ -1622,35 +1619,46 @@ function BarcodeResultCard({
             </Button>
           </div>
         </>
+      ) : mappingFood ? (
+        <>
+          {/* User selected a mapping food — show confirmation */}
+          <SelectedMappingCard
+            food={mappingFood}
+            amount={amount}
+            onAmountChange={onAmountChange}
+            onAdd={() => onAdd(mappingFood, true)}
+            saving={saving}
+            factor={factor}
+          />
+          <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
+            Opnieuw scannen
+          </Button>
+        </>
       ) : (
         <>
-          {/* Outcome 2: Product found but no NEVO match */}
+          {/* Outcome 2: Product found but incomplete dialysis nutrition — show 3 suggestions */}
           <div className="rounded-lg bg-warning/10 border border-warning/30 p-3">
             <p className="text-sm font-medium text-warning">
-              Voedingsgegevens onvolledig
+              ⚠ Voedingsgegevens onvolledig
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Dit product mist dialyse-relevante voedingswaarden. Kies een generiek voedingsmiddel als vervanging.
+              Dialyse-relevante voedingswaarden ontbreken. Kies het best passende alternatief.
             </p>
           </div>
 
           {showMappingSearch ? (
             <MappingSearchPanel />
           ) : (
-            <SuggestionCards suggestions={result.searchSuggestions} title="Gebruik generieke voedingswaarden:" />
+            <SuggestionCards suggestions={result.searchSuggestions} title="Beste alternatieven:" />
           )}
 
-          {/* If user selected a mapping food, show confirmation */}
-          {mappingFood && (
-            <SelectedMappingCard
-              food={mappingFood}
-              amount={amount}
-              onAmountChange={onAmountChange}
-              onAdd={() => onAdd(mappingFood, true)}
-              saving={saving}
-              factor={factor}
-            />
-          )}
+          <button
+            onClick={onManualSearch}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+          >
+            <Search className="h-4 w-4" />
+            Handmatig zoeken
+          </button>
 
           <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
             Opnieuw scannen
