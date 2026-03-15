@@ -1,3 +1,4 @@
+import AdBanner from '@/components/AdBanner';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot, Crown } from 'lucide-react';
@@ -274,6 +275,8 @@ export default function FoodTracker() {
                 <p className="text-[11px] text-muted-foreground/70">We werken aan een betrouwbaardere scanfunctie.</p>
               </div>
             </div>
+
+            <AdBanner className="mb-4" />
 
             {/* Premium actions: Foto & Galerij */}
             <div className="mb-4 grid grid-cols-2 gap-3">

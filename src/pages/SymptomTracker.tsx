@@ -482,6 +482,8 @@ export default function SymptomTracker() {
             </div>
           </div>
         )}
+
+        <AdBanner className="mt-6" />
       </div>
     </div>
   );
