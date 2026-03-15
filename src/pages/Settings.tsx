@@ -1,3 +1,4 @@
+import AdBanner from '@/components/AdBanner';
 import { useState } from 'react';
 import { Settings, Save, Beaker, Flame, Waves, Egg, Droplets, Info, Calendar, Clock, RotateCcw } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
