@@ -1383,7 +1383,7 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-// --- Barcode Result Card (NEVO-first approach) ---
+// --- Barcode Result Card (4 outcomes) ---
 function BarcodeResultCard({
   result,
   amount,
@@ -1396,17 +1396,86 @@ function BarcodeResultCard({
   result: BarcodeResult;
   amount: number;
   onAmountChange: (amount: number) => void;
-  onAdd: () => void;
+  onAdd: (food?: FoodRow, saveMapping?: boolean) => void;
   onRescan: () => void;
   onManualSearch: () => void;
   saving: boolean;
 }) {
+  const [mappingFood, setMappingFood] = useState<FoodRow | null>(null);
+  const [mappingSearch, setMappingSearch] = useState('');
+  const [showMappingSearch, setShowMappingSearch] = useState(false);
+  const { foods: mappingResults, loading: mappingLoading } = useFoodSearch(showMappingSearch ? mappingSearch : '');
   const factor = amount / 100;
-  const nevo = result.nevoMatch;
+  const nevo = mappingFood || result.nevoMatch;
 
+  const handleSelectMapping = (food: FoodRow) => {
+    setMappingFood(food);
+    onAmountChange(food.portion_grams || 100);
+    setShowMappingSearch(false);
+  };
+
+  // Outcome 3: Barcode not found in OFF at all
+  if (!result.productFound) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="rounded-lg bg-muted p-3 text-center">
+          <p className="text-base font-semibold text-foreground">Barcode niet gevonden</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Dit product is niet bekend. Zoek het handmatig op of scan een ander product.
+          </p>
+        </div>
+
+        {/* Search suggestions */}
+        {result.searchSuggestions.length > 0 && (
+          <div>
+            <p className="text-sm font-medium text-foreground mb-2">Suggesties uit de database:</p>
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {result.searchSuggestions.map(food => (
+                <button
+                  key={food.id}
+                  onClick={() => handleSelectMapping(food)}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left hover:bg-muted transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{foodDisplayName(food)}</p>
+                    <p className="text-xs text-muted-foreground">{food.category} · {food.portion_description}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* If user selected a mapping food, show it */}
+        {mappingFood && (
+          <SelectedMappingCard
+            food={mappingFood}
+            amount={amount}
+            onAmountChange={onAmountChange}
+            onAdd={() => onAdd(mappingFood, true)}
+            saving={saving}
+            factor={factor}
+          />
+        )}
+
+        <div className="flex gap-3">
+          <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
+            Opnieuw scannen
+          </Button>
+          <Button onClick={onManualSearch} className="h-12 flex-1 rounded-xl text-base font-semibold">
+            <Search className="mr-2 h-5 w-5" />
+            Handmatig zoeken
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Product was found in OFF
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-      {/* Product info from barcode */}
+      {/* Product info */}
       <div className="flex gap-3">
         {result.imageUrl && (
           <img
@@ -1421,24 +1490,27 @@ function BarcodeResultCard({
             <p className="text-sm text-muted-foreground">{result.offBrand}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">Barcode: {result.barcode}</p>
+          {result.fromMapping && (
+            <p className="text-xs text-safe mt-1">✓ Eerder gekoppeld</p>
+          )}
         </div>
       </div>
 
       {nevo ? (
         <>
-          {/* NEVO match found */}
+          {/* Outcome 1: Complete match */}
           <div className="rounded-lg bg-safe/10 border border-safe/30 p-3">
             <p className="text-sm font-medium text-safe">
-              ✓ Gekoppeld aan NEVO-database: {foodDisplayName(nevo)}
+              ✓ Gekoppeld aan database: {foodDisplayName(nevo)}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Voedingswaarden komen uit de betrouwbare NEVO-database.
             </p>
           </div>
 
-          {/* Nutrient values per 100g from NEVO */}
+          {/* Nutrient values per 100g */}
           <div>
-            <p className="text-sm font-medium text-foreground mb-2">Voedingswaarden per 100g (NEVO):</p>
+            <p className="text-sm font-medium text-foreground mb-2">Voedingswaarden per 100g:</p>
             <div className="grid grid-cols-5 gap-1 text-center">
               <NutrientMini label="K" value={nevo.potassium_mg} unit="mg" />
               <NutrientMini label="F" value={nevo.phosphate_mg} unit="mg" />
@@ -1484,7 +1556,7 @@ function BarcodeResultCard({
               Opnieuw scannen
             </Button>
             <Button
-              onClick={onAdd}
+              onClick={() => onAdd(mappingFood || undefined, !result.fromMapping && !!mappingFood)}
               disabled={saving || amount <= 0}
               className="h-12 flex-1 rounded-xl text-base font-semibold"
             >
@@ -1495,15 +1567,82 @@ function BarcodeResultCard({
         </>
       ) : (
         <>
-          {/* No NEVO match */}
+          {/* Outcome 2: Product found but no NEVO match - offer generic mapping */}
           <div className="rounded-lg bg-warning/10 border border-warning/30 p-3">
             <p className="text-sm font-medium text-warning">
-              Dit product is herkend, maar bevat onvoldoende voedingsgegevens voor betrouwbare dialyseberekening.
+              Voedingsgegevens onvolledig
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Het product kon niet worden gekoppeld aan de interne voedingsdatabase. Zoek het product handmatig op voor betrouwbare waarden.
+              Dit product mist dialyse-relevante voedingswaarden (kalium, fosfaat, natrium of eiwit). 
+              Kies een generiek voedingsmiddel als vervanging.
             </p>
           </div>
+
+          {/* Search for generic food */}
+          {!showMappingSearch && (
+            <Button
+              onClick={() => { setShowMappingSearch(true); setMappingSearch(result.offName); }}
+              variant="outline"
+              className="w-full h-12 rounded-xl text-base font-semibold"
+            >
+              <Search className="mr-2 h-5 w-5" />
+              Generiek voedingsmiddel zoeken
+            </Button>
+          )}
+
+          {showMappingSearch && (
+            <div className="space-y-3 border-t border-border pt-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Zoek generiek voedingsmiddel..."
+                  value={mappingSearch}
+                  onChange={e => setMappingSearch(e.target.value)}
+                  className="h-10 rounded-xl pl-9 text-sm"
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-48 space-y-1 overflow-y-auto">
+                {mappingResults.slice(0, 8).map(food => (
+                  <button
+                    key={food.id}
+                    onClick={() => handleSelectMapping(food)}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left hover:bg-muted transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{foodDisplayName(food)}</p>
+                      <p className="text-xs text-muted-foreground">{food.category}</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </button>
+                ))}
+                {mappingLoading && <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />}
+              </div>
+            </div>
+          )}
+
+          {/* Suggestions from initial search */}
+          {!showMappingSearch && result.searchSuggestions.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">Suggesties:</p>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {result.searchSuggestions.map(food => (
+                  <button
+                    key={food.id}
+                    onClick={() => handleSelectMapping(food)}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left hover:bg-muted transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{foodDisplayName(food)}</p>
+                      <p className="text-xs text-muted-foreground">{food.category}</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
               Opnieuw scannen
@@ -1515,6 +1654,57 @@ function BarcodeResultCard({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Card shown when user selects a mapping food for a barcode */
+function SelectedMappingCard({
+  food,
+  amount,
+  onAmountChange,
+  onAdd,
+  saving,
+  factor,
+}: {
+  food: FoodRow;
+  amount: number;
+  onAmountChange: (amount: number) => void;
+  onAdd: () => void;
+  saving: boolean;
+  factor: number;
+}) {
+  return (
+    <div className="rounded-xl border border-safe/30 bg-safe/5 p-4 space-y-3">
+      <div className="rounded-lg bg-safe/10 border border-safe/30 p-2">
+        <p className="text-sm font-medium text-safe">
+          ✓ Gekoppeld aan: {foodDisplayName(food)}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Deze koppeling wordt opgeslagen voor toekomstige scans.
+        </p>
+      </div>
+
+      <AmountInput food={food} grams={amount} onGramsChange={onAmountChange} />
+
+      {amount > 0 && (
+        <div className="grid grid-cols-5 gap-1 text-center">
+          <NutrientMini label="K" value={Math.round(food.potassium_mg * factor)} unit="mg" />
+          <NutrientMini label="F" value={Math.round(food.phosphate_mg * factor)} unit="mg" />
+          <NutrientMini label="Na" value={Math.round(food.sodium_mg * factor)} unit="mg" />
+          <NutrientMini label="E" value={Math.round(food.protein_g * factor * 10) / 10} unit="g" />
+          <NutrientMini label="V" value={Math.round(food.fluid_ml * factor)} unit="ml" />
+        </div>
+      )}
+
+      <Button
+        onClick={onAdd}
+        disabled={saving || amount <= 0}
+        className="h-12 w-full rounded-xl text-base font-semibold"
+      >
+        {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
+        Toevoegen & koppeling opslaan
+      </Button>
     </div>
   );
 }
