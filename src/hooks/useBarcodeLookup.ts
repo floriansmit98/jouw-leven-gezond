@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { FoodRow } from './useFoods';
-import { foodDisplayName } from './useFoods';
 
 export interface BarcodeResult {
   barcode: string;
@@ -15,6 +14,12 @@ export interface BarcodeResult {
   nevoMatch: FoodRow | null;
   /** Whether we have a usable match with complete nutrition */
   isUsable: boolean;
+  /** Whether the product was found in OFF at all */
+  productFound: boolean;
+  /** Whether the match came from a saved barcode mapping */
+  fromMapping: boolean;
+  /** Search suggestions based on product name (for no-match / incomplete cases) */
+  searchSuggestions: FoodRow[];
 }
 
 export function useBarcodeLookup() {
@@ -28,16 +33,59 @@ export function useBarcodeLookup() {
     setResult(null);
 
     try {
-      // Step 1: Look up barcode in Open Food Facts to get product info
+      // Step 0: Check saved barcode mappings first
+      const { data: mapping } = await supabase
+        .from('barcode_mappings')
+        .select('food_id, product_name, brand')
+        .eq('barcode', barcode)
+        .maybeSingle();
+
+      if (mapping) {
+        // Fetch the full food row
+        const { data: foodData } = await supabase
+          .from('foods')
+          .select('*')
+          .eq('id', mapping.food_id)
+          .single();
+
+        if (foodData) {
+          const barcodeResult: BarcodeResult = {
+            barcode,
+            offName: mapping.product_name || foodData.display_name || foodData.name,
+            offBrand: mapping.brand || '',
+            nevoMatch: foodData as FoodRow,
+            isUsable: true,
+            productFound: true,
+            fromMapping: true,
+            searchSuggestions: [],
+          };
+          setResult(barcodeResult);
+          setLoading(false);
+          return barcodeResult;
+        }
+      }
+
+      // Step 1: Look up barcode in Open Food Facts
       const res = await fetch(
         `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,generic_name,brands,categories_tags,image_front_url`
       );
       const json = await res.json();
 
       if (json.status !== 1 || !json.product) {
-        setError('Geen product gevonden voor deze barcode.');
+        // Outcome 3: Barcode not found at all
+        const barcodeResult: BarcodeResult = {
+          barcode,
+          offName: '',
+          offBrand: '',
+          nevoMatch: null,
+          isUsable: false,
+          productFound: false,
+          fromMapping: false,
+          searchSuggestions: [],
+        };
+        setResult(barcodeResult);
         setLoading(false);
-        return null;
+        return barcodeResult;
       }
 
       const p = json.product;
@@ -47,18 +95,28 @@ export function useBarcodeLookup() {
       const categoryTags: string[] = p.categories_tags || [];
 
       if (!offName.trim() && !genericName.trim()) {
-        setError('Product herkend maar geen naam beschikbaar.');
+        const barcodeResult: BarcodeResult = {
+          barcode,
+          offName: '',
+          offBrand: offBrand,
+          imageUrl: p.image_front_url || undefined,
+          nevoMatch: null,
+          isUsable: false,
+          productFound: false,
+          fromMapping: false,
+          searchSuggestions: [],
+        };
+        setResult(barcodeResult);
         setLoading(false);
-        return null;
+        return barcodeResult;
       }
 
-      // Step 2: Search NEVO database using multiple strategies
+      // Step 2: Search NEVO database
       const searchTerms = buildSearchTerms(offName, offBrand, genericName, categoryTags);
       let nevoMatch: FoodRow | null = null;
 
       for (const term of searchTerms) {
         if (!term.trim()) continue;
-        // Try unified search first (includes branded_products), then ranked
         const { data } = await supabase.rpc('search_foods_ranked', {
           search_query: term,
           page_size: 5,
@@ -70,6 +128,42 @@ export function useBarcodeLookup() {
         }
       }
 
+      // Step 3: Get search suggestions for fallback UI
+      let searchSuggestions: FoodRow[] = [];
+      if (!nevoMatch) {
+        // Try broader search for suggestions
+        const mainTerm = genericName.trim() || offName.trim();
+        if (mainTerm) {
+          const { data } = await supabase.rpc('search_foods_ranked', {
+            search_query: mainTerm.split(/\s+/).slice(0, 2).join(' '),
+            page_size: 8,
+            page_offset: 0,
+          });
+          searchSuggestions = (data ?? []) as FoodRow[];
+        }
+        // If still no suggestions, try individual words
+        if (searchSuggestions.length === 0) {
+          const words = offName.split(/\s+/).filter(w => w.length >= 3);
+          for (const word of words.slice(0, 3)) {
+            const { data } = await supabase.rpc('search_foods_ranked', {
+              search_query: word,
+              page_size: 4,
+              page_offset: 0,
+            });
+            if (data && data.length > 0) {
+              searchSuggestions = [...searchSuggestions, ...(data as FoodRow[])];
+            }
+          }
+          // Deduplicate
+          const seen = new Set<string>();
+          searchSuggestions = searchSuggestions.filter(f => {
+            if (seen.has(f.id)) return false;
+            seen.add(f.id);
+            return true;
+          }).slice(0, 8);
+        }
+      }
+
       const barcodeResult: BarcodeResult = {
         barcode,
         offName,
@@ -77,6 +171,9 @@ export function useBarcodeLookup() {
         imageUrl: p.image_front_url || undefined,
         nevoMatch,
         isUsable: nevoMatch !== null,
+        productFound: true,
+        fromMapping: false,
+        searchSuggestions,
       };
 
       setResult(barcodeResult);
@@ -89,47 +186,53 @@ export function useBarcodeLookup() {
     }
   };
 
+  const saveMapping = async (barcode: string, foodId: string, productName?: string, brand?: string) => {
+    const { error } = await supabase.from('barcode_mappings').upsert(
+      {
+        barcode,
+        food_id: foodId,
+        product_name: productName || null,
+        brand: brand || null,
+      },
+      { onConflict: 'barcode' }
+    );
+    return !error;
+  };
+
   const reset = () => {
     setResult(null);
     setError(null);
   };
 
-  return { lookup, result, loading, error, reset };
+  return { lookup, result, loading, error, reset, saveMapping };
 }
 
 /**
  * Build an array of search terms to try against NEVO, from most specific to least.
- * Uses product name, generic name, and OFF category tags for better matching.
  */
 function buildSearchTerms(name: string, brand: string, genericName: string, categoryTags: string[]): string[] {
   const terms: string[] = [];
   const cleanName = name.replace(/[®™©]/g, '').trim();
 
-  // Try full name + brand
   if (brand) {
     terms.push(`${cleanName} ${brand.split(',')[0].trim()}`);
   }
-  // Try just the product name
   if (cleanName) terms.push(cleanName);
 
-  // Try generic name from OFF (e.g. "Stroopwafels" instead of "AH Stroopwafels roomboter")
   const cleanGeneric = genericName.replace(/[®™©]/g, '').trim();
   if (cleanGeneric && cleanGeneric !== cleanName) {
     terms.push(cleanGeneric);
   }
 
-  // Try individual meaningful words from the product name (skip short/common words)
   const STOP_WORDS = new Set(['de', 'het', 'een', 'van', 'met', 'en', 'in', 'op', 'voor', 'uit', 'bij', 'tot', 'aan', 'om', 'als', 'maar', 'dan', 'nog', 'wel', 'niet', 'al', 'er', 'die', 'dat', 'dit', 'was', 'is', 'are', 'the', 'and', 'or', 'with', 'from', 'pure', 'original', 'naturel', 'light', 'bio', 'organic']);
   const words = cleanName.split(/\s+/).filter(w => w.length >= 3 && !STOP_WORDS.has(w.toLowerCase()));
   
-  // Try each significant word individually
   for (const word of words) {
     if (word !== cleanName && word !== cleanGeneric) {
       terms.push(word);
     }
   }
 
-  // Extract Dutch food names from OFF category tags (e.g. "en:stroopwafels" → "stroopwafels")
   for (const tag of categoryTags) {
     const match = tag.match(/^(?:nl|en):(.+)$/);
     if (match) {
