@@ -224,6 +224,44 @@ export function getGoalLabel(status: 'safe' | 'warning' | 'danger'): string {
   }
 }
 
+// Dialysis schedule
+export interface DialysisSchedule {
+  dialysisDays: number[]; // 0=Sun, 1=Mon, ... 6=Sat
+  usualEndTime: string; // HH:mm
+  lastDialysisEnd: string | null; // ISO datetime
+}
+
+const DEFAULT_SCHEDULE: DialysisSchedule = {
+  dialysisDays: [1, 3, 5], // Mon, Wed, Fri
+  usualEndTime: '15:00',
+  lastDialysisEnd: null,
+};
+
+export function getDialysisSchedule(): DialysisSchedule {
+  return getFromStorage('dialysis_schedule', DEFAULT_SCHEDULE);
+}
+
+export function saveDialysisSchedule(schedule: DialysisSchedule): void {
+  saveToStorage('dialysis_schedule', schedule);
+}
+
+export function getNextDialysisDatetime(schedule: DialysisSchedule): Date | null {
+  if (schedule.dialysisDays.length === 0) return null;
+  const now = new Date();
+  const [h, m] = schedule.usualEndTime.split(':').map(Number);
+  
+  // Check next 14 days for a dialysis day
+  for (let i = 0; i <= 14; i++) {
+    const candidate = new Date(now);
+    candidate.setDate(candidate.getDate() + i);
+    candidate.setHours(h, m, 0, 0);
+    if (schedule.dialysisDays.includes(candidate.getDay()) && candidate > now) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 // Risk analysis
 export function analyzeRisks() {
   const totals = getTodayTotals();
