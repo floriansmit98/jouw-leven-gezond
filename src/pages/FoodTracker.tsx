@@ -1414,6 +1414,85 @@ function BarcodeResultCard({
     setShowMappingSearch(false);
   };
 
+  // Shared suggestion cards UI (used in Outcome 2 & 3)
+  const SuggestionCards = ({ suggestions, title }: { suggestions: FoodRow[]; title: string }) => {
+    const topSuggestions = suggestions.slice(0, 3);
+    if (topSuggestions.length === 0) return null;
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <div className="space-y-2">
+          {topSuggestions.map(food => {
+            const isSelected = mappingFood?.id === food.id;
+            return (
+              <button
+                key={food.id}
+                onClick={() => handleSelectMapping(food)}
+                className={`flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.98] ${
+                  isSelected
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border bg-card hover:border-primary/40 hover:shadow-sm'
+                }`}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+                  <span className="text-lg">🍽️</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-foreground truncate">{foodDisplayName(food)}</p>
+                  <p className="text-xs text-muted-foreground">{food.category} · {food.portion_description}</p>
+                </div>
+                {isSelected && <Check className="h-5 w-5 text-primary shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => { setShowMappingSearch(true); setMappingSearch(result.offName || ''); }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Search className="h-4 w-4" />
+          Ander voedingsmiddel zoeken
+        </button>
+      </div>
+    );
+  };
+
+  // Manual search overlay (shared between Outcome 2 & 3)
+  const MappingSearchPanel = () => (
+    <div className="space-y-3 border-t border-border pt-3">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={() => setShowMappingSearch(false)}>← Terug</Button>
+        <p className="text-sm font-medium text-foreground">Zoek voedingsmiddel</p>
+      </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Zoek generiek voedingsmiddel..."
+          value={mappingSearch}
+          onChange={e => setMappingSearch(e.target.value)}
+          className="h-10 rounded-xl pl-9 text-sm"
+          autoFocus
+        />
+      </div>
+      <div className="max-h-48 space-y-1 overflow-y-auto">
+        {mappingResults.slice(0, 8).map(food => (
+          <button
+            key={food.id}
+            onClick={() => handleSelectMapping(food)}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left hover:bg-muted transition-colors"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">{foodDisplayName(food)}</p>
+              <p className="text-xs text-muted-foreground">{food.category}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </button>
+        ))}
+        {mappingLoading && <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />}
+      </div>
+    </div>
+  );
+
   // Outcome 3: Barcode not found in OFF at all
   if (!result.productFound) {
     return (
@@ -1421,30 +1500,14 @@ function BarcodeResultCard({
         <div className="rounded-lg bg-muted p-3 text-center">
           <p className="text-base font-semibold text-foreground">Barcode niet gevonden</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Dit product is niet bekend. Zoek het handmatig op of scan een ander product.
+            Dit product is niet bekend. Kies een vergelijkbaar voedingsmiddel.
           </p>
         </div>
 
-        {/* Search suggestions */}
-        {result.searchSuggestions.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-foreground mb-2">Suggesties uit de database:</p>
-            <div className="space-y-1 max-h-60 overflow-y-auto">
-              {result.searchSuggestions.map(food => (
-                <button
-                  key={food.id}
-                  onClick={() => handleSelectMapping(food)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left hover:bg-muted transition-colors"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{foodDisplayName(food)}</p>
-                    <p className="text-xs text-muted-foreground">{food.category} · {food.portion_description}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
-          </div>
+        {showMappingSearch ? (
+          <MappingSearchPanel />
+        ) : (
+          <SuggestionCards suggestions={result.searchSuggestions} title="Vergelijkbare producten:" />
         )}
 
         {/* If user selected a mapping food, show it */}
@@ -1459,15 +1522,9 @@ function BarcodeResultCard({
           />
         )}
 
-        <div className="flex gap-3">
-          <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
-            Opnieuw scannen
-          </Button>
-          <Button onClick={onManualSearch} className="h-12 flex-1 rounded-xl text-base font-semibold">
-            <Search className="mr-2 h-5 w-5" />
-            Handmatig zoeken
-          </Button>
-        </div>
+        <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
+          Opnieuw scannen
+        </Button>
       </div>
     );
   }
@@ -1567,91 +1624,37 @@ function BarcodeResultCard({
         </>
       ) : (
         <>
-          {/* Outcome 2: Product found but no NEVO match - offer generic mapping */}
+          {/* Outcome 2: Product found but no NEVO match */}
           <div className="rounded-lg bg-warning/10 border border-warning/30 p-3">
             <p className="text-sm font-medium text-warning">
               Voedingsgegevens onvolledig
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Dit product mist dialyse-relevante voedingswaarden (kalium, fosfaat, natrium of eiwit). 
-              Kies een generiek voedingsmiddel als vervanging.
+              Dit product mist dialyse-relevante voedingswaarden. Kies een generiek voedingsmiddel als vervanging.
             </p>
           </div>
 
-          {/* Search for generic food */}
-          {!showMappingSearch && (
-            <Button
-              onClick={() => { setShowMappingSearch(true); setMappingSearch(result.offName); }}
-              variant="outline"
-              className="w-full h-12 rounded-xl text-base font-semibold"
-            >
-              <Search className="mr-2 h-5 w-5" />
-              Generiek voedingsmiddel zoeken
-            </Button>
+          {showMappingSearch ? (
+            <MappingSearchPanel />
+          ) : (
+            <SuggestionCards suggestions={result.searchSuggestions} title="Gebruik generieke voedingswaarden:" />
           )}
 
-          {showMappingSearch && (
-            <div className="space-y-3 border-t border-border pt-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Zoek generiek voedingsmiddel..."
-                  value={mappingSearch}
-                  onChange={e => setMappingSearch(e.target.value)}
-                  className="h-10 rounded-xl pl-9 text-sm"
-                  autoFocus
-                />
-              </div>
-              <div className="max-h-48 space-y-1 overflow-y-auto">
-                {mappingResults.slice(0, 8).map(food => (
-                  <button
-                    key={food.id}
-                    onClick={() => handleSelectMapping(food)}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left hover:bg-muted transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{foodDisplayName(food)}</p>
-                      <p className="text-xs text-muted-foreground">{food.category}</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </button>
-                ))}
-                {mappingLoading && <Loader2 className="mx-auto h-4 w-4 animate-spin text-primary" />}
-              </div>
-            </div>
+          {/* If user selected a mapping food, show confirmation */}
+          {mappingFood && (
+            <SelectedMappingCard
+              food={mappingFood}
+              amount={amount}
+              onAmountChange={onAmountChange}
+              onAdd={() => onAdd(mappingFood, true)}
+              saving={saving}
+              factor={factor}
+            />
           )}
 
-          {/* Suggestions from initial search */}
-          {!showMappingSearch && result.searchSuggestions.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-foreground mb-2">Suggesties:</p>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {result.searchSuggestions.map(food => (
-                  <button
-                    key={food.id}
-                    onClick={() => handleSelectMapping(food)}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left hover:bg-muted transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{foodDisplayName(food)}</p>
-                      <p className="text-xs text-muted-foreground">{food.category}</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <Button onClick={onRescan} variant="outline" className="h-12 flex-1 rounded-xl text-base font-semibold">
-              Opnieuw scannen
-            </Button>
-            <Button onClick={onManualSearch} className="h-12 flex-1 rounded-xl text-base font-semibold">
-              <Search className="mr-2 h-5 w-5" />
-              Handmatig zoeken
-            </Button>
-          </div>
+          <Button onClick={onRescan} variant="outline" className="h-12 w-full rounded-xl text-base font-semibold">
+            Opnieuw scannen
+          </Button>
         </>
       )}
     </div>
