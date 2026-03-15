@@ -248,11 +248,11 @@ export default function FoodTracker() {
         {/* Step 1: Capture */}
         {step === 'capture' && (
           <>
-            {/* Free actions: Slim zoeken & Barcode side by side */}
-            <div className="mb-4 grid grid-cols-2 gap-3">
+            {/* Primary action: Slim zoeken (full width) */}
+            <div className="mb-4">
               <button
                 onClick={() => setStep('manual')}
-                className="flex items-center gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
+                className="flex w-full items-center gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
               >
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/20">
                   <Search className="h-6 w-6" />
@@ -262,18 +262,17 @@ export default function FoodTracker() {
                   <p className="text-xs text-primary-foreground/75">Zoek voeding</p>
                 </div>
               </button>
-              <button
-                onClick={() => setStep('barcode')}
-                className="flex items-center gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-lg transition-transform active:scale-[0.98]"
-              >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/20">
-                  <ScanBarcode className="h-6 w-6" />
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-bold font-display">Barcode</span>
-                  <p className="text-xs text-primary-foreground/75">Scan product</p>
-                </div>
-              </button>
+            </div>
+
+            {/* Barcode coming soon notice */}
+            <div className="mb-4 rounded-xl border border-border bg-muted/50 p-3 flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <ScanBarcode className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-muted-foreground">Barcode scannen binnenkort beschikbaar</p>
+                <p className="text-[11px] text-muted-foreground/70">We werken aan een betrouwbaardere scanfunctie.</p>
+              </div>
             </div>
 
             {/* Premium actions: Foto & Galerij */}
@@ -437,53 +436,7 @@ export default function FoodTracker() {
           />
         )}
 
-        {/* Step: Barcode scanner */}
-        {step === 'barcode' && (
-          <BarcodeScanner
-            onScan={handleBarcodeScan}
-            onClose={() => setStep('capture')}
-          />
-        )}
-
-        {/* Step: Barcode result */}
-        {step === 'barcode-result' && (
-          <div className="mb-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={handleReset}>
-                ← Terug
-              </Button>
-              <h2 className="font-display text-lg font-semibold text-foreground">Barcode resultaat</h2>
-            </div>
-
-            {barcodeLookup.loading && (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-8">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-base font-medium text-foreground">Product opzoeken...</p>
-              </div>
-            )}
-
-            {barcodeLookup.error && (
-              <div className="rounded-xl border border-border bg-card p-6 text-center">
-                <p className="text-sm text-muted-foreground">{barcodeLookup.error}</p>
-                <Button onClick={() => setStep('barcode')} variant="outline" className="mt-4">
-                  Opnieuw scannen
-                </Button>
-              </div>
-            )}
-
-            {barcodeLookup.result && (
-              <BarcodeResultCard
-                result={barcodeLookup.result}
-                amount={barcodeAmount}
-                onAmountChange={setBarcodeAmount}
-                onAdd={handleAddBarcodeProduct}
-                onRescan={() => { barcodeLookup.reset(); setStep('barcode'); }}
-                onManualSearch={() => setStep('manual')}
-                saving={saving}
-              />
-            )}
-          </div>
-        )}
+        {/* Barcode steps disabled — scanner temporarily removed */}
 
         {/* Step: Meal composer */}
         {step === 'meal-compose' && (
