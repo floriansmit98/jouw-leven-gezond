@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
-import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot } from 'lucide-react';
+import { Camera, Upload, Loader2, Plus, X, Search, Check, Pencil, ChevronRight, ScanBarcode, UtensilsCrossed, Star, Clock, History, Sparkles, Bot, ShoppingBag, CookingPot, Crown } from 'lucide-react';
+import { usePremium } from '@/contexts/PremiumContext';
+import { useNavigate } from 'react-router-dom';
 import SuggestedMealBuilder from '@/components/SuggestedMealBuilder';
 import { useOFFSearch, type OFFMatchedFood } from '@/hooks/useOpenFoodFacts';
 import { useAIFoodSearch } from '@/hooks/useAIFoodSearch';
