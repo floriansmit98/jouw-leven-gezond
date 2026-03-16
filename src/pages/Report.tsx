@@ -217,6 +217,52 @@ export default function Report() {
             <span className="text-xs">Delen</span>
           </Button>
         </div>
+
+        <Sheet open={showShareSheet} onOpenChange={setShowShareSheet}>
+          <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+            <SheetHeader className="pb-2">
+              <SheetTitle className="text-base">Rapport delen</SheetTitle>
+            </SheetHeader>
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <button
+                onClick={handleEmailShare}
+                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <Mail className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-xs font-medium text-foreground">E-mail</span>
+              </button>
+              <button
+                onClick={handleWhatsAppShare}
+                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
+                  <MessageCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <span className="text-xs font-medium text-foreground">WhatsApp</span>
+              </button>
+              <button
+                onClick={handleCopyText}
+                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  {copied ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5 text-muted-foreground" />}
+                </div>
+                <span className="text-xs font-medium text-foreground">{copied ? 'Gekopieerd!' : 'Kopiëren'}</span>
+              </button>
+            </div>
+            <div className="mt-4 pt-3 border-t">
+              <Button onClick={handleDownload} variant="outline" className="w-full gap-2">
+                <Download className="h-4 w-4" />
+                Download PDF en deel handmatig
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              Tip: download het PDF-bestand en voeg het als bijlage toe aan uw bericht.
+            </p>
+          </SheetContent>
+        </Sheet>
       </div>
     );
   }
