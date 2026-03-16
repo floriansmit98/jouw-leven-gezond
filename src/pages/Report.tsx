@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Download, Calendar, Share2, ArrowLeft } from 'lucide-react';
+import { FileText, Download, Calendar, Share2, ArrowLeft, Mail, MessageCircle, Copy, Check } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ReportPreview from '@/components/ReportPreview';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,12 @@ import { generateReportPdf, type FoodRecord, type SymptomRecord } from '@/lib/ge
 import type { jsPDF } from 'jspdf';
 import { usePremium } from '@/contexts/PremiumContext';
 import PremiumBanner from '@/components/PremiumBanner';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 type Period = '1' | '7' | '14' | '30';
 
@@ -29,6 +35,8 @@ export default function Report() {
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
 
   if (!isPremium) {
@@ -136,17 +144,38 @@ export default function Report() {
         return;
       }
 
-      // Fallback: try without file
-      if (navigator.share) {
-        await navigator.share({ title: 'Dialyse Rapport', text: 'Bekijk het dialyse rapport.' });
-        toast({ title: 'Gedeeld', description: 'Het rapport is gedeeld (zonder bijlage). Gebruik "Downloaden" voor het PDF-bestand.' });
-        return;
-      }
-
-      toast({ title: 'Delen niet beschikbaar', description: 'Uw browser ondersteunt delen niet. Gebruik "Downloaden".', variant: 'destructive' });
+      // Show share sheet with options
+      setShowShareSheet(true);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      toast({ title: 'Fout', description: 'Het rapport kon niet worden gedeeld. Probeer "Downloaden".', variant: 'destructive' });
+      setShowShareSheet(true);
+    }
+  };
+
+  const handleEmailShare = () => {
+    const subject = encodeURIComponent('Mijn Dialyse Rapport');
+    const body = encodeURIComponent('Hierbij mijn dialyse rapport. Het PDF-bestand is als bijlage toegevoegd of kan gedownload worden vanuit de app.');
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+    setShowShareSheet(false);
+    toast({ title: 'E-mail geopend', description: 'Download eerst het rapport en voeg het als bijlage toe.' });
+  };
+
+  const handleWhatsAppShare = () => {
+    const text = encodeURIComponent('Bekijk mijn dialyse rapport. Ik heb het geëxporteerd vanuit de NierDieet App.');
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    setShowShareSheet(false);
+    toast({ title: 'WhatsApp geopend', description: 'Download eerst het rapport om het mee te sturen.' });
+  };
+
+  const handleCopyText = async () => {
+    const text = `Dialyse Rapport - ${periodLabels[period]}\n\nVoeding: ${foods.length} registraties\nSymptomen: ${symptoms.length} registraties\nDialyse sessies: ${sessions.length}\n\nGeëxporteerd vanuit NierDieet App`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: 'Gekopieerd', description: 'Rapportsamenvatting gekopieerd naar klembord.' });
+    } catch {
+      toast({ title: 'Fout', description: 'Kopiëren niet gelukt.', variant: 'destructive' });
     }
   };
 
@@ -188,6 +217,52 @@ export default function Report() {
             <span className="text-xs">Delen</span>
           </Button>
         </div>
+
+        <Sheet open={showShareSheet} onOpenChange={setShowShareSheet}>
+          <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+            <SheetHeader className="pb-2">
+              <SheetTitle className="text-base">Rapport delen</SheetTitle>
+            </SheetHeader>
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <button
+                onClick={handleEmailShare}
+                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <Mail className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-xs font-medium text-foreground">E-mail</span>
+              </button>
+              <button
+                onClick={handleWhatsAppShare}
+                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
+                  <MessageCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <span className="text-xs font-medium text-foreground">WhatsApp</span>
+              </button>
+              <button
+                onClick={handleCopyText}
+                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  {copied ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5 text-muted-foreground" />}
+                </div>
+                <span className="text-xs font-medium text-foreground">{copied ? 'Gekopieerd!' : 'Kopiëren'}</span>
+              </button>
+            </div>
+            <div className="mt-4 pt-3 border-t">
+              <Button onClick={handleDownload} variant="outline" className="w-full gap-2">
+                <Download className="h-4 w-4" />
+                Download PDF en deel handmatig
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              Tip: download het PDF-bestand en voeg het als bijlage toe aan uw bericht.
+            </p>
+          </SheetContent>
+        </Sheet>
       </div>
     );
   }
