@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Download, Calendar, Share2, ArrowLeft, Mail, MessageCircle, Copy, Check } from 'lucide-react';
+import { FileText, Download, Calendar, ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ReportPreview from '@/components/ReportPreview';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,6 @@ import { generateReportPdf, type FoodRecord, type SymptomRecord } from '@/lib/ge
 import type { jsPDF } from 'jspdf';
 import { usePremium } from '@/contexts/PremiumContext';
 import PremiumBanner from '@/components/PremiumBanner';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 
 type Period = '1' | '7' | '14' | '30';
 
@@ -35,8 +29,6 @@ export default function Report() {
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [showShareSheet, setShowShareSheet] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
 
   const days = parseInt(period, 10);
@@ -93,6 +85,12 @@ export default function Report() {
     );
   }
 
+  const periodLabels: Record<Period, string> = {
+    '1': 'Vandaag',
+    '7': 'Afgelopen week',
+    '14': 'Afgelopen 2 weken',
+    '30': 'Afgelopen maand',
+  };
 
   const getFileName = () => {
     const dateStr = new Date().toISOString().split('T')[0];
@@ -133,10 +131,8 @@ export default function Report() {
       const blobUrl = URL.createObjectURL(blob);
 
       if (isMobile) {
-        // On mobile, open in new tab so user can save/share
         const newTab = window.open(blobUrl, '_blank');
         if (!newTab) {
-          // Fallback: force download via anchor
           const link = document.createElement('a');
           link.href = blobUrl;
           link.download = getFileName();
@@ -146,7 +142,6 @@ export default function Report() {
         }
         toast({ title: 'Rapport geopend', description: 'U kunt het PDF-bestand nu opslaan of delen.' });
       } else {
-        // Desktop: direct download via anchor
         const link = document.createElement('a');
         link.href = blobUrl;
         link.download = getFileName();
@@ -158,61 +153,8 @@ export default function Report() {
 
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } catch {
-      toast({ title: 'Fout', description: 'Het bestand kon niet worden gedownload. Probeer "Delen".', variant: 'destructive' });
+      toast({ title: 'Fout', description: 'Het bestand kon niet worden gedownload.', variant: 'destructive' });
     }
-  };
-
-  const handleShare = async () => {
-    try {
-      const pdf = ensurePdf();
-      const blob = pdf.output('blob');
-      const file = new File([blob], getFileName(), { type: 'application/pdf' });
-
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ title: 'Dialyse Rapport', files: [file] });
-        return;
-      }
-
-      // Show share sheet with options
-      setShowShareSheet(true);
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-      setShowShareSheet(true);
-    }
-  };
-
-  const handleEmailShare = () => {
-    const subject = encodeURIComponent('Mijn Dialyse Rapport');
-    const body = encodeURIComponent('Hierbij mijn dialyse rapport. Het PDF-bestand is als bijlage toegevoegd of kan gedownload worden vanuit de app.');
-    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
-    setShowShareSheet(false);
-    toast({ title: 'E-mail geopend', description: 'Download eerst het rapport en voeg het als bijlage toe.' });
-  };
-
-  const handleWhatsAppShare = () => {
-    const text = encodeURIComponent('Bekijk mijn dialyse rapport. Ik heb het geëxporteerd vanuit de NierDieet App.');
-    window.open(`https://wa.me/?text=${text}`, '_blank');
-    setShowShareSheet(false);
-    toast({ title: 'WhatsApp geopend', description: 'Download eerst het rapport om het mee te sturen.' });
-  };
-
-  const handleCopyText = async () => {
-    const text = `Dialyse Rapport - ${periodLabels[period]}\n\nVoeding: ${foods.length} registraties\nSymptomen: ${symptoms.length} registraties\nDialyse sessies: ${sessions.length}\n\nGeëxporteerd vanuit NierDieet App`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({ title: 'Gekopieerd', description: 'Rapportsamenvatting gekopieerd naar klembord.' });
-    } catch {
-      toast({ title: 'Fout', description: 'Kopiëren niet gelukt.', variant: 'destructive' });
-    }
-  };
-
-  const periodLabels: Record<Period, string> = {
-    '1': 'Vandaag',
-    '7': 'Afgelopen week',
-    '14': 'Afgelopen 2 weken',
-    '30': 'Afgelopen maand',
   };
 
   // Preview screen
@@ -224,9 +166,6 @@ export default function Report() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="flex-1 text-base font-semibold">Rapport voorbeeld</h1>
-          <Button variant="ghost" size="icon" onClick={handleShare} aria-label="Delen">
-            <Share2 className="h-5 w-5" />
-          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -239,62 +178,12 @@ export default function Report() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2 border-t bg-background p-3">
-          <Button onClick={handleDownload} className="flex-col gap-1 h-auto py-3">
+        <div className="border-t bg-background p-3">
+          <Button onClick={handleDownload} className="w-full gap-2 h-12">
             <Download className="h-5 w-5" />
-            <span className="text-xs">Downloaden</span>
-          </Button>
-          <Button onClick={handleShare} variant="outline" className="flex-col gap-1 h-auto py-3">
-            <Share2 className="h-5 w-5" />
-            <span className="text-xs">Delen</span>
+            <span>Downloaden (PDF)</span>
           </Button>
         </div>
-
-        <Sheet open={showShareSheet} onOpenChange={setShowShareSheet}>
-          <SheetContent side="bottom" className="rounded-t-2xl pb-8">
-            <SheetHeader className="pb-2">
-              <SheetTitle className="text-base">Rapport delen</SheetTitle>
-            </SheetHeader>
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <button
-                onClick={handleEmailShare}
-                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <Mail className="h-5 w-5 text-primary" />
-                </div>
-                <span className="text-xs font-medium text-foreground">E-mail</span>
-              </button>
-              <button
-                onClick={handleWhatsAppShare}
-                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
-                  <MessageCircle className="h-5 w-5 text-green-600" />
-                </div>
-                <span className="text-xs font-medium text-foreground">WhatsApp</span>
-              </button>
-              <button
-                onClick={handleCopyText}
-                className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                  {copied ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5 text-muted-foreground" />}
-                </div>
-                <span className="text-xs font-medium text-foreground">{copied ? 'Gekopieerd!' : 'Kopiëren'}</span>
-              </button>
-            </div>
-            <div className="mt-4 pt-3 border-t">
-              <Button onClick={handleDownload} variant="outline" className="w-full gap-2">
-                <Download className="h-4 w-4" />
-                Download PDF en deel handmatig
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center mt-3">
-              Tip: download het PDF-bestand en voeg het als bijlage toe aan uw bericht.
-            </p>
-          </SheetContent>
-        </Sheet>
       </div>
     );
   }
@@ -302,18 +191,7 @@ export default function Report() {
   return (
     <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
-        <div className="flex items-start justify-between">
-          <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mt-1 shrink-0"
-            onClick={handleShare}
-            aria-label="Rapport delen"
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
-        </div>
+        <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
 
         <Card className="mb-4">
           <CardHeader className="pb-3">
