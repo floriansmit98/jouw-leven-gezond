@@ -39,20 +39,6 @@ export default function Report() {
   const [copied, setCopied] = useState(false);
   const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
 
-  if (!isPremium) {
-    return (
-      <div className="min-h-screen pb-24">
-        <div className="mx-auto max-w-lg px-4 pt-6">
-          <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
-          <PremiumBanner
-            title="Rapporten exporteren"
-            description="Met Premium kunt u uw voedings-, symptoom- en dialysegegevens exporteren als PDF voor uw arts."
-          />
-        </div>
-      </div>
-    );
-  }
-
   const days = parseInt(period, 10);
   const periodStart = getPeriodStart(days);
   const periodStartIso = periodStart.toISOString();
@@ -70,7 +56,7 @@ export default function Report() {
       if (error) throw error;
       return data as FoodRecord[];
     },
-    enabled: !!user,
+    enabled: !!user && isPremium,
   });
 
   const { data: symptoms = [] } = useQuery({
@@ -86,12 +72,27 @@ export default function Report() {
       if (error) throw error;
       return data as SymptomRecord[];
     },
-    enabled: !!user,
+    enabled: !!user && isPremium,
   });
 
   const allSessions = getDialysisSessions();
   const sessions = allSessions.filter(s => new Date(s.date) >= periodStart);
   const limits = getLimits();
+
+  if (!isPremium) {
+    return (
+      <div className="min-h-screen pb-24">
+        <div className="mx-auto max-w-lg px-4 pt-6">
+          <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
+          <PremiumBanner
+            title="Rapporten exporteren"
+            description="Met Premium kunt u uw voedings-, symptoom- en dialysegegevens exporteren als PDF voor uw arts."
+          />
+        </div>
+      </div>
+    );
+  }
+
 
   const getFileName = () => {
     const dateStr = new Date().toISOString().split('T')[0];
