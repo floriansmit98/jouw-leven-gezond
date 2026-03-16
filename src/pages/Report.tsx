@@ -35,6 +35,8 @@ export default function Report() {
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
 
   if (!isPremium) {
