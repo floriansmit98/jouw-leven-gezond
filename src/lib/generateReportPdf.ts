@@ -87,7 +87,7 @@ export function generateReportPdf(
   pdf.setFontSize(20);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(40, 40, 40);
-  pdf.text('Dialyse Patiënt Rapport', margin, y);
+  pdf.text('Dialyse Rapport', margin, y);
   y += 10;
 
   pdf.setFontSize(10);
