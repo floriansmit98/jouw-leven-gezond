@@ -93,41 +93,6 @@ export default function Report() {
     );
   }
 
-  const { data: foods = [] } = useQuery({
-    queryKey: ['report_foods', user?.id, days],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('food_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('logged_at', periodStartIso)
-        .order('logged_at', { ascending: false });
-      if (error) throw error;
-      return data as FoodRecord[];
-    },
-    enabled: !!user,
-  });
-
-  const { data: symptoms = [] } = useQuery({
-    queryKey: ['report_symptoms', user?.id, days],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('symptom_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('logged_at', periodStartIso)
-        .order('logged_at', { ascending: false });
-      if (error) throw error;
-      return data as SymptomRecord[];
-    },
-    enabled: !!user,
-  });
-
-  const allSessions = getDialysisSessions();
-  const sessions = allSessions.filter(s => new Date(s.date) >= periodStart);
-  const limits = getLimits();
 
   const getFileName = () => {
     const dateStr = new Date().toISOString().split('T')[0];
