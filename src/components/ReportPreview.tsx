@@ -153,7 +153,7 @@ export default function ReportPreview({ period, foods, symptoms, sessions, limit
 
       {/* Footer */}
       <div className="border-t pt-3 mt-4">
-        <p className="text-[10px] text-muted-foreground">Gegenereerd door NierDieet App</p>
+        <p className="text-[10px] text-muted-foreground">Gegenereerd met de Dialyse Inzicht app</p>
         <p className="text-[10px] text-muted-foreground">Dit rapport is bedoeld als hulpmiddel en vervangt geen medisch advies.</p>
       </div>
     </div>
