@@ -124,11 +124,39 @@ export default function Report() {
     setPdfInstance(null);
   };
 
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const handleDownload = () => {
     try {
       const pdf = ensurePdf();
-      pdf.save(getFileName());
-      toast({ title: 'Rapport opgeslagen', description: 'Het PDF-bestand wordt gedownload.' });
+      const blob = pdf.output('blob');
+      const blobUrl = URL.createObjectURL(blob);
+
+      if (isMobile) {
+        // On mobile, open in new tab so user can save/share
+        const newTab = window.open(blobUrl, '_blank');
+        if (!newTab) {
+          // Fallback: force download via anchor
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = getFileName();
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        toast({ title: 'Rapport geopend', description: 'U kunt het PDF-bestand nu opslaan of delen.' });
+      } else {
+        // Desktop: direct download via anchor
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = getFileName();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({ title: 'Rapport opgeslagen', description: 'Het PDF-bestand wordt gedownload.' });
+      }
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } catch {
       toast({ title: 'Fout', description: 'Het bestand kon niet worden gedownload. Probeer "Delen".', variant: 'destructive' });
     }
