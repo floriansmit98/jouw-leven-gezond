@@ -195,6 +195,9 @@ export default function Report() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="flex-1 text-base font-semibold">Rapport voorbeeld</h1>
+          <Button variant="ghost" size="icon" onClick={handleShare} aria-label="Delen">
+            <Share2 className="h-5 w-5" />
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
