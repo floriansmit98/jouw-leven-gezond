@@ -195,6 +195,9 @@ export default function Report() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="flex-1 text-base font-semibold">Rapport voorbeeld</h1>
+          <Button variant="ghost" size="icon" onClick={handleShare} aria-label="Delen">
+            <Share2 className="h-5 w-5" />
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -270,7 +273,18 @@ export default function Report() {
   return (
     <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
-        <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
+        <div className="flex items-start justify-between">
+          <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mt-1 shrink-0"
+            onClick={handleShare}
+            aria-label="Rapport delen"
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
+        </div>
 
         <Card className="mb-4">
           <CardHeader className="pb-3">

@@ -87,7 +87,7 @@ export function generateReportPdf(
   pdf.setFontSize(20);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(40, 40, 40);
-  pdf.text('Dialyse Patiënt Rapport', margin, y);
+  pdf.text('Dialyse Rapport', margin, y);
   y += 10;
 
   pdf.setFontSize(10);
@@ -215,7 +215,7 @@ export function generateReportPdf(
   y += 6;
   pdf.setFontSize(8);
   pdf.setTextColor(140, 140, 140);
-  pdf.text('Gegenereerd door NierDieet App', margin, y);
+  pdf.text('Gegenereerd met de Dialyse Inzicht app', margin, y);
   y += 4;
   pdf.text('Dit rapport is bedoeld als hulpmiddel en vervangt geen medisch advies.', margin, y);
 
