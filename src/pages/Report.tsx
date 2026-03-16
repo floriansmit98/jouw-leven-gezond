@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Download, Calendar, Share2, ArrowLeft } from 'lucide-react';
+import { FileText, Download, Calendar, Share2, ArrowLeft, Mail, MessageCircle, Copy, Check } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ReportPreview from '@/components/ReportPreview';
 import { Button } from '@/components/ui/button';
