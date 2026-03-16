@@ -144,17 +144,38 @@ export default function Report() {
         return;
       }
 
-      // Fallback: try without file
-      if (navigator.share) {
-        await navigator.share({ title: 'Dialyse Rapport', text: 'Bekijk het dialyse rapport.' });
-        toast({ title: 'Gedeeld', description: 'Het rapport is gedeeld (zonder bijlage). Gebruik "Downloaden" voor het PDF-bestand.' });
-        return;
-      }
-
-      toast({ title: 'Delen niet beschikbaar', description: 'Uw browser ondersteunt delen niet. Gebruik "Downloaden".', variant: 'destructive' });
+      // Show share sheet with options
+      setShowShareSheet(true);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      toast({ title: 'Fout', description: 'Het rapport kon niet worden gedeeld. Probeer "Downloaden".', variant: 'destructive' });
+      setShowShareSheet(true);
+    }
+  };
+
+  const handleEmailShare = () => {
+    const subject = encodeURIComponent('Mijn Dialyse Rapport');
+    const body = encodeURIComponent('Hierbij mijn dialyse rapport. Het PDF-bestand is als bijlage toegevoegd of kan gedownload worden vanuit de app.');
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+    setShowShareSheet(false);
+    toast({ title: 'E-mail geopend', description: 'Download eerst het rapport en voeg het als bijlage toe.' });
+  };
+
+  const handleWhatsAppShare = () => {
+    const text = encodeURIComponent('Bekijk mijn dialyse rapport. Ik heb het geëxporteerd vanuit de NierDieet App.');
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    setShowShareSheet(false);
+    toast({ title: 'WhatsApp geopend', description: 'Download eerst het rapport om het mee te sturen.' });
+  };
+
+  const handleCopyText = async () => {
+    const text = `Dialyse Rapport - ${periodLabels[period]}\n\nVoeding: ${foods.length} registraties\nSymptomen: ${symptoms.length} registraties\nDialyse sessies: ${sessions.length}\n\nGeëxporteerd vanuit NierDieet App`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: 'Gekopieerd', description: 'Rapportsamenvatting gekopieerd naar klembord.' });
+    } catch {
+      toast({ title: 'Fout', description: 'Kopiëren niet gelukt.', variant: 'destructive' });
     }
   };
 
