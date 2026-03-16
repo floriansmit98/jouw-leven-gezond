@@ -270,7 +270,18 @@ export default function Report() {
   return (
     <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-lg px-4 pt-6">
-        <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
+        <div className="flex items-start justify-between">
+          <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mt-1 shrink-0"
+            onClick={handleShare}
+            aria-label="Rapport delen"
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
+        </div>
 
         <Card className="mb-4">
           <CardHeader className="pb-3">
