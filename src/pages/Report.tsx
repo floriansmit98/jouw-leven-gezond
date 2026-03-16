@@ -13,6 +13,12 @@ import { generateReportPdf, type FoodRecord, type SymptomRecord } from '@/lib/ge
 import type { jsPDF } from 'jspdf';
 import { usePremium } from '@/contexts/PremiumContext';
 import PremiumBanner from '@/components/PremiumBanner';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 type Period = '1' | '7' | '14' | '30';
 
