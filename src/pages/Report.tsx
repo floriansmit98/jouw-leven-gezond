@@ -39,6 +39,46 @@ export default function Report() {
   const [copied, setCopied] = useState(false);
   const [pdfInstance, setPdfInstance] = useState<jsPDF | null>(null);
 
+  const days = parseInt(period, 10);
+  const periodStart = getPeriodStart(days);
+  const periodStartIso = periodStart.toISOString();
+
+  const { data: foods = [] } = useQuery({
+    queryKey: ['report_foods', user?.id, days],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', periodStartIso)
+        .order('logged_at', { ascending: false });
+      if (error) throw error;
+      return data as FoodRecord[];
+    },
+    enabled: !!user && isPremium,
+  });
+
+  const { data: symptoms = [] } = useQuery({
+    queryKey: ['report_symptoms', user?.id, days],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('symptom_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', periodStartIso)
+        .order('logged_at', { ascending: false });
+      if (error) throw error;
+      return data as SymptomRecord[];
+    },
+    enabled: !!user && isPremium,
+  });
+
+  const allSessions = getDialysisSessions();
+  const sessions = allSessions.filter(s => new Date(s.date) >= periodStart);
+  const limits = getLimits();
+
   if (!isPremium) {
     return (
       <div className="min-h-screen pb-24">
@@ -52,10 +92,6 @@ export default function Report() {
       </div>
     );
   }
-
-  const days = parseInt(period, 10);
-  const periodStart = getPeriodStart(days);
-  const periodStartIso = periodStart.toISOString();
 
   const { data: foods = [] } = useQuery({
     queryKey: ['report_foods', user?.id, days],
