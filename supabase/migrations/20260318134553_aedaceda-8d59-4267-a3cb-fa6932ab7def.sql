@@ -1,0 +1,1 @@
+UPDATE profiles SET is_premium = false WHERE id = 'c9eb0c21-d8fe-464e-90db-563c3f24eeed';
