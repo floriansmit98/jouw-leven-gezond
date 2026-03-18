@@ -25,6 +25,7 @@ function getPeriodStart(days: number) {
 
 export default function Report() {
   const { isPremium } = usePremium();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
