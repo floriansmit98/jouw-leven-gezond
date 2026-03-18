@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FileText, Download, Calendar, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Download, Calendar, ArrowLeft, Lock, Sparkles, Crown } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ReportPreview from '@/components/ReportPreview';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,6 @@ import { useQuery } from '@tanstack/react-query';
 import { generateReportPdf, type FoodRecord, type SymptomRecord } from '@/lib/generateReportPdf';
 import type { jsPDF } from 'jspdf';
 import { usePremium } from '@/contexts/PremiumContext';
-import PremiumBanner from '@/components/PremiumBanner';
 
 type Period = '1' | '7' | '14' | '30';
 
@@ -25,6 +25,7 @@ function getPeriodStart(days: number) {
 
 export default function Report() {
   const { isPremium } = usePremium();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('7');
   const [generating, setGenerating] = useState(false);
@@ -75,11 +76,25 @@ export default function Report() {
     return (
       <div className="min-h-screen pb-24">
         <div className="mx-auto max-w-lg px-4 pt-6">
-          <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
-          <PremiumBanner
-            title="Rapporten exporteren"
-            description="Met Premium kunt u uw voedings-, symptoom- en dialysegegevens exporteren als PDF voor uw arts."
-          />
+          <PageHeader title="Rapporten & Inzicht" mascotMessage="Bekijk trends en blijf binnen uw grenzen." />
+          <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 p-5 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Lock className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="mb-1 font-display text-base font-bold text-foreground">Rapporten & Inzicht</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Met Premium krijgt u inzicht in uw voedings-, symptoom- en dialysegegevens over meerdere dagen. Bekijk trends en zie eenvoudig of u binnen uw grenzen blijft.
+            </p>
+            <ul className="mb-5 space-y-2 text-left text-sm text-muted-foreground">
+              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Inname sinds laatste dialyse</li>
+              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Trends over meerdere dagen</li>
+              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Inzicht in kalium, fosfaat, eiwit, natrium en vocht</li>
+              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Duidelijke signalen bij risico</li>
+            </ul>
+            <Button onClick={() => navigate('/premium')} className="gap-2 rounded-xl">
+              <Crown className="h-4 w-4" /> Ontgrendel Premium
+            </Button>
+          </div>
         </div>
       </div>
     );
