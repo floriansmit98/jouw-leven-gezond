@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FileText, Download, Calendar, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Download, Calendar, ArrowLeft, Lock, Sparkles, Crown } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ReportPreview from '@/components/ReportPreview';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,6 @@ import { useQuery } from '@tanstack/react-query';
 import { generateReportPdf, type FoodRecord, type SymptomRecord } from '@/lib/generateReportPdf';
 import type { jsPDF } from 'jspdf';
 import { usePremium } from '@/contexts/PremiumContext';
-import PremiumBanner from '@/components/PremiumBanner';
 
 type Period = '1' | '7' | '14' | '30';
 
