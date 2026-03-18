@@ -85,13 +85,7 @@ export default function Report() {
             <p className="mb-4 text-sm text-muted-foreground">
               Met Premium krijgt u inzicht in uw voedings-, symptoom- en dialysegegevens over meerdere dagen. Bekijk trends en zie eenvoudig of u binnen uw grenzen blijft.
             </p>
-            <ul className="mb-5 space-y-2 text-left text-sm text-muted-foreground">
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Inname sinds laatste dialyse</li>
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Trends over meerdere dagen</li>
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Inzicht in kalium, fosfaat, eiwit, natrium en vocht</li>
-              <li className="flex items-start gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Duidelijke signalen bij risico</li>
-            </ul>
-            <Button onClick={() => navigate('/premium')} className="gap-2 rounded-xl">
+            <Button onClick={() => navigate('/premium')} className="gap-2 rounded-xl mt-4">
               <Crown className="h-4 w-4" /> Ontgrendel Premium
             </Button>
           </div>
