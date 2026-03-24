@@ -27,6 +27,13 @@ const queryClient = new QueryClient();
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
 
+  // Initialize AdMob and pre-load first interstitial
+  useEffect(() => {
+    initializeAdMob().then(() => {
+      prepareInterstitial();
+    });
+  }, []);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
