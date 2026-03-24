@@ -141,6 +141,7 @@ export default function FoodTracker() {
       const factor = amountGrams / 100;
       await addFoodEntryDB(user.id, food, factor);
       toast.success(`${foodDisplayName(food)} toegevoegd!`);
+      triggerInterstitial();
       refetch();
       // If we came from confirm step (AI detection), go back there
       if (detectedFoods.length > 0) {
