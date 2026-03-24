@@ -179,6 +179,7 @@ export default function FoodTracker() {
         await addFoodEntryDB(user.id, item.matched!, factor);
       }
       toast.success(`${toSave.length} voedingsmiddel${toSave.length > 1 ? 'en' : ''} toegevoegd!`);
+      triggerInterstitial();
       handleReset();
       refetch();
     } catch {
