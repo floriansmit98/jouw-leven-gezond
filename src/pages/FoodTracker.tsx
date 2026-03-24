@@ -228,6 +228,7 @@ export default function FoodTracker() {
         );
       }
       toast.success(`${foodDisplayName(nevo)} toegevoegd!`);
+      triggerInterstitial();
       handleReset();
       refetch();
     } catch {
