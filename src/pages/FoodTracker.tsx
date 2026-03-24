@@ -26,6 +26,7 @@ import { getLimits } from '@/lib/store';
 import MealComposer from '@/components/MealComposer';
 import MealCard from '@/components/MealCard';
 import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type MealWithItems } from '@/hooks/useMeals';
+import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 
 interface DetectedFood {
   naam: string;
@@ -42,6 +43,7 @@ type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcod
 export default function FoodTracker() {
   const { user } = useAuth();
   const { isPremium } = usePremium();
+  const { triggerInterstitial } = useInterstitialAd();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>('capture');
   const [preview, setPreview] = useState<string | null>(null);
@@ -139,6 +141,7 @@ export default function FoodTracker() {
       const factor = amountGrams / 100;
       await addFoodEntryDB(user.id, food, factor);
       toast.success(`${foodDisplayName(food)} toegevoegd!`);
+      triggerInterstitial();
       refetch();
       // If we came from confirm step (AI detection), go back there
       if (detectedFoods.length > 0) {
@@ -176,6 +179,7 @@ export default function FoodTracker() {
         await addFoodEntryDB(user.id, item.matched!, factor);
       }
       toast.success(`${toSave.length} voedingsmiddel${toSave.length > 1 ? 'en' : ''} toegevoegd!`);
+      triggerInterstitial();
       handleReset();
       refetch();
     } catch {
@@ -224,6 +228,7 @@ export default function FoodTracker() {
         );
       }
       toast.success(`${foodDisplayName(nevo)} toegevoegd!`);
+      triggerInterstitial();
       handleReset();
       refetch();
     } catch {

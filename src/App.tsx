@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { initializeAdMob, prepareInterstitial } from "@/lib/admob";
 import BottomNav from "@/components/BottomNav";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PremiumProvider } from "@/contexts/PremiumContext";
@@ -24,6 +26,13 @@ const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
+
+  // Initialize AdMob and pre-load first interstitial
+  useEffect(() => {
+    initializeAdMob().then(() => {
+      prepareInterstitial();
+    });
+  }, []);
 
   if (loading) {
     return (
