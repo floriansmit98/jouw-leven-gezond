@@ -26,6 +26,7 @@ import { getLimits } from '@/lib/store';
 import MealComposer from '@/components/MealComposer';
 import MealCard from '@/components/MealCard';
 import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type MealWithItems } from '@/hooks/useMeals';
+import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 
 interface DetectedFood {
   naam: string;
