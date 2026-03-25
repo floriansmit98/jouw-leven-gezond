@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePremium } from '@/contexts/PremiumContext';
+import { useAdBanner } from '@/contexts/AdBannerContext';
 import { Beaker, Droplets, Flame, Waves, Egg, Settings, LogOut, Clock, Sparkles, Search, Crown } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
 import NutrientCard from '@/components/NutrientCard';
@@ -21,6 +22,7 @@ import FluidScheduleSection from '@/components/FluidScheduleSection';
 
 export default function Index() {
   const { isPremium } = usePremium();
+  const { contentBottomPadding } = useAdBanner();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const limits = getLimits();
@@ -56,7 +58,7 @@ export default function Index() {
   }, [totals, limits]);
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen" style={{ paddingBottom: contentBottomPadding }}>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Goedendag 👋"
