@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { initializeAdMob, prepareInterstitial } from "@/lib/admob";
+import AdBanner from "@/components/AdBanner";
 import BottomNav from "@/components/BottomNav";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PremiumProvider } from "@/contexts/PremiumContext";
@@ -61,6 +62,7 @@ function ProtectedRoutes() {
         <Route path="/instellingen" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <AdBanner />
       <BottomNav />
     </>
   );

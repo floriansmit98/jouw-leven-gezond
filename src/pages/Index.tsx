@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { usePremium } from '@/contexts/PremiumContext';
 
 import { Beaker, Droplets, Flame, Waves, Egg, Settings, LogOut, Clock, Sparkles, Search, Crown } from 'lucide-react';
-import AdBanner from '@/components/AdBanner';
 import PageShell from '@/components/PageShell';
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
@@ -146,9 +145,6 @@ export default function Index() {
                 )}
               </div>
             </div>
-
-            {/* Ad banner */}
-            <AdBanner className="mb-5" />
 
             {/* Fluid schedule */}
             <div className="mb-6">

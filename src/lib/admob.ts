@@ -1,4 +1,4 @@
-import { AdMob, BannerAdSize, BannerAdPosition, AdmobConsentStatus, AdOptions, BannerAdOptions } from '@capacitor-community/admob';
+import { AdMob, BannerAdSize, BannerAdPosition, AdOptions, BannerAdOptions } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
 // Real ad unit IDs
@@ -25,6 +25,8 @@ function getInterstitialAdId(): string {
 }
 
 let initialized = false;
+let bannerMounted = false;
+let currentBannerMargin = -1;
 let lastInterstitialTime = 0;
 const INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000; // 3 minutes
 
@@ -41,19 +43,38 @@ export async function initializeAdMob(): Promise<void> {
   }
 }
 
-export async function showBannerAd(): Promise<void> {
-  if (!isNative || !initialized) return;
+export async function showBannerAd(margin = 0): Promise<boolean> {
+  if (!isNative || !initialized) return false;
+
+  const resolvedMargin = Math.max(0, Math.round(margin));
+
+  if (bannerMounted && currentBannerMargin === resolvedMargin) {
+    return true;
+  }
+
   try {
+    if (bannerMounted) {
+      await AdMob.removeBanner().catch(() => undefined);
+      bannerMounted = false;
+      currentBannerMargin = -1;
+    }
+
     const options: BannerAdOptions = {
       adId: getBannerAdId(),
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 60, // space for bottom nav bar (~60px)
+      margin: resolvedMargin,
       isTesting: !IS_PRODUCTION,
     };
     await AdMob.showBanner(options);
+    bannerMounted = true;
+    currentBannerMargin = resolvedMargin;
+    return true;
   } catch (e) {
+    bannerMounted = false;
+    currentBannerMargin = -1;
     console.warn('[AdMob] Banner failed:', e);
+    return false;
   }
 }
 
@@ -63,6 +84,9 @@ export async function hideBannerAd(): Promise<void> {
     await AdMob.hideBanner();
   } catch (e) {
     // silently ignore
+  } finally {
+    bannerMounted = false;
+    currentBannerMargin = -1;
   }
 }
 
@@ -72,6 +96,9 @@ export async function removeBannerAd(): Promise<void> {
     await AdMob.removeBanner();
   } catch (e) {
     // silently ignore
+  } finally {
+    bannerMounted = false;
+    currentBannerMargin = -1;
   }
 }
 

@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, UtensilsCrossed, Activity, FileText } from 'lucide-react';
-import { useAdBanner } from '@/contexts/AdBannerContext';
+import { BOTTOM_NAV_HEIGHT, useAdBanner } from '@/contexts/AdBannerContext';
 
 const NAV_ITEMS = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -12,14 +12,14 @@ const NAV_ITEMS = [
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { navBottomOffset } = useAdBanner();
+  const { safeAreaBottom } = useAdBanner();
 
   return (
     <nav
-      className="fixed left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md shadow-lg"
-      style={{ bottom: navBottomOffset }}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md shadow-lg"
+      style={{ paddingBottom: safeAreaBottom }}
     >
-      <div className="mx-auto flex max-w-lg items-center justify-around py-2">
+      <div className="mx-auto flex max-w-lg items-center justify-around py-2" style={{ minHeight: BOTTOM_NAV_HEIGHT }}>
         {NAV_ITEMS.map(item => {
           const isActive = location.pathname === item.path;
           return (
