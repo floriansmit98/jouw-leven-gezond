@@ -1,4 +1,4 @@
-import { AdMob, AdOptions } from '@capacitor-community/admob';
+import { AdMob } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
 const REAL_INTERSTITIAL_ID = 'ca-app-pub-2355808199980173/6304517723';
