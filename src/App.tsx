@@ -74,7 +74,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PremiumProvider>
-            <ProtectedRoutes />
+            <AdBannerProvider>
+              <ProtectedRoutes />
+            </AdBannerProvider>
           </PremiumProvider>
         </AuthProvider>
       </BrowserRouter>
