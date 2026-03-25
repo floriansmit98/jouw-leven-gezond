@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { generateReportPdf, type FoodRecord, type SymptomRecord } from '@/lib/generateReportPdf';
 import type { jsPDF } from 'jspdf';
 import { usePremium } from '@/contexts/PremiumContext';
+import InlineAdBanner from '@/components/InlineAdBanner';
 
 type Period = '1' | '7' | '14' | '30';
 
@@ -242,6 +243,9 @@ export default function Report() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Inline ad */}
+        <InlineAdBanner className="mb-4" />
 
         <Button onClick={handlePreview} disabled={generating} size="lg" className="w-full h-14 gap-2 text-base font-semibold">
           <FileText className="h-5 w-5" />

@@ -1,6 +1,5 @@
 import PageShell from "@/components/PageShell";
 import { useState, useRef, useEffect } from 'react';
-import { useAdBanner } from '@/contexts/AdBannerContext';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,6 @@ interface Message {
   content: string;
 }
 
-// Local AI coach with pre-built responses (no backend needed yet)
 function getCoachResponse(question: string): string {
   const q = question.toLowerCase();
   const totals = getTodayTotals();
@@ -44,8 +42,9 @@ function getCoachResponse(question: string): string {
   return `Bedankt voor uw vraag! Als dialyse coach kan ik u helpen met:\n\n• Voedingsadvies (kalium, fosfaat, natrium, eiwit)\n• Tips tegen dorst\n• Informatie over symptomen\n• Wat u kunt eten\n\nUw dagelijkse status:\n• Kalium: ${totals.potassium}/${limits.potassium} mg\n• Fosfaat: ${totals.phosphate}/${limits.phosphate} mg\n• Eiwit: ${totals.protein}/${limits.protein} g\n• Vocht: ${totals.fluid}/${limits.fluid} ml\n\nStel gerust een specifieke vraag!`;
 }
 
+const BOTTOM_NAV_HEIGHT = 60;
+
 export default function Coach() {
-  const { bottomChromeHeight } = useAdBanner();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -101,10 +100,10 @@ export default function Coach() {
         </div>
       </div>
 
-      {/* Input */}
+      {/* Input - positioned above bottom nav */}
       <div
         className="fixed left-0 right-0 border-t border-border bg-card p-3"
-        style={{ bottom: bottomChromeHeight }}
+        style={{ bottom: BOTTOM_NAV_HEIGHT }}
       >
         <div className="mx-auto flex max-w-lg gap-2">
           <Input

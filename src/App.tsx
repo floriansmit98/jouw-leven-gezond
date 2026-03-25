@@ -5,11 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { initializeAdMob, prepareInterstitial } from "@/lib/admob";
-import AdBanner from "@/components/AdBanner";
 import BottomNav from "@/components/BottomNav";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PremiumProvider } from "@/contexts/PremiumContext";
-import { AdBannerProvider } from "@/contexts/AdBannerContext";
 import Index from "./pages/Index";
 import Premium from "./pages/Premium";
 import FoodTracker from "./pages/FoodTracker";
@@ -62,7 +60,6 @@ function ProtectedRoutes() {
         <Route path="/instellingen" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <AdBanner />
       <BottomNav />
     </>
   );
@@ -76,9 +73,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PremiumProvider>
-            <AdBannerProvider>
-              <ProtectedRoutes />
-            </AdBannerProvider>
+            <ProtectedRoutes />
           </PremiumProvider>
         </AuthProvider>
       </BrowserRouter>

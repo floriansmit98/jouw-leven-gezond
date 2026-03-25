@@ -1,23 +1,12 @@
-import { AdMob, BannerAdSize, BannerAdPosition, AdOptions, BannerAdOptions } from '@capacitor-community/admob';
+import { AdMob, AdOptions } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
-// Real ad unit IDs
-const REAL_BANNER_ID = 'ca-app-pub-2355808199980173/4663999549';
 const REAL_INTERSTITIAL_ID = 'ca-app-pub-2355808199980173/6304517723';
-
-// Test ad unit IDs (Google's official test IDs)
-const TEST_BANNER_ID_ANDROID = 'ca-app-pub-3940256099942544/6300978111';
 const TEST_INTERSTITIAL_ID_ANDROID = 'ca-app-pub-3940256099942544/1033173712';
-const TEST_BANNER_ID_IOS = 'ca-app-pub-3940256099942544/2934735716';
 const TEST_INTERSTITIAL_ID_IOS = 'ca-app-pub-3940256099942544/4411468910';
 
 const IS_PRODUCTION = import.meta.env.PROD;
 const isNative = Capacitor.isNativePlatform();
-
-function getBannerAdId(): string {
-  if (IS_PRODUCTION) return REAL_BANNER_ID;
-  return Capacitor.getPlatform() === 'ios' ? TEST_BANNER_ID_IOS : TEST_BANNER_ID_ANDROID;
-}
 
 function getInterstitialAdId(): string {
   if (IS_PRODUCTION) return REAL_INTERSTITIAL_ID;
@@ -25,17 +14,13 @@ function getInterstitialAdId(): string {
 }
 
 let initialized = false;
-let bannerMounted = false;
-let currentBannerMargin = -1;
 let lastInterstitialTime = 0;
-const INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000; // 3 minutes
+const INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000;
 
 export async function initializeAdMob(): Promise<void> {
   if (!isNative || initialized) return;
   try {
-    await AdMob.initialize({
-      initializeForTesting: !IS_PRODUCTION,
-    });
+    await AdMob.initialize({ initializeForTesting: !IS_PRODUCTION });
     initialized = true;
     console.log('[AdMob] Initialized');
   } catch (e) {
@@ -43,103 +28,34 @@ export async function initializeAdMob(): Promise<void> {
   }
 }
 
-export async function showBannerAd(margin = 0): Promise<boolean> {
-  if (!isNative || !initialized) return false;
-
-  const resolvedMargin = Math.max(0, Math.round(margin));
-
-  if (bannerMounted && currentBannerMargin === resolvedMargin) {
-    return true;
-  }
-
-  try {
-    if (bannerMounted) {
-      await AdMob.removeBanner().catch(() => undefined);
-      bannerMounted = false;
-      currentBannerMargin = -1;
-    }
-
-    const options: BannerAdOptions = {
-      adId: getBannerAdId(),
-      adSize: BannerAdSize.ADAPTIVE_BANNER,
-      position: BannerAdPosition.BOTTOM_CENTER,
-      margin: resolvedMargin,
-      isTesting: !IS_PRODUCTION,
-    };
-    await AdMob.showBanner(options);
-    bannerMounted = true;
-    currentBannerMargin = resolvedMargin;
-    return true;
-  } catch (e) {
-    bannerMounted = false;
-    currentBannerMargin = -1;
-    console.warn('[AdMob] Banner failed:', e);
-    return false;
-  }
-}
-
-export async function hideBannerAd(): Promise<void> {
-  if (!isNative) return;
-  try {
-    await AdMob.hideBanner();
-  } catch (e) {
-    // silently ignore
-  } finally {
-    bannerMounted = false;
-    currentBannerMargin = -1;
-  }
-}
-
-export async function removeBannerAd(): Promise<void> {
-  if (!isNative) return;
-  try {
-    await AdMob.removeBanner();
-  } catch (e) {
-    // silently ignore
-  } finally {
-    bannerMounted = false;
-    currentBannerMargin = -1;
-  }
-}
-
 export async function prepareInterstitial(): Promise<void> {
   if (!isNative || !initialized) return;
   try {
-    const options: AdOptions = {
+    await AdMob.prepareInterstitial({
       adId: getInterstitialAdId(),
       isTesting: !IS_PRODUCTION,
-    };
-    await AdMob.prepareInterstitial(options);
+    });
   } catch (e) {
     console.warn('[AdMob] Interstitial prep failed:', e);
   }
 }
 
-/**
- * Show an interstitial ad if cooldown has passed.
- * Returns true if the ad was shown.
- */
 export async function showInterstitialAd(force = false): Promise<boolean> {
   if (!isNative || !initialized) return false;
   const now = Date.now();
-  if (!force && now - lastInterstitialTime < INTERSTITIAL_COOLDOWN_MS) {
-    return false;
-  }
+  if (!force && now - lastInterstitialTime < INTERSTITIAL_COOLDOWN_MS) return false;
   try {
     await AdMob.showInterstitial();
     lastInterstitialTime = Date.now();
-    // Pre-load next one
     prepareInterstitial().catch(() => {});
     return true;
   } catch (e) {
     console.warn('[AdMob] Interstitial show failed:', e);
-    // Try to prepare the next one
     prepareInterstitial().catch(() => {});
     return false;
   }
 }
 
-/** Whether we're running on a native platform with AdMob support */
 export function isAdMobAvailable(): boolean {
   return isNative && initialized;
 }

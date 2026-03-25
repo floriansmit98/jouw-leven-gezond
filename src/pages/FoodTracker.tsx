@@ -27,6 +27,7 @@ import MealComposer from '@/components/MealComposer';
 import MealCard from '@/components/MealCard';
 import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type MealWithItems } from '@/hooks/useMeals';
 import { useInterstitialAd } from '@/hooks/useInterstitialAd';
+import InlineAdBanner from '@/components/InlineAdBanner';
 
 interface DetectedFood {
   naam: string;
@@ -338,6 +339,9 @@ export default function FoodTracker() {
                 <span className="text-xs font-medium">Geschiedenis</span>
               </button>
             </div>
+
+            {/* Inline ad below action buttons */}
+            <InlineAdBanner className="mb-4" />
 
             {/* Photo preview (when captured) */}
             {preview && (

@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import FluidScheduleSection from '@/components/FluidScheduleSection';
+import InlineAdBanner from '@/components/InlineAdBanner';
 
 export default function Index() {
   const { isPremium } = usePremium();
@@ -145,6 +146,9 @@ export default function Index() {
                 )}
               </div>
             </div>
+
+            {/* Inline ad */}
+            <InlineAdBanner className="mb-5" />
 
             {/* Fluid schedule */}
             <div className="mb-6">
