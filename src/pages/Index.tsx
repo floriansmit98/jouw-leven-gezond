@@ -4,6 +4,7 @@ import { usePremium } from '@/contexts/PremiumContext';
 import { useAdBanner } from '@/contexts/AdBannerContext';
 import { Beaker, Droplets, Flame, Waves, Egg, Settings, LogOut, Clock, Sparkles, Search, Crown } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
+import PageShell from '@/components/PageShell';
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
