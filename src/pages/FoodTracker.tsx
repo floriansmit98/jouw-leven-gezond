@@ -504,7 +504,7 @@ export default function FoodTracker() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }
 

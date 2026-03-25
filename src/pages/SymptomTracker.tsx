@@ -241,7 +241,7 @@ export default function SymptomTracker() {
             )}
           </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
@@ -485,6 +485,6 @@ export default function SymptomTracker() {
 
         <AdBanner className="mt-6" />
       </div>
-    </div>
+    </PageShell>
   );
 }
