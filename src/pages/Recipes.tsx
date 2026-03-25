@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/PageHeader';
@@ -12,7 +13,7 @@ export default function Recipes() {
 
   if (recipe) {
     return (
-      <div className="min-h-screen bg-background pb-24">
+      <PageShell className="bg-background">
         <div className="mx-auto max-w-lg px-4 pt-6">
           <Button variant="ghost" onClick={() => setSelectedId(null)} className="mb-4 gap-2 -ml-2">
             <ArrowLeft className="h-4 w-4" /> Terug
@@ -70,7 +71,7 @@ export default function Recipes() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <PageShell className="bg-background">
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader title="Recepten" mascotMessage="Ontdek niervriendelijke recepten!" />
         <div className="space-y-3">

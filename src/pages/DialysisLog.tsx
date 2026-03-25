@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import { useState } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,7 @@ export default function DialysisLog() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <PageShell className="bg-background">
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Dialyse"

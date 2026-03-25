@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Download, Calendar, ArrowLeft, Lock, Sparkles, Crown } from 'lucide-react';
@@ -74,7 +75,7 @@ export default function Report() {
 
   if (!isPremium) {
     return (
-      <div className="min-h-screen pb-24">
+      <PageShell>
         <div className="mx-auto max-w-lg px-4 pt-6">
           <PageHeader title="Rapporten & Inzicht" mascotMessage="Bekijk trends en blijf binnen uw grenzen." />
           <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 p-5 text-center">
@@ -198,7 +199,7 @@ export default function Report() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader title="Rapport" mascotMessage="Exporteer uw gegevens voor uw arts." />
 

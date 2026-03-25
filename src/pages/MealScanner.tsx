@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import { useState, useRef, useCallback } from 'react';
 import { Camera, Upload, Loader2, Plus, AlertTriangle, X } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
@@ -118,7 +119,7 @@ export default function MealScanner() {
   }, [handleCapture]);
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Maaltijd Scanner"
