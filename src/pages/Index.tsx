@@ -161,6 +161,6 @@ export default function Index() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -1,3 +1,4 @@
+import PageShell from '@/components/PageShell';
 import AdBanner from '@/components/AdBanner';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
@@ -240,7 +241,7 @@ export default function FoodTracker() {
   const confirmedCount = detectedFoods.filter(f => f.confirmed && f.matched).length;
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Voeding & Vocht"

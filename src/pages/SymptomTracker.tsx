@@ -189,7 +189,7 @@ export default function SymptomTracker() {
   // "Meer symptomen" full-screen overlay
   if (showMore) {
     return (
-      <div className="min-h-screen bg-background pb-24">
+      <PageShell className="bg-background">
         <div className="mx-auto max-w-lg px-4 pt-6">
           {/* Header */}
           <div className="mb-4 flex items-center gap-3">
@@ -246,7 +246,7 @@ export default function SymptomTracker() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Symptomen"
