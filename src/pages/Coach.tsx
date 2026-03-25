@@ -1,5 +1,6 @@
 import PageShell from "@/components/PageShell";
 import { useState, useRef, useEffect } from 'react';
+import { useAdBanner } from '@/contexts/AdBannerContext';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ function getCoachResponse(question: string): string {
 }
 
 export default function Coach() {
+  const { bottomChromeHeight } = useAdBanner();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -73,7 +75,7 @@ export default function Coach() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4">
-        <div className="mx-auto max-w-lg space-y-4 pb-4">
+        <div className="mx-auto max-w-lg space-y-4 pb-24">
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -93,14 +95,17 @@ export default function Coach() {
                   <p key={j} className={j > 0 ? 'mt-1' : ''}>{line}</p>
                 ))}
               </div>
-            </PageShell>
+            </div>
           ))}
           <div ref={bottomRef} />
         </div>
       </div>
 
       {/* Input */}
-      <div className="fixed bottom-16 left-0 right-0 border-t border-border bg-card p-3">
+      <div
+        className="fixed left-0 right-0 border-t border-border bg-card p-3"
+        style={{ bottom: bottomChromeHeight }}
+      >
         <div className="mx-auto flex max-w-lg gap-2">
           <Input
             value={input}
@@ -114,6 +119,6 @@ export default function Coach() {
           </Button>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

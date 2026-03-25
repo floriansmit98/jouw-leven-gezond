@@ -1,5 +1,4 @@
 import PageShell from "@/components/PageShell";
-import AdBanner from '@/components/AdBanner';
 import { useState } from 'react';
 import { Settings, Save, Beaker, Flame, Waves, Egg, Droplets, Info, Calendar, Clock, RotateCcw } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
@@ -253,8 +252,6 @@ export default function SettingsPage() {
           <Save className="h-5 w-5" />
           {saved ? 'Opgeslagen ✓' : 'Opslaan'}
         </Button>
-
-        <AdBanner className="mt-6" />
 
       </div>
     </PageShell>

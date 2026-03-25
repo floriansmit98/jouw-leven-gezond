@@ -1,46 +1,73 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePremium } from '@/contexts/PremiumContext';
 import { Capacitor } from '@capacitor/core';
-import { showBannerAd, hideBannerAd, removeBannerAd } from '@/lib/admob';
-import { useAdBanner } from '@/contexts/AdBannerContext';
+import { showBannerAd, removeBannerAd } from '@/lib/admob';
+import { BOTTOM_NAV_HEIGHT, useAdBanner } from '@/contexts/AdBannerContext';
 
-interface AdBannerProps {
-  className?: string;
-}
-
-export default function AdBanner({ className = '' }: AdBannerProps) {
+export default function AdBanner() {
   const { isPremium } = usePremium();
   const isNative = Capacitor.isNativePlatform();
-  const { setBannerVisible } = useAdBanner();
+  const {
+    bannerSlotHeight,
+    safeAreaBottom,
+    setBannerVisible,
+    shouldReserveBannerSlot,
+  } = useAdBanner();
+  const lastRequestedRef = useRef<string>('');
 
-  // On native: show/hide the native AdMob banner
   useEffect(() => {
-    if (!isNative || isPremium) {
-      removeBannerAd();
+    const shouldShowNativeBanner = isNative && !isPremium && shouldReserveBannerSlot;
+    const bannerMargin = BOTTOM_NAV_HEIGHT + safeAreaBottom;
+    const requestKey = shouldShowNativeBanner ? `show:${bannerMargin}` : 'hide';
+
+    if (lastRequestedRef.current === requestKey) return;
+    lastRequestedRef.current = requestKey;
+
+    let cancelled = false;
+
+    const syncBanner = async () => {
       setBannerVisible(false);
-      return;
-    }
-    showBannerAd().then(() => setBannerVisible(true));
-    return () => {
-      hideBannerAd();
-      setBannerVisible(false);
+
+      if (!shouldShowNativeBanner) {
+        await removeBannerAd();
+        if (!cancelled) setBannerVisible(false);
+        return;
+      }
+
+      const shown = await showBannerAd(bannerMargin);
+
+      if (cancelled) return;
+
+      if (!shown) {
+        await removeBannerAd();
+      }
+
+      setBannerVisible(shown);
     };
-  }, [isNative, isPremium, setBannerVisible]);
 
-  // Premium users: no ads at all
-  if (isPremium) return null;
+    void syncBanner();
 
-  // Native: the banner is rendered natively, no web placeholder needed
-  if (isNative) return null;
+    return () => {
+      cancelled = true;
+    };
+  }, [isNative, isPremium, safeAreaBottom, setBannerVisible, shouldReserveBannerSlot]);
 
-  // Web fallback: placeholder ad
+  useEffect(() => {
+    return () => {
+      void removeBannerAd();
+    };
+  }, []);
+
+  if (!isNative || isPremium || bannerSlotHeight === 0) return null;
+
   return (
-    <div className={`rounded-xl border border-border bg-muted/30 p-4 text-center ${className}`}>
-      <p className="text-xs text-muted-foreground/60">Advertentie</p>
-      <div className="my-2 flex h-14 items-center justify-center rounded-lg bg-muted/50">
-        <span className="text-xs text-muted-foreground/40">Ad placeholder</span>
-      </div>
-      <p className="text-[10px] text-muted-foreground/40">Verwijder advertenties met Premium</p>
-    </div>
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md"
+      style={{
+        height: bannerSlotHeight,
+        bottom: `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
+      }}
+    />
   );
 }

@@ -15,7 +15,6 @@ import { nl } from 'date-fns/locale';
 import { ChevronDown, ArrowLeft, Search, X } from 'lucide-react';
 import { usePremium } from '@/contexts/PremiumContext';
 import PremiumBanner from '@/components/PremiumBanner';
-import AdBanner from '@/components/AdBanner';
 
 const QUICK_SYMPTOM_ICONS: Record<SymptomType, string> = {
   vermoeidheid: '😴',
@@ -484,7 +483,6 @@ export default function SymptomTracker() {
           </div>
         )}
 
-        <AdBanner className="mt-6" />
       </div>
     </PageShell>
   );
