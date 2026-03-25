@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import AdBanner from '@/components/AdBanner';
 import { useState } from 'react';
 import { Settings, Save, Beaker, Flame, Waves, Egg, Droplets, Info, Calendar, Clock, RotateCcw } from 'lucide-react';
@@ -89,7 +90,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Instellingen"
@@ -256,6 +257,6 @@ export default function SettingsPage() {
         <AdBanner className="mt-6" />
 
       </div>
-    </div>
+    </PageShell>
   );
 }

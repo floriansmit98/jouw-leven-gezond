@@ -8,6 +8,7 @@ import { initializeAdMob, prepareInterstitial } from "@/lib/admob";
 import BottomNav from "@/components/BottomNav";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PremiumProvider } from "@/contexts/PremiumContext";
+import { AdBannerProvider } from "@/contexts/AdBannerContext";
 import Index from "./pages/Index";
 import Premium from "./pages/Premium";
 import FoodTracker from "./pages/FoodTracker";
@@ -73,7 +74,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PremiumProvider>
-            <ProtectedRoutes />
+            <AdBannerProvider>
+              <ProtectedRoutes />
+            </AdBannerProvider>
           </PremiumProvider>
         </AuthProvider>
       </BrowserRouter>

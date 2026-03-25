@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import { TrendingUp, BarChart3, FileText, Ban, Eye, Check, X, Shield, Clock, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -49,7 +50,7 @@ export default function Premium() {
 
   if (isPremium) {
     return (
-      <div className="min-h-screen pb-24">
+      <PageShell>
         <div className="mx-auto max-w-lg px-4 pt-8">
           <Card className="border-safe/20 bg-gradient-to-br from-safe/5 to-primary/5">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
@@ -66,7 +67,7 @@ export default function Premium() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageShell>
     );
   }
 

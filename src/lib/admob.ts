@@ -48,7 +48,7 @@ export async function showBannerAd(): Promise<void> {
       adId: getBannerAdId(),
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 56, // space for bottom nav
+      margin: 60, // space for bottom nav bar (~60px)
       isTesting: !IS_PRODUCTION,
     };
     await AdMob.showBanner(options);

@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import { useState, useRef, useEffect } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ export default function Coach() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-24">
+    <PageShell className="flex flex-col bg-background">
       <div className="mx-auto w-full max-w-lg px-4 pt-6">
         <PageHeader title="Dialyse Coach" mascotMessage="Stel mij uw vragen over dieet en gezondheid." />
       </div>
@@ -92,7 +93,7 @@ export default function Coach() {
                   <p key={j} className={j > 0 ? 'mt-1' : ''}>{line}</p>
                 ))}
               </div>
-            </div>
+            </PageShell>
           ))}
           <div ref={bottomRef} />
         </div>

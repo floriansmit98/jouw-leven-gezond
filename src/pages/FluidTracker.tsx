@@ -1,3 +1,4 @@
+import PageShell from "@/components/PageShell";
 import { useState } from 'react';
 import { Search, Plus, ChevronRight, Loader2, ShoppingCart } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
@@ -75,7 +76,7 @@ export default function FluidTracker() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader title="Vocht" mascotMessage="Houd uw vochtinname bij!" />
 
@@ -215,7 +216,7 @@ export default function FluidTracker() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }
 

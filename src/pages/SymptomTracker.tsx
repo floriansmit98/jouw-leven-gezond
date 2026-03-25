@@ -1,3 +1,4 @@
+import PageShell from '@/components/PageShell';
 import { useState, useMemo } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -189,7 +190,7 @@ export default function SymptomTracker() {
   // "Meer symptomen" full-screen overlay
   if (showMore) {
     return (
-      <div className="min-h-screen bg-background pb-24">
+      <PageShell className="bg-background">
         <div className="mx-auto max-w-lg px-4 pt-6">
           {/* Header */}
           <div className="mb-4 flex items-center gap-3">
@@ -241,12 +242,12 @@ export default function SymptomTracker() {
             )}
           </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Symptomen"
@@ -485,6 +486,6 @@ export default function SymptomTracker() {
 
         <AdBanner className="mt-6" />
       </div>
-    </div>
+    </PageShell>
   );
 }

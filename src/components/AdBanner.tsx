@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { usePremium } from '@/contexts/PremiumContext';
 import { Capacitor } from '@capacitor/core';
 import { showBannerAd, hideBannerAd, removeBannerAd } from '@/lib/admob';
+import { useAdBanner } from '@/contexts/AdBannerContext';
 
 interface AdBannerProps {
   className?: string;
@@ -10,18 +11,21 @@ interface AdBannerProps {
 export default function AdBanner({ className = '' }: AdBannerProps) {
   const { isPremium } = usePremium();
   const isNative = Capacitor.isNativePlatform();
+  const { setBannerVisible } = useAdBanner();
 
   // On native: show/hide the native AdMob banner
   useEffect(() => {
     if (!isNative || isPremium) {
       removeBannerAd();
+      setBannerVisible(false);
       return;
     }
-    showBannerAd();
+    showBannerAd().then(() => setBannerVisible(true));
     return () => {
       hideBannerAd();
+      setBannerVisible(false);
     };
-  }, [isNative, isPremium]);
+  }, [isNative, isPremium, setBannerVisible]);
 
   // Premium users: no ads at all
   if (isPremium) return null;

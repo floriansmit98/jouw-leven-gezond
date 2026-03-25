@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePremium } from '@/contexts/PremiumContext';
+
 import { Beaker, Droplets, Flame, Waves, Egg, Settings, LogOut, Clock, Sparkles, Search, Crown } from 'lucide-react';
 import AdBanner from '@/components/AdBanner';
+import PageShell from '@/components/PageShell';
 import NutrientCard from '@/components/NutrientCard';
 import GoalCard from '@/components/GoalCard';
 import RiskAlerts from '@/components/RiskAlerts';
@@ -56,7 +58,7 @@ export default function Index() {
   }, [totals, limits]);
 
   return (
-    <div className="min-h-screen pb-24">
+    <PageShell>
       <div className="mx-auto max-w-lg px-4 pt-6">
         <PageHeader
           title="Goedendag 👋"
@@ -159,6 +161,6 @@ export default function Index() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </PageShell>
   );
 }
