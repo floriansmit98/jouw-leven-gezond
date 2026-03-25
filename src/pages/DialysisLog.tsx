@@ -176,6 +176,6 @@ export default function DialysisLog() {
           ))}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

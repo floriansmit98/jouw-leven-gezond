@@ -93,7 +93,7 @@ export default function Coach() {
                   <p key={j} className={j > 0 ? 'mt-1' : ''}>{line}</p>
                 ))}
               </div>
-            </div>
+            </PageShell>
           ))}
           <div ref={bottomRef} />
         </div>

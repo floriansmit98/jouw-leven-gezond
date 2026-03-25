@@ -66,7 +66,7 @@ export default function Recipes() {
             </ol>
           </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
@@ -96,6 +96,6 @@ export default function Recipes() {
           ))}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

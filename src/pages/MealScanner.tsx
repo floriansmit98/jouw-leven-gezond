@@ -277,6 +277,6 @@ export default function MealScanner() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

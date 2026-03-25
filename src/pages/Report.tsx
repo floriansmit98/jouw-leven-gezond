@@ -91,7 +91,7 @@ export default function Report() {
             </Button>
           </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
@@ -252,7 +252,7 @@ export default function Report() {
           Het rapport wordt als PDF gegenereerd met uw voedingsinname, symptomen en dialyse sessies.
         </p>
       </div>
-    </div>
+    </PageShell>
   );
 }
 

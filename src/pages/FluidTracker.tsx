@@ -216,7 +216,7 @@ export default function FluidTracker() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }
 

@@ -67,7 +67,7 @@ export default function Premium() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageShell>
     );
   }
 

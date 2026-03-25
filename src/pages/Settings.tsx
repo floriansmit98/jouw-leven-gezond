@@ -257,6 +257,6 @@ export default function SettingsPage() {
         <AdBanner className="mt-6" />
 
       </div>
-    </div>
+    </PageShell>
   );
 }
