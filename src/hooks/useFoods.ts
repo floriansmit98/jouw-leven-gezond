@@ -33,6 +33,7 @@ export interface FoodEntryRow {
   fluid_ml: number;
   portions: number;
   logged_at: string;
+  meal_type: string | null;
 }
 
 const PAGE_SIZE = 20;
