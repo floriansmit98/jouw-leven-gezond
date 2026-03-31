@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FoodRow } from './useFoods';
+import { searchFoodsUnified, type FoodRow } from './useFoods';
 
 export interface BarcodeResult {
   barcode: string;

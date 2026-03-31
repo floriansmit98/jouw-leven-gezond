@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FoodRow } from './useFoods';
+import { searchFoodsUnified, type FoodRow } from './useFoods';
 
 export interface AIFoodComponent {
   name: string;

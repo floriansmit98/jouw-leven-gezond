@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FoodRow } from './useFoods';
+import { searchFoodsUnified, type FoodRow } from './useFoods';
 
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 400;

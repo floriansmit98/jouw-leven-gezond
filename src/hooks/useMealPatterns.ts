@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FoodRow } from './useFoods';
+import { searchFoodsUnified, type FoodRow } from './useFoods';
 
 export interface MealPatternMatch {
   patternId: string;
