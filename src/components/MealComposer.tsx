@@ -411,7 +411,7 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
                 {mostUsedFoods.map(food => (
                   <button
                     key={food.id}
-                    onClick={() => { setSelectedFood(food); setAmount(food.portion_grams || 100); }}
+                    onClick={() => { setSelectedFood({ ...food, nutrition_source: 'exact' } as FoodRowWithSource); setAmount(food.portion_grams || 100); }}
                     className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-secondary/50"
                   >
                     <div className="flex-1 min-w-0">
