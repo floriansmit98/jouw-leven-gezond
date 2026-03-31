@@ -142,13 +142,9 @@ export function useBarcodeLookup() {
         if (searchSuggestions.length === 0) {
           const words = offName.split(/\s+/).filter(w => w.length >= 3);
           for (const word of words.slice(0, 3)) {
-            const { data } = await supabase.rpc('search_foods_ranked', {
-              search_query: word,
-              page_size: 4,
-              page_offset: 0,
-            });
-            if (data && data.length > 0) {
-              searchSuggestions = [...searchSuggestions, ...(data as FoodRow[])];
+            const results = await searchFoodsUnified(word, 4, 0);
+            if (results.length > 0) {
+              searchSuggestions = [...searchSuggestions, ...results];
             }
           }
           // Deduplicate

@@ -102,15 +102,11 @@ export function useMealPatterns(query: string) {
         // Resolve each component to a food record
         const resolvedComponents = await Promise.all(
           foodComponents.map(async (componentName: string, idx: number) => {
-            const { data } = await supabase.rpc('search_foods_ranked', {
-              search_query: componentName,
-              page_size: 1,
-              page_offset: 0,
-            });
+            const results = await searchFoodsUnified(componentName, 1, 0);
 
             return {
               name: componentName,
-              food: (data && data.length > 0 ? data[0] : null) as FoodRow | null,
+              food: results.length > 0 ? results[0] : null,
               defaultGrams: defaultPortions[idx] || 100,
             };
           })
