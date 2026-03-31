@@ -283,11 +283,11 @@ function NutrientBox({ label, value, unit }: { label: string; value: number; uni
 /** Inline food picker used within the meal composer */
 function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: number) => void; onBack: () => void }) {
   const [query, setQuery] = useState('');
-  const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
+  const [selectedFood, setSelectedFood] = useState<FoodRowWithSource | null>(null);
   const [amount, setAmount] = useState(100);
   const { results: unifiedResults, loading } = useUnifiedSearch(query);
   const searchResults = useMemo(() => {
-    console.log('[MealComposer] Unified search results for query:', query, '→', unifiedResults.length, 'results', unifiedResults.map(r => `${r.display_name} (${r.result_type})`));
+    console.log('[MealComposer] Unified search results for query:', query, '→', unifiedResults.length, 'results', unifiedResults.map(r => `${r.display_name} (${r.result_type}, ${r.nutrition_source})`));
     return unifiedResults.map(unifiedResultToFoodRow);
   }, [unifiedResults, query]);
   const { foods: recentFoods } = useRecentFoods();
@@ -297,6 +297,8 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
 
   if (selectedFood) {
     const factor = amount / 100;
+    const isEstimated = selectedFood.nutrition_source === 'estimated';
+    const isUnknown = selectedFood.nutrition_source === 'unknown';
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -307,15 +309,30 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
           <div>
             <p className="font-semibold text-foreground">{foodDisplayName(selectedFood)}</p>
             <p className="text-xs text-muted-foreground">{selectedFood.portion_description} · {selectedFood.category}</p>
+            <div className="mt-1.5">
+              <NutritionSourceBadge source={selectedFood.nutrition_source} />
+            </div>
           </div>
+          {isEstimated && (
+            <div className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/50">
+              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p className="text-xs text-foreground">Geschat op basis van vergelijkbare producten. Werkelijke waarden kunnen afwijken.</p>
+            </div>
+          )}
+          {isUnknown && (
+            <div className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 bg-muted">
+              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Onvoldoende betrouwbare gegevens om waarden te schatten.</p>
+            </div>
+          )}
           <AmountInput food={selectedFood} grams={amount} onGramsChange={setAmount} />
-          {amount > 0 && (
+          {amount > 0 && !isUnknown && (
             <div className="grid grid-cols-5 gap-1 text-center">
-              <MiniNutrient label="K" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" />
-              <MiniNutrient label="F" value={Math.round(selectedFood.phosphate_mg * factor)} unit="mg" />
-              <MiniNutrient label="Na" value={Math.round(selectedFood.sodium_mg * factor)} unit="mg" />
-              <MiniNutrient label="E" value={Math.round(selectedFood.protein_g * factor * 10) / 10} unit="g" />
-              <MiniNutrient label="V" value={Math.round(selectedFood.fluid_ml * factor)} unit="ml" />
+              <MiniNutrient label="K" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" estimated={isEstimated} />
+              <MiniNutrient label="F" value={Math.round(selectedFood.phosphate_mg * factor)} unit="mg" estimated={isEstimated} />
+              <MiniNutrient label="Na" value={Math.round(selectedFood.sodium_mg * factor)} unit="mg" estimated={isEstimated} />
+              <MiniNutrient label="E" value={Math.round(selectedFood.protein_g * factor * 10) / 10} unit="g" estimated={isEstimated} />
+              <MiniNutrient label="V" value={Math.round(selectedFood.fluid_ml * factor)} unit="ml" estimated={isEstimated} />
             </div>
           )}
         </div>
