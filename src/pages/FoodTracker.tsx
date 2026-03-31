@@ -672,17 +672,6 @@ function DetectedFoodCard({
   );
 }
 
-const MEAL_TYPE_OPTIONS = [
-  { value: 'ontbijt', label: 'Ontbijt', icon: '🌅' },
-  { value: 'lunch', label: 'Lunch', icon: '☀️' },
-  { value: 'avondeten', label: 'Avondeten', icon: '🌙' },
-  { value: 'tussendoortje', label: 'Tussendoortje', icon: '🍎' },
-];
-
-function getMealTypeLabel(type: string | null | undefined): string {
-  return MEAL_TYPE_OPTIONS.find(o => o.value === type)?.label || type || '';
-}
-
 // --- AI-Assisted Smart Search Panel ---
 function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   onAddFood?: (food: FoodRow) => void;
