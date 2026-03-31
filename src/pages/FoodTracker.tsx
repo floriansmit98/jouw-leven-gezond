@@ -1215,7 +1215,17 @@ function SearchResultCard({
             </span>
             <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
           </div>
-          {!isMeal && (
+          {!isMeal && result.nutrition_source === 'estimated' && (
+            <span className="inline-flex items-center gap-1 mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400">
+              ≈ Geschat
+            </span>
+          )}
+          {!isMeal && result.nutrition_source === 'unknown' && (
+            <span className="inline-flex items-center gap-1 mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-muted border-border text-muted-foreground">
+              Onvoldoende data
+            </span>
+          )}
+          {!isMeal && (result.nutrition_source === 'exact' || result.nutrition_source === 'estimated') && (
             <SearchWarningBadges flags={getFoodFlags({
               potassium_mg: result.potassium_mg,
               phosphate_mg: result.phosphate_mg,
