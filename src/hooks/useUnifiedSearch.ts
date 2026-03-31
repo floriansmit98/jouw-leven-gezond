@@ -110,31 +110,45 @@ export function useUnifiedSearch(query: string) {
           setLoading(false);
           return;
         }
-        let rows = (data ?? []) as UnifiedSearchResult[];
+        const rows = (data ?? []) as UnifiedSearchResult[];
+        console.log('[UnifiedSearch] Raw results:', rows.length, 'for query:', trimmed);
 
-        // Estimate nutrients for items that need it
-        const enriched = await Promise.all(
-          rows.map(async (row) => {
-            if (row.nutrition_source === 'needs_estimation') {
-              const est = await estimateNutrients(row.category, row.display_name);
-              return { ...row, ...est };
-            }
-            if (!row.nutrition_source) {
-              return { ...row, nutrition_source: 'exact' as NutritionSource };
-            }
-            return row;
-          })
-        );
-
-        if (cancelled) return;
+        // Show results immediately, then enrich in background
+        const initial = rows.map(row => ({
+          ...row,
+          nutrition_source: (row.nutrition_source || 'exact') as NutritionSource,
+        }));
 
         if (page === 0) {
-          setResults(enriched);
+          setResults(initial);
         } else {
-          setResults(prev => [...prev, ...enriched]);
+          setResults(prev => [...prev, ...initial]);
         }
-        setHasMore(enriched.length === PAGE_SIZE);
+        setHasMore(initial.length === PAGE_SIZE);
         setLoading(false);
+
+        // Enrich items that need estimation (non-blocking)
+        const needsEstimation = initial.filter(r => r.nutrition_source === 'needs_estimation');
+        if (needsEstimation.length > 0) {
+          try {
+            const estimates = await Promise.all(
+              needsEstimation.map(async (row) => {
+                const est = await estimateNutrients(row.category, row.display_name);
+                return { result_id: row.result_id, ...est };
+              })
+            );
+            if (cancelled) return;
+            setResults(prev => prev.map(r => {
+              const est = estimates.find(e => e.result_id === r.result_id);
+              if (est) {
+                return { ...r, potassium_mg: est.potassium_mg, phosphate_mg: est.phosphate_mg, sodium_mg: est.sodium_mg, protein_g: est.protein_g, fluid_ml: est.fluid_ml, nutrition_source: est.nutrition_source };
+              }
+              return r;
+            }));
+          } catch (e) {
+            console.warn('[UnifiedSearch] Estimation failed, showing results without estimates:', e);
+          }
+        }
       });
 
     return () => { cancelled = true; };
