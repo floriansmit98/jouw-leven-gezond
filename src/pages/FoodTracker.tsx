@@ -464,27 +464,66 @@ export default function FoodTracker() {
             {/* Daily total warnings */}
             <DailyTotalWarnings entries={entries} />
 
-            <div className="space-y-2">
-              {entries.map(entry => {
-                const entryWarnings = analyzeFoodWarnings(
-                  { potassium_mg: entry.potassium_mg / entry.portions, phosphate_mg: entry.phosphate_mg / entry.portions, sodium_mg: entry.sodium_mg / entry.portions, protein_g: entry.protein_g / entry.portions, fluid_ml: entry.fluid_ml / entry.portions, portion_grams: 100, portion_description: '', name: entry.name, display_name: null, id: entry.id, category: '', dialysis_risk_label: '' } as FoodRow,
-                  entry.portions * 100
-                );
-                return (
-                  <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
-                    <p className="font-medium text-foreground">{entry.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
-                    </p>
-                    {entryWarnings.length > 0 && (
-                      <div className="mt-1.5">
-                        <WarningBadges warnings={entryWarnings} />
+            {/* Group entries by meal_type */}
+            {(() => {
+              const grouped: Record<string, FoodEntryRow[]> = {};
+              const orderMap: Record<string, number> = { ontbijt: 0, lunch: 1, avondeten: 2, tussendoortje: 3 };
+              for (const entry of entries) {
+                const key = entry.meal_type || 'overig';
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(entry);
+              }
+              const sortedKeys = Object.keys(grouped).sort((a, b) => (orderMap[a] ?? 99) - (orderMap[b] ?? 99));
+
+              return (
+                <div className="space-y-4">
+                  {sortedKeys.map(mealType => {
+                    const groupEntries = grouped[mealType];
+                    const opt = MEAL_TYPE_OPTIONS.find(o => o.value === mealType);
+                    const groupLabel = opt ? `${opt.icon} ${opt.label}` : '📋 Overig';
+                    const groupTotals = {
+                      k: groupEntries.reduce((s, e) => s + Number(e.potassium_mg), 0),
+                      f: groupEntries.reduce((s, e) => s + Number(e.phosphate_mg), 0),
+                      na: groupEntries.reduce((s, e) => s + Number(e.sodium_mg), 0),
+                      e: groupEntries.reduce((s, e) => s + Number(e.protein_g), 0),
+                      v: groupEntries.reduce((s, e) => s + Number(e.fluid_ml), 0),
+                    };
+
+                    return (
+                      <div key={mealType}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-sm font-semibold text-foreground">{groupLabel}</h3>
+                          <span className="text-[11px] text-muted-foreground">
+                            K:{groupTotals.k} · Na:{groupTotals.na} · E:{groupTotals.e}g
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {groupEntries.map(entry => {
+                            const entryWarnings = analyzeFoodWarnings(
+                              { potassium_mg: entry.potassium_mg / entry.portions, phosphate_mg: entry.phosphate_mg / entry.portions, sodium_mg: entry.sodium_mg / entry.portions, protein_g: entry.protein_g / entry.portions, fluid_ml: entry.fluid_ml / entry.portions, portion_grams: 100, portion_description: '', name: entry.name, display_name: null, id: entry.id, category: '', dialysis_risk_label: '' } as FoodRow,
+                              entry.portions * 100
+                            );
+                            return (
+                              <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
+                                <p className="font-medium text-foreground">{entry.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
+                                </p>
+                                {entryWarnings.length > 0 && (
+                                  <div className="mt-1.5">
+                                    <WarningBadges warnings={entryWarnings} />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
