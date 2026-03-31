@@ -448,11 +448,11 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
   );
 }
 
-function MiniNutrient({ label, value, unit }: { label: string; value: number; unit: string }) {
+function MiniNutrient({ label, value, unit, estimated }: { label: string; value: number; unit: string; estimated?: boolean }) {
   return (
-    <div className="rounded-md bg-muted px-1 py-1.5">
-      <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-xs font-bold text-foreground">{value}</p>
+    <div className={`rounded-md px-1 py-1.5 ${estimated ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-muted'}`}>
+      <p className="text-[10px] text-muted-foreground">{label}{estimated ? '~' : ''}</p>
+      <p className={`text-xs font-bold ${estimated ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>{value}</p>
     </div>
   );
 }
