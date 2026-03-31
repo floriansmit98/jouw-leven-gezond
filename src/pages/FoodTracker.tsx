@@ -446,7 +446,7 @@ export default function FoodTracker() {
         )}
 
         {/* Today's meals */}
-        {todayMeals.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
+        {todayMeals.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-history' && (
           <div className="mb-4">
             <h2 className="mb-3 font-display text-lg font-semibold">Maaltijden vandaag</h2>
             <div className="space-y-2">
