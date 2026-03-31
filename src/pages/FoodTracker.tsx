@@ -694,7 +694,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
 
   const handleSaveDirect = async () => {
     if (selectedFood && onAddFoodDirect) {
-      await onAddFoodDirect(selectedFood, amount);
+      await onAddFoodDirect(selectedFood, amount, selectedMealType);
       setSelectedFood(null);
       setQuery('');
     }
