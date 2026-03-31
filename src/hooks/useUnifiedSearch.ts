@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export type NutritionSource = 'exact' | 'estimated' | 'unknown' | 'needs_estimation';
+
 export interface UnifiedSearchResult {
   result_id: string;
   result_type: 'food' | 'meal' | 'branded_product';
@@ -16,6 +18,7 @@ export interface UnifiedSearchResult {
   portion_description: string;
   portion_grams: number;
   rank_score: number;
+  nutrition_source: NutritionSource;
 }
 
 export interface CommonMealItem {
@@ -42,6 +45,36 @@ export interface CommonMealItem {
 }
 
 const PAGE_SIZE = 20;
+
+/** Estimate nutrients for a product with missing values using median of similar products */
+async function estimateNutrients(
+  category: string,
+  displayName: string
+): Promise<{ potassium_mg: number; phosphate_mg: number; sodium_mg: number; protein_g: number; fluid_ml: number; nutrition_source: NutritionSource }> {
+  try {
+    const { data, error } = await supabase.rpc('estimate_nutrients', {
+      p_category: category,
+      p_display_name: displayName,
+    });
+    if (error || !data || data.length === 0) {
+      return { potassium_mg: 0, phosphate_mg: 0, sodium_mg: 0, protein_g: 0, fluid_ml: 0, nutrition_source: 'unknown' };
+    }
+    const est = (data as any[])[0];
+    if (est.nutrition_source === 'estimated') {
+      return {
+        potassium_mg: Math.round(est.est_potassium_mg ?? 0),
+        phosphate_mg: Math.round(est.est_phosphate_mg ?? 0),
+        sodium_mg: Math.round(est.est_sodium_mg ?? 0),
+        protein_g: Math.round((est.est_protein_g ?? 0) * 10) / 10,
+        fluid_ml: Math.round(est.est_fluid_ml ?? 0),
+        nutrition_source: 'estimated',
+      };
+    }
+    return { potassium_mg: 0, phosphate_mg: 0, sodium_mg: 0, protein_g: 0, fluid_ml: 0, nutrition_source: 'unknown' };
+  } catch {
+    return { potassium_mg: 0, phosphate_mg: 0, sodium_mg: 0, protein_g: 0, fluid_ml: 0, nutrition_source: 'unknown' };
+  }
+}
 
 export function useUnifiedSearch(query: string) {
   const [results, setResults] = useState<UnifiedSearchResult[]>([]);
@@ -70,20 +103,37 @@ export function useUnifiedSearch(query: string) {
         page_size: PAGE_SIZE,
         page_offset: page * PAGE_SIZE,
       })
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (cancelled) return;
         if (error) {
           console.error('Unified search error:', error);
           setLoading(false);
           return;
         }
-        const rows = (data ?? []) as UnifiedSearchResult[];
+        let rows = (data ?? []) as UnifiedSearchResult[];
+
+        // Estimate nutrients for items that need it
+        const enriched = await Promise.all(
+          rows.map(async (row) => {
+            if (row.nutrition_source === 'needs_estimation') {
+              const est = await estimateNutrients(row.category, row.display_name);
+              return { ...row, ...est };
+            }
+            if (!row.nutrition_source) {
+              return { ...row, nutrition_source: 'exact' as NutritionSource };
+            }
+            return row;
+          })
+        );
+
+        if (cancelled) return;
+
         if (page === 0) {
-          setResults(rows);
+          setResults(enriched);
         } else {
-          setResults(prev => [...prev, ...rows]);
+          setResults(prev => [...prev, ...enriched]);
         }
-        setHasMore(rows.length === PAGE_SIZE);
+        setHasMore(enriched.length === PAGE_SIZE);
         setLoading(false);
       });
 

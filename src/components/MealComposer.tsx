@@ -1,19 +1,24 @@
 import { useState, useMemo } from 'react';
 
-import { Plus, X, Check, Loader2, Search, ChevronRight, Star, Trash2 } from 'lucide-react';
+import { Plus, X, Check, Loader2, Search, ChevronRight, Star, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AmountInput from '@/components/AmountInput';
 import { useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
-import { useUnifiedSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
+import { useUnifiedSearch, type UnifiedSearchResult, type NutritionSource } from '@/hooks/useUnifiedSearch';
 import { type MealDraftItem, draftTotals, saveMeal, type MealWithItems } from '@/hooks/useMeals';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { analyzeFoodWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges } from '@/components/NutrientWarnings';
 
-/** Convert a UnifiedSearchResult to a FoodRow for use in the meal composer */
-function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRow {
+/** Extended FoodRow that tracks nutrition source */
+export interface FoodRowWithSource extends FoodRow {
+  nutrition_source: NutritionSource;
+}
+
+/** Convert a UnifiedSearchResult to a FoodRowWithSource for use in the meal composer */
+function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRowWithSource {
   return {
     id: r.food_id || r.result_id,
     name: r.display_name,
@@ -27,7 +32,27 @@ function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRow {
     protein_g: r.protein_g ?? 0,
     fluid_ml: r.fluid_ml ?? 0,
     dialysis_risk_label: 'laag',
+    nutrition_source: r.nutrition_source || 'exact',
   };
+}
+
+/** Badge showing the nutrition data source */
+function NutritionSourceBadge({ source }: { source: NutritionSource }) {
+  if (source === 'exact') return null;
+  if (source === 'estimated') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold border bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400">
+        <Info className="h-3 w-3" />
+        Geschat
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold border bg-muted border-border text-muted-foreground">
+      <Info className="h-3 w-3" />
+      Onvoldoende data
+    </span>
+  );
 }
 
 const MEAL_TYPES = [
@@ -258,11 +283,11 @@ function NutrientBox({ label, value, unit }: { label: string; value: number; uni
 /** Inline food picker used within the meal composer */
 function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: number) => void; onBack: () => void }) {
   const [query, setQuery] = useState('');
-  const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
+  const [selectedFood, setSelectedFood] = useState<FoodRowWithSource | null>(null);
   const [amount, setAmount] = useState(100);
   const { results: unifiedResults, loading } = useUnifiedSearch(query);
   const searchResults = useMemo(() => {
-    console.log('[MealComposer] Unified search results for query:', query, '→', unifiedResults.length, 'results', unifiedResults.map(r => `${r.display_name} (${r.result_type})`));
+    console.log('[MealComposer] Unified search results for query:', query, '→', unifiedResults.length, 'results', unifiedResults.map(r => `${r.display_name} (${r.result_type}, ${r.nutrition_source})`));
     return unifiedResults.map(unifiedResultToFoodRow);
   }, [unifiedResults, query]);
   const { foods: recentFoods } = useRecentFoods();
@@ -272,6 +297,8 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
 
   if (selectedFood) {
     const factor = amount / 100;
+    const isEstimated = selectedFood.nutrition_source === 'estimated';
+    const isUnknown = selectedFood.nutrition_source === 'unknown';
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -282,15 +309,30 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
           <div>
             <p className="font-semibold text-foreground">{foodDisplayName(selectedFood)}</p>
             <p className="text-xs text-muted-foreground">{selectedFood.portion_description} · {selectedFood.category}</p>
+            <div className="mt-1.5">
+              <NutritionSourceBadge source={selectedFood.nutrition_source} />
+            </div>
           </div>
+          {isEstimated && (
+            <div className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 bg-amber-50 dark:bg-amber-950/50">
+              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p className="text-xs text-foreground">Geschat op basis van vergelijkbare producten. Werkelijke waarden kunnen afwijken.</p>
+            </div>
+          )}
+          {isUnknown && (
+            <div className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 bg-muted">
+              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Onvoldoende betrouwbare gegevens om waarden te schatten.</p>
+            </div>
+          )}
           <AmountInput food={selectedFood} grams={amount} onGramsChange={setAmount} />
-          {amount > 0 && (
+          {amount > 0 && !isUnknown && (
             <div className="grid grid-cols-5 gap-1 text-center">
-              <MiniNutrient label="K" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" />
-              <MiniNutrient label="F" value={Math.round(selectedFood.phosphate_mg * factor)} unit="mg" />
-              <MiniNutrient label="Na" value={Math.round(selectedFood.sodium_mg * factor)} unit="mg" />
-              <MiniNutrient label="E" value={Math.round(selectedFood.protein_g * factor * 10) / 10} unit="g" />
-              <MiniNutrient label="V" value={Math.round(selectedFood.fluid_ml * factor)} unit="ml" />
+              <MiniNutrient label="K" value={Math.round(selectedFood.potassium_mg * factor)} unit="mg" estimated={isEstimated} />
+              <MiniNutrient label="F" value={Math.round(selectedFood.phosphate_mg * factor)} unit="mg" estimated={isEstimated} />
+              <MiniNutrient label="Na" value={Math.round(selectedFood.sodium_mg * factor)} unit="mg" estimated={isEstimated} />
+              <MiniNutrient label="E" value={Math.round(selectedFood.protein_g * factor * 10) / 10} unit="g" estimated={isEstimated} />
+              <MiniNutrient label="V" value={Math.round(selectedFood.fluid_ml * factor)} unit="ml" estimated={isEstimated} />
             </div>
           )}
         </div>
@@ -331,23 +373,25 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
       {showResults ? (
         <div className="space-y-1.5">
           {searchResults.map(food => {
-            const isUnmatched = (food as any).nevoMatched === false;
+            const src = food.nutrition_source;
             return (
               <button
                 key={food.id}
-                onClick={() => { if (!isUnmatched) { setSelectedFood(food); setAmount(food.portion_grams || 100); } }}
-                disabled={isUnmatched}
-                className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm ${
-                  isUnmatched ? 'border-border/50 opacity-60 cursor-not-allowed' : 'border-border hover:bg-secondary/50'
-                }`}
+                onClick={() => { setSelectedFood(food); setAmount(food.portion_grams || 100); }}
+                className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-secondary/50"
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
                   <p className="text-xs text-muted-foreground">
-                    {isUnmatched ? '⚠️ Geen betrouwbare voedingswaarden' : `${food.portion_description} · ${food.category}`}
+                    {`${food.portion_description} · ${food.category}`}
                   </p>
+                  {src !== 'exact' && (
+                    <div className="mt-1">
+                      <NutritionSourceBadge source={src} />
+                    </div>
+                  )}
                 </div>
-                {!isUnmatched && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />}
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />
               </button>
             );
           })}
@@ -367,7 +411,7 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
                 {mostUsedFoods.map(food => (
                   <button
                     key={food.id}
-                    onClick={() => { setSelectedFood(food); setAmount(food.portion_grams || 100); }}
+                    onClick={() => { setSelectedFood({ ...food, nutrition_source: 'exact' } as FoodRowWithSource); setAmount(food.portion_grams || 100); }}
                     className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-secondary/50"
                   >
                     <div className="flex-1 min-w-0">
@@ -387,7 +431,7 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
                 {recentFoods.map(food => (
                   <button
                     key={food.id}
-                    onClick={() => { setSelectedFood(food); setAmount(food.portion_grams || 100); }}
+                    onClick={() => { setSelectedFood({ ...food, nutrition_source: 'exact' } as FoodRowWithSource); setAmount(food.portion_grams || 100); }}
                     className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-secondary/50"
                   >
                     <div className="flex-1 min-w-0">
@@ -406,11 +450,11 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
   );
 }
 
-function MiniNutrient({ label, value, unit }: { label: string; value: number; unit: string }) {
+function MiniNutrient({ label, value, unit, estimated }: { label: string; value: number; unit: string; estimated?: boolean }) {
   return (
-    <div className="rounded-md bg-muted px-1 py-1.5">
-      <p className="text-[10px] text-muted-foreground">{label}</p>
-      <p className="text-xs font-bold text-foreground">{value}</p>
+    <div className={`rounded-md px-1 py-1.5 ${estimated ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-muted'}`}>
+      <p className="text-[10px] text-muted-foreground">{label}{estimated ? '~' : ''}</p>
+      <p className={`text-xs font-bold ${estimated ? 'text-amber-700 dark:text-amber-400' : 'text-foreground'}`}>{value}</p>
     </div>
   );
 }
