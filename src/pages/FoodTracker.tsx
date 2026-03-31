@@ -13,7 +13,7 @@ import AmountInput from '@/components/AmountInput';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useFoodSearch, useTodayEntries, addFoodEntryDB, useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
+import { useFoodSearch, useTodayEntries, addFoodEntryDB, useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow, type FoodEntryRow } from '@/hooks/useFoods';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -23,9 +23,8 @@ import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } 
 import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
 import { getFoodFlags, SearchWarningBadges, SearchWarningDetail } from '@/components/SearchNutrientWarning';
 import { getLimits } from '@/lib/store';
-import MealComposer from '@/components/MealComposer';
-import MealCard from '@/components/MealCard';
 import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type MealWithItems } from '@/hooks/useMeals';
+import MealCard from '@/components/MealCard';
 import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 import InlineAdBanner from '@/components/InlineAdBanner';
 
@@ -39,7 +38,18 @@ interface DetectedFood {
   confirmed: boolean;
 }
 
-type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result' | 'meal-compose' | 'meal-history';
+const MEAL_TYPE_OPTIONS = [
+  { value: 'ontbijt', label: 'Ontbijt', icon: '🌅' },
+  { value: 'lunch', label: 'Lunch', icon: '☀️' },
+  { value: 'avondeten', label: 'Avondeten', icon: '🌙' },
+  { value: 'tussendoortje', label: 'Tussendoortje', icon: '🍎' },
+];
+
+function getMealTypeLabel(type: string | null | undefined): string {
+  return MEAL_TYPE_OPTIONS.find(o => o.value === type)?.label || type || '';
+}
+
+type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result' | 'meal-history';
 
 export default function FoodTracker() {
   const { user } = useAuth();
@@ -135,16 +145,15 @@ export default function FoodTracker() {
   };
 
   // --- Add manual food directly (save immediately) ---
-  const addManualFoodDirect = async (food: FoodRow, amountGrams: number) => {
+  const addManualFoodDirect = async (food: FoodRow, amountGrams: number, mealType?: string) => {
     if (!user) return;
     setSaving(true);
     try {
       const factor = amountGrams / 100;
-      await addFoodEntryDB(user.id, food, factor);
-      toast.success(`${foodDisplayName(food)} toegevoegd!`);
+      await addFoodEntryDB(user.id, food, factor, mealType);
+      toast.success(`${foodDisplayName(food)} toegevoegd aan ${getMealTypeLabel(mealType)}!`);
       triggerInterstitial();
       refetch();
-      // If we came from confirm step (AI detection), go back there
       if (detectedFoods.length > 0) {
         setStep('confirm');
       } else {
@@ -323,20 +332,13 @@ export default function FoodTracker() {
             </div>
 
             {/* Additional actions */}
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setStep('meal-compose')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
-              >
-                <UtensilsCrossed className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium">Maaltijd samenstellen</span>
-              </button>
+            <div className="mb-4">
               <button
                 onClick={() => setStep('meal-history')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+                className="flex w-full items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
               >
                 <History className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium">Geschiedenis</span>
+                <span className="text-xs font-medium">Maaltijdgeschiedenis</span>
               </button>
             </div>
 
@@ -448,21 +450,13 @@ export default function FoodTracker() {
 
         {/* Barcode steps disabled — scanner temporarily removed */}
 
-        {/* Step: Meal composer */}
-        {step === 'meal-compose' && (
-          <MealComposer
-            onSaved={() => { handleReset(); refetchAll(); }}
-            onCancel={() => setStep('capture')}
-          />
-        )}
-
         {/* Step: Meal history */}
         {step === 'meal-history' && (
           <MealHistoryPanel onBack={() => setStep('capture')} onRefresh={refetchAll} />
         )}
 
         {/* Today's meals */}
-        {todayMeals.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
+        {todayMeals.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-history' && (
           <div className="mb-4">
             <h2 className="mb-3 font-display text-lg font-semibold">Maaltijden vandaag</h2>
             <div className="space-y-2">
@@ -474,34 +468,73 @@ export default function FoodTracker() {
         )}
 
         {/* Today's individual entries with daily warnings */}
-        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
+        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-history' && (
           <div>
             <h2 className="mb-3 font-display text-lg font-semibold">Vandaag gegeten</h2>
 
             {/* Daily total warnings */}
             <DailyTotalWarnings entries={entries} />
 
-            <div className="space-y-2">
-              {entries.map(entry => {
-                const entryWarnings = analyzeFoodWarnings(
-                  { potassium_mg: entry.potassium_mg / entry.portions, phosphate_mg: entry.phosphate_mg / entry.portions, sodium_mg: entry.sodium_mg / entry.portions, protein_g: entry.protein_g / entry.portions, fluid_ml: entry.fluid_ml / entry.portions, portion_grams: 100, portion_description: '', name: entry.name, display_name: null, id: entry.id, category: '', dialysis_risk_label: '' } as FoodRow,
-                  entry.portions * 100
-                );
-                return (
-                  <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
-                    <p className="font-medium text-foreground">{entry.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
-                    </p>
-                    {entryWarnings.length > 0 && (
-                      <div className="mt-1.5">
-                        <WarningBadges warnings={entryWarnings} />
+            {/* Group entries by meal_type */}
+            {(() => {
+              const grouped: Record<string, FoodEntryRow[]> = {};
+              const orderMap: Record<string, number> = { ontbijt: 0, lunch: 1, avondeten: 2, tussendoortje: 3 };
+              for (const entry of entries) {
+                const key = entry.meal_type || 'overig';
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(entry);
+              }
+              const sortedKeys = Object.keys(grouped).sort((a, b) => (orderMap[a] ?? 99) - (orderMap[b] ?? 99));
+
+              return (
+                <div className="space-y-4">
+                  {sortedKeys.map(mealType => {
+                    const groupEntries = grouped[mealType];
+                    const opt = MEAL_TYPE_OPTIONS.find(o => o.value === mealType);
+                    const groupLabel = opt ? `${opt.icon} ${opt.label}` : '📋 Overig';
+                    const groupTotals = {
+                      k: groupEntries.reduce((s, e) => s + Number(e.potassium_mg), 0),
+                      f: groupEntries.reduce((s, e) => s + Number(e.phosphate_mg), 0),
+                      na: groupEntries.reduce((s, e) => s + Number(e.sodium_mg), 0),
+                      e: groupEntries.reduce((s, e) => s + Number(e.protein_g), 0),
+                      v: groupEntries.reduce((s, e) => s + Number(e.fluid_ml), 0),
+                    };
+
+                    return (
+                      <div key={mealType}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-sm font-semibold text-foreground">{groupLabel}</h3>
+                          <span className="text-[11px] text-muted-foreground">
+                            K:{groupTotals.k} · Na:{groupTotals.na} · E:{groupTotals.e}g
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {groupEntries.map(entry => {
+                            const entryWarnings = analyzeFoodWarnings(
+                              { potassium_mg: entry.potassium_mg / entry.portions, phosphate_mg: entry.phosphate_mg / entry.portions, sodium_mg: entry.sodium_mg / entry.portions, protein_g: entry.protein_g / entry.portions, fluid_ml: entry.fluid_ml / entry.portions, portion_grams: 100, portion_description: '', name: entry.name, display_name: null, id: entry.id, category: '', dialysis_risk_label: '' } as FoodRow,
+                              entry.portions * 100
+                            );
+                            return (
+                              <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
+                                <p className="font-medium text-foreground">{entry.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  K: {entry.potassium_mg}mg · F: {entry.phosphate_mg}mg · Na: {entry.sodium_mg}mg · E: {entry.protein_g}g · Vocht: {entry.fluid_ml}ml
+                                </p>
+                                {entryWarnings.length > 0 && (
+                                  <div className="mt-1.5">
+                                    <WarningBadges warnings={entryWarnings} />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -642,13 +675,20 @@ function DetectedFoodCard({
 // --- AI-Assisted Smart Search Panel ---
 function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   onAddFood?: (food: FoodRow) => void;
-  onAddFoodDirect?: (food: FoodRow, amountGrams: number) => Promise<void>;
+  onAddFoodDirect?: (food: FoodRow, amountGrams: number, mealType?: string) => Promise<void>;
   onBack: () => void;
   saving?: boolean;
 }) {
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
+  const [selectedMealType, setSelectedMealType] = useState<string>(() => {
+    const hour = new Date().getHours();
+    if (hour < 10) return 'ontbijt';
+    if (hour < 14) return 'lunch';
+    if (hour < 18) return 'tussendoortje';
+    return 'avondeten';
+  });
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [mealItems, setMealItems] = useState<Record<string, any[]>>({});
   
@@ -692,7 +732,7 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
 
   const handleSaveDirect = async () => {
     if (selectedFood && onAddFoodDirect) {
-      await onAddFoodDirect(selectedFood, amount);
+      await onAddFoodDirect(selectedFood, amount, selectedMealType);
       setSelectedFood(null);
       setQuery('');
     }
@@ -760,13 +800,34 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
           })} />
         </div>
 
+        {/* Meal type selector */}
+        <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+          <p className="text-sm font-semibold text-foreground">Bij welk eetmoment?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {MEAL_TYPE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setSelectedMealType(opt.value)}
+                className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                  selectedMealType === opt.value
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                <span>{opt.icon}</span>
+                <span>{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <Button
           onClick={handleSaveDirect}
           disabled={saving || amount <= 0}
           className="h-12 w-full rounded-xl text-base font-semibold"
         >
           {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
-          Toevoegen
+          Toevoegen aan {getMealTypeLabel(selectedMealType)}
         </Button>
       </div>
     );

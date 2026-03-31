@@ -33,6 +33,7 @@ export interface FoodEntryRow {
   fluid_ml: number;
   portions: number;
   logged_at: string;
+  meal_type: string | null;
 }
 
 const PAGE_SIZE = 20;
@@ -188,7 +189,7 @@ export function useMostUsedFoods() {
   return { foods, loading };
 }
 
-export async function addFoodEntryDB(userId: string, food: FoodRow, portions: number) {
+export async function addFoodEntryDB(userId: string, food: FoodRow, portions: number, mealType?: string) {
   const { error } = await supabase.from('food_entries').insert({
     user_id: userId,
     food_id: food.id,
@@ -199,6 +200,7 @@ export async function addFoodEntryDB(userId: string, food: FoodRow, portions: nu
     protein_g: Math.round(food.protein_g * portions),
     fluid_ml: Math.round(food.fluid_ml * portions),
     portions,
-  });
+    meal_type: mealType || null,
+  } as any);
   if (error) throw error;
 }

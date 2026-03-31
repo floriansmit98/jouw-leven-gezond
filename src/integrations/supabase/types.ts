@@ -178,6 +178,7 @@ export type Database = {
           id: string
           logged_at: string
           meal_id: string | null
+          meal_type: string | null
           name: string
           phosphate_mg: number
           portions: number
@@ -192,6 +193,7 @@ export type Database = {
           id?: string
           logged_at?: string
           meal_id?: string | null
+          meal_type?: string | null
           name: string
           phosphate_mg?: number
           portions?: number
@@ -206,6 +208,7 @@ export type Database = {
           id?: string
           logged_at?: string
           meal_id?: string | null
+          meal_type?: string | null
           name?: string
           phosphate_mg?: number
           portions?: number
