@@ -12,8 +12,13 @@ import { toast } from 'sonner';
 import { analyzeFoodWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges } from '@/components/NutrientWarnings';
 
-/** Convert a UnifiedSearchResult to a FoodRow for use in the meal composer */
-function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRow {
+/** Extended FoodRow that tracks nutrition source */
+export interface FoodRowWithSource extends FoodRow {
+  nutrition_source: NutritionSource;
+}
+
+/** Convert a UnifiedSearchResult to a FoodRowWithSource for use in the meal composer */
+function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRowWithSource {
   return {
     id: r.food_id || r.result_id,
     name: r.display_name,
@@ -27,7 +32,27 @@ function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRow {
     protein_g: r.protein_g ?? 0,
     fluid_ml: r.fluid_ml ?? 0,
     dialysis_risk_label: 'laag',
+    nutrition_source: r.nutrition_source || 'exact',
   };
+}
+
+/** Badge showing the nutrition data source */
+function NutritionSourceBadge({ source }: { source: NutritionSource }) {
+  if (source === 'exact') return null;
+  if (source === 'estimated') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold border bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400">
+        <Info className="h-3 w-3" />
+        Geschat
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold border bg-muted border-border text-muted-foreground">
+      <Info className="h-3 w-3" />
+      Onvoldoende data
+    </span>
+  );
 }
 
 const MEAL_TYPES = [
