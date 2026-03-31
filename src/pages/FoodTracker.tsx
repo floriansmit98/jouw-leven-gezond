@@ -38,6 +38,17 @@ interface DetectedFood {
   confirmed: boolean;
 }
 
+const MEAL_TYPE_OPTIONS = [
+  { value: 'ontbijt', label: 'Ontbijt', icon: '🌅' },
+  { value: 'lunch', label: 'Lunch', icon: '☀️' },
+  { value: 'avondeten', label: 'Avondeten', icon: '🌙' },
+  { value: 'tussendoortje', label: 'Tussendoortje', icon: '🍎' },
+];
+
+function getMealTypeLabel(type: string | null | undefined): string {
+  return MEAL_TYPE_OPTIONS.find(o => o.value === type)?.label || type || '';
+}
+
 type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result' | 'meal-history';
 
 export default function FoodTracker() {
