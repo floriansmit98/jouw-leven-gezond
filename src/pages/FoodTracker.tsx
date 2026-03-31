@@ -1215,7 +1215,17 @@ function SearchResultCard({
             </span>
             <span className="text-xs text-muted-foreground truncate">{portionLabel}</span>
           </div>
-          {!isMeal && (
+          {!isMeal && result.nutrition_source === 'estimated' && (
+            <span className="inline-flex items-center gap-1 mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400">
+              ≈ Geschat
+            </span>
+          )}
+          {!isMeal && result.nutrition_source === 'unknown' && (
+            <span className="inline-flex items-center gap-1 mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border bg-muted border-border text-muted-foreground">
+              Onvoldoende data
+            </span>
+          )}
+          {!isMeal && (result.nutrition_source === 'exact' || result.nutrition_source === 'estimated') && (
             <SearchWarningBadges flags={getFoodFlags({
               potassium_mg: result.potassium_mg,
               phosphate_mg: result.phosphate_mg,
@@ -1311,46 +1321,6 @@ function SearchResultCard({
   );
 }
 
-function FoodSearchResult({ food, onSelect }: { food: FoodRow & { nevoMatched?: boolean; nutrition_source?: string }; onSelect: (f: FoodRow) => void }) {
-  const isUnmatched = food.nevoMatched === false;
-  const nutritionSrc = (food as any).nutrition_source as string | undefined;
-  const isEstimated = nutritionSrc === 'estimated';
-  const isUnknown = nutritionSrc === 'unknown';
-  
-  // Allow selection for all items (estimated values are usable)
-  const isDisabled = isUnmatched && !isEstimated && !isUnknown;
-  
-  return (
-    <button
-      onClick={() => !isDisabled && onSelect(food)}
-      disabled={isDisabled}
-      className={`flex w-full items-center justify-between rounded-xl border bg-card p-3 text-left shadow-sm transition-colors ${
-        isDisabled ? 'border-border/50 opacity-60 cursor-not-allowed' : 'border-border hover:bg-secondary/50'
-      }`}
-    >
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-foreground text-sm truncate">{foodDisplayName(food)}</p>
-        <p className="text-xs text-muted-foreground">
-          {isDisabled
-            ? '⚠️ Geen betrouwbare voedingswaarden beschikbaar'
-            : `${food.portion_description} · ${food.category}`
-          }
-        </p>
-        {isEstimated && (
-          <span className="inline-flex items-center gap-1 mt-1 rounded-full px-2 py-0.5 text-[11px] font-semibold border bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-400">
-            ≈ Geschat
-          </span>
-        )}
-        {isUnknown && (
-          <span className="inline-flex items-center gap-1 mt-1 rounded-full px-2 py-0.5 text-[11px] font-semibold border bg-muted border-border text-muted-foreground">
-            Onvoldoende data
-          </span>
-        )}
-      </div>
-      {!isDisabled && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground ml-2" />}
-    </button>
-  );
-}
 
 
 function fileToBase64(file: File): Promise<string> {
