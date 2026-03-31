@@ -322,20 +322,13 @@ export default function FoodTracker() {
             </div>
 
             {/* Additional actions */}
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setStep('meal-compose')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
-              >
-                <UtensilsCrossed className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium">Maaltijd samenstellen</span>
-              </button>
+            <div className="mb-4">
               <button
                 onClick={() => setStep('meal-history')}
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
+                className="flex w-full items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
               >
                 <History className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium">Geschiedenis</span>
+                <span className="text-xs font-medium">Maaltijdgeschiedenis</span>
               </button>
             </div>
 
