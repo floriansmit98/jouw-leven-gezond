@@ -3,13 +3,31 @@ import { Plus, X, Check, Loader2, Search, ChevronRight, Star, Trash2 } from 'luc
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AmountInput from '@/components/AmountInput';
-import { useFoodSearch, useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
-import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
+import { useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
+import { useUnifiedSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
 import { type MealDraftItem, draftTotals, saveMeal, type MealWithItems } from '@/hooks/useMeals';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { analyzeFoodWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges } from '@/components/NutrientWarnings';
+
+/** Convert a UnifiedSearchResult to a FoodRow for use in the meal composer */
+function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRow {
+  return {
+    id: r.food_id || r.result_id,
+    name: r.display_name,
+    display_name: r.display_name,
+    category: r.category || 'overig',
+    portion_description: r.portion_description || '100g',
+    portion_grams: r.portion_grams || 100,
+    potassium_mg: r.potassium_mg ?? 0,
+    phosphate_mg: r.phosphate_mg ?? 0,
+    sodium_mg: r.sodium_mg ?? 0,
+    protein_g: r.protein_g ?? 0,
+    fluid_ml: r.fluid_ml ?? 0,
+    dialysis_risk_label: 'laag',
+  };
+}
 
 const MEAL_TYPES = [
   { value: 'ontbijt', label: 'Ontbijt' },
