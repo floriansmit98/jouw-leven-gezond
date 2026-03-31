@@ -762,13 +762,34 @@ function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
           })} />
         </div>
 
+        {/* Meal type selector */}
+        <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+          <p className="text-sm font-semibold text-foreground">Bij welk eetmoment?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {MEAL_TYPE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setSelectedMealType(opt.value)}
+                className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                  selectedMealType === opt.value
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                <span>{opt.icon}</span>
+                <span>{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <Button
           onClick={handleSaveDirect}
           disabled={saving || amount <= 0}
           className="h-12 w-full rounded-xl text-base font-semibold"
         >
           {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
-          Toevoegen
+          Toevoegen aan {getMealTypeLabel(selectedMealType)}
         </Button>
       </div>
     );
