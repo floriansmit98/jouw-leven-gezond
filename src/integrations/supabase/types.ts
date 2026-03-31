@@ -502,6 +502,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      estimate_nutrients: {
+        Args: { p_category: string; p_display_name: string }
+        Returns: {
+          comparable_count: number
+          est_fluid_ml: number
+          est_phosphate_mg: number
+          est_potassium_mg: number
+          est_protein_g: number
+          est_sodium_mg: number
+          nutrition_source: string
+        }[]
+      }
       generate_display_name: { Args: { raw_name: string }; Returns: string }
       get_most_used_foods: {
         Args: { p_limit?: number; p_user_id: string }
@@ -571,6 +583,7 @@ export type Database = {
           display_name: string
           fluid_ml: number
           food_id: string
+          nutrition_source: string
           phosphate_mg: number
           portion_description: string
           portion_grams: number
@@ -685,6 +698,7 @@ export type Database = {
           display_name: string
           fluid_ml: number
           food_id: string
+          nutrition_source: string
           phosphate_mg: number
           portion_description: string
           portion_grams: number
