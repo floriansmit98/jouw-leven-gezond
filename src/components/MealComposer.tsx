@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 
-import { Plus, X, Check, Loader2, Search, ChevronRight, Star, Trash2 } from 'lucide-react';
+import { Plus, X, Check, Loader2, Search, ChevronRight, Star, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AmountInput from '@/components/AmountInput';
 import { useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
-import { useUnifiedSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
+import { useUnifiedSearch, type UnifiedSearchResult, type NutritionSource } from '@/hooks/useUnifiedSearch';
 import { type MealDraftItem, draftTotals, saveMeal, type MealWithItems } from '@/hooks/useMeals';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
