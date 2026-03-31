@@ -23,9 +23,8 @@ import { analyzeFoodWarnings, analyzeDailyWarnings, analyzeMealImpactWarnings } 
 import { WarningBadges, WarningMessages, DailyWarningAlerts } from '@/components/NutrientWarnings';
 import { getFoodFlags, SearchWarningBadges, SearchWarningDetail } from '@/components/SearchNutrientWarning';
 import { getLimits } from '@/lib/store';
-import MealComposer from '@/components/MealComposer';
-import MealCard from '@/components/MealCard';
 import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type MealWithItems } from '@/hooks/useMeals';
+import MealCard from '@/components/MealCard';
 import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 import InlineAdBanner from '@/components/InlineAdBanner';
 
