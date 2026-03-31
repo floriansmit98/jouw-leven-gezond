@@ -623,16 +623,34 @@ function DetectedFoodCard({
   );
 }
 
+const MEAL_TYPE_OPTIONS = [
+  { value: 'ontbijt', label: 'Ontbijt', icon: '🌅' },
+  { value: 'lunch', label: 'Lunch', icon: '☀️' },
+  { value: 'avondeten', label: 'Avondeten', icon: '🌙' },
+  { value: 'tussendoortje', label: 'Tussendoortje', icon: '🍎' },
+];
+
+function getMealTypeLabel(type: string | null | undefined): string {
+  return MEAL_TYPE_OPTIONS.find(o => o.value === type)?.label || type || '';
+}
+
 // --- AI-Assisted Smart Search Panel ---
 function ManualSearchPanel({ onAddFood, onAddFoodDirect, onBack, saving }: {
   onAddFood?: (food: FoodRow) => void;
-  onAddFoodDirect?: (food: FoodRow, amountGrams: number) => Promise<void>;
+  onAddFoodDirect?: (food: FoodRow, amountGrams: number, mealType?: string) => Promise<void>;
   onBack: () => void;
   saving?: boolean;
 }) {
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
+  const [selectedMealType, setSelectedMealType] = useState<string>(() => {
+    const hour = new Date().getHours();
+    if (hour < 10) return 'ontbijt';
+    if (hour < 14) return 'lunch';
+    if (hour < 18) return 'tussendoortje';
+    return 'avondeten';
+  });
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [mealItems, setMealItems] = useState<Record<string, any[]>>({});
   
