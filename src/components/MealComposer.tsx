@@ -3,13 +3,31 @@ import { Plus, X, Check, Loader2, Search, ChevronRight, Star, Trash2 } from 'luc
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AmountInput from '@/components/AmountInput';
-import { useFoodSearch, useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
-import { useOFFSearch } from '@/hooks/useOpenFoodFacts';
+import { useRecentFoods, useMostUsedFoods, foodDisplayName, type FoodRow } from '@/hooks/useFoods';
+import { useUnifiedSearch, type UnifiedSearchResult } from '@/hooks/useUnifiedSearch';
 import { type MealDraftItem, draftTotals, saveMeal, type MealWithItems } from '@/hooks/useMeals';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { analyzeFoodWarnings } from '@/lib/nutrientWarnings';
 import { WarningBadges } from '@/components/NutrientWarnings';
+
+/** Convert a UnifiedSearchResult to a FoodRow for use in the meal composer */
+function unifiedResultToFoodRow(r: UnifiedSearchResult): FoodRow {
+  return {
+    id: r.food_id || r.result_id,
+    name: r.display_name,
+    display_name: r.display_name,
+    category: r.category || 'overig',
+    portion_description: r.portion_description || '100g',
+    portion_grams: r.portion_grams || 100,
+    potassium_mg: r.potassium_mg ?? 0,
+    phosphate_mg: r.phosphate_mg ?? 0,
+    sodium_mg: r.sodium_mg ?? 0,
+    protein_g: r.protein_g ?? 0,
+    fluid_ml: r.fluid_ml ?? 0,
+    dialysis_risk_label: 'laag',
+  };
+}
 
 const MEAL_TYPES = [
   { value: 'ontbijt', label: 'Ontbijt' },
@@ -241,17 +259,11 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
-  const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
-  const { products: offResults, loading: offLoading } = useOFFSearch(query, false);
+  const { results: unifiedResults, loading } = useUnifiedSearch(query);
   const searchResults = useMemo(() => {
-    const seen = new Set(nevoResults.map(f => f.id));
-    const merged = [...nevoResults];
-    for (const off of offResults) {
-      if (!seen.has(off.id)) { seen.add(off.id); merged.push(off); }
-    }
-    return merged;
-  }, [nevoResults, offResults]);
-  const loading = nevoLoading || offLoading;
+    console.log('[MealComposer] Unified search results for query:', query, '→', unifiedResults.length, 'results', unifiedResults.map(r => `${r.display_name} (${r.result_type})`));
+    return unifiedResults.map(unifiedResultToFoodRow);
+  }, [unifiedResults, query]);
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
 
