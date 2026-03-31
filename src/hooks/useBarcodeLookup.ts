@@ -136,12 +136,7 @@ export function useBarcodeLookup() {
         // Try broader search for suggestions
         const mainTerm = genericName.trim() || offName.trim();
         if (mainTerm) {
-          const { data } = await supabase.rpc('search_foods_ranked', {
-            search_query: mainTerm.split(/\s+/).slice(0, 2).join(' '),
-            page_size: 8,
-            page_offset: 0,
-          });
-          searchSuggestions = (data ?? []) as FoodRow[];
+          searchSuggestions = await searchFoodsUnified(mainTerm.split(/\s+/).slice(0, 2).join(' '), 8, 0);
         }
         // If still no suggestions, try individual words
         if (searchSuggestions.length === 0) {
