@@ -37,7 +37,38 @@ export interface FoodEntryRow {
 
 const PAGE_SIZE = 20;
 
-export function useFoodSearch(search: string, isDrink?: boolean) {
+/** Shared helper: search via unified_food_search and map results to FoodRow */
+export async function searchFoodsUnified(
+  query: string,
+  pageSize = 20,
+  pageOffset = 0
+): Promise<FoodRow[]> {
+  const { data, error } = await supabase.rpc('search_all_foods', {
+    search_query: query,
+    page_size: pageSize,
+    page_offset: pageOffset,
+  });
+  if (error) {
+    console.error('[searchFoodsUnified] error:', error);
+    return [];
+  }
+  return ((data ?? []) as any[]).map(row => ({
+    id: row.food_id || row.result_id,
+    name: row.display_name,
+    display_name: row.display_name,
+    category: row.category || 'overig',
+    portion_description: row.portion_description || '100g',
+    portion_grams: row.portion_grams || 100,
+    potassium_mg: row.potassium_mg ?? 0,
+    phosphate_mg: row.phosphate_mg ?? 0,
+    sodium_mg: row.sodium_mg ?? 0,
+    protein_g: row.protein_g ?? 0,
+    fluid_ml: row.fluid_ml ?? 0,
+    dialysis_risk_label: 'laag',
+  }));
+}
+
+export function useFoodSearch(search: string, _isDrink?: boolean) {
   const [foods, setFoods] = useState<FoodRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -45,13 +76,12 @@ export function useFoodSearch(search: string, isDrink?: boolean) {
 
   useEffect(() => {
     setPage(0);
-  }, [search, isDrink]);
+  }, [search]);
 
   useEffect(() => {
     let cancelled = false;
     const trimmed = search.trim();
 
-    // Don't search if empty
     if (!trimmed) {
       setFoods([]);
       setLoading(false);
@@ -62,28 +92,8 @@ export function useFoodSearch(search: string, isDrink?: boolean) {
     setLoading(true);
     const offset = page * PAGE_SIZE;
 
-    // Use the new ranked search for general queries, or type-based for drink filtering
-    const query = isDrink !== undefined
-      ? supabase.rpc('search_foods_by_type', {
-          search_query: trimmed,
-          is_drink: isDrink,
-          page_size: PAGE_SIZE,
-          page_offset: offset,
-        })
-      : supabase.rpc('search_foods_ranked', {
-          search_query: trimmed,
-          page_size: PAGE_SIZE,
-          page_offset: offset,
-        });
-
-    query.then(({ data, error }) => {
+    searchFoodsUnified(trimmed, PAGE_SIZE, offset).then(rows => {
       if (cancelled) return;
-      if (error) {
-        console.error('Food search error:', error);
-        setLoading(false);
-        return;
-      }
-      const rows = (data ?? []) as FoodRow[];
       if (page === 0) {
         setFoods(rows);
       } else {
@@ -94,7 +104,7 @@ export function useFoodSearch(search: string, isDrink?: boolean) {
     });
 
     return () => { cancelled = true; };
-  }, [search, page, isDrink]);
+  }, [search, page]);
 
   const loadMore = () => setPage(p => p + 1);
 

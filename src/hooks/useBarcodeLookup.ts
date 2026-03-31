@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FoodRow } from './useFoods';
+import { searchFoodsUnified, type FoodRow } from './useFoods';
 
 export interface BarcodeResult {
   barcode: string;
@@ -117,13 +117,9 @@ export function useBarcodeLookup() {
 
       for (const term of searchTerms) {
         if (!term.trim()) continue;
-        const { data } = await supabase.rpc('search_foods_ranked', {
-          search_query: term,
-          page_size: 5,
-          page_offset: 0,
-        });
-        if (data && data.length > 0) {
-          nevoMatch = data[0] as FoodRow;
+        const results = await searchFoodsUnified(term, 5, 0);
+        if (results.length > 0) {
+          nevoMatch = results[0];
           break;
         }
       }
@@ -140,24 +136,15 @@ export function useBarcodeLookup() {
         // Try broader search for suggestions
         const mainTerm = genericName.trim() || offName.trim();
         if (mainTerm) {
-          const { data } = await supabase.rpc('search_foods_ranked', {
-            search_query: mainTerm.split(/\s+/).slice(0, 2).join(' '),
-            page_size: 8,
-            page_offset: 0,
-          });
-          searchSuggestions = (data ?? []) as FoodRow[];
+          searchSuggestions = await searchFoodsUnified(mainTerm.split(/\s+/).slice(0, 2).join(' '), 8, 0);
         }
         // If still no suggestions, try individual words
         if (searchSuggestions.length === 0) {
           const words = offName.split(/\s+/).filter(w => w.length >= 3);
           for (const word of words.slice(0, 3)) {
-            const { data } = await supabase.rpc('search_foods_ranked', {
-              search_query: word,
-              page_size: 4,
-              page_offset: 0,
-            });
-            if (data && data.length > 0) {
-              searchSuggestions = [...searchSuggestions, ...(data as FoodRow[])];
+            const results = await searchFoodsUnified(word, 4, 0);
+            if (results.length > 0) {
+              searchSuggestions = [...searchSuggestions, ...results];
             }
           }
           // Deduplicate

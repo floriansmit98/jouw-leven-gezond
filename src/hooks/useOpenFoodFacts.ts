@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FoodRow } from './useFoods';
+import { searchFoodsUnified, type FoodRow } from './useFoods';
 
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 400;
@@ -150,18 +150,13 @@ function extractGenericTerms(product: OFFProduct): string[] {
  * Try to find a NEVO match for an OFF product.
  * Returns the best-matching FoodRow or null.
  */
-async function findNevoMatch(product: OFFProduct, isDrink: boolean): Promise<FoodRow | null> {
+async function findNevoMatch(product: OFFProduct, _isDrink: boolean): Promise<FoodRow | null> {
   const terms = extractGenericTerms(product);
   
   for (const term of terms) {
-    const { data } = await supabase.rpc(
-      isDrink ? 'search_foods_by_type' : 'search_foods_ranked',
-      isDrink
-        ? { search_query: term, is_drink: true, page_size: 3, page_offset: 0 }
-        : { search_query: term, page_size: 3, page_offset: 0 }
-    );
-    if (data && data.length > 0) {
-      return data[0] as FoodRow;
+    const results = await searchFoodsUnified(term, 3, 0);
+    if (results.length > 0) {
+      return results[0];
     }
   }
   return null;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { FoodRow } from './useFoods';
+import { searchFoodsUnified, type FoodRow } from './useFoods';
 
 export interface AIFoodComponent {
   name: string;
@@ -39,31 +39,21 @@ async function logSearch(query: string, matched: boolean, matchQuality: string, 
   }
 }
 
-async function searchNevo(terms: string[], isDrink: boolean): Promise<FoodRow | null> {
+async function searchNevo(terms: string[], _isDrink: boolean): Promise<FoodRow | null> {
   for (const term of terms) {
-    const { data } = await supabase.rpc(
-      isDrink ? 'search_foods_by_type' : 'search_foods_ranked',
-      isDrink
-        ? { search_query: term, is_drink: true, page_size: 3, page_offset: 0 }
-        : { search_query: term, page_size: 3, page_offset: 0 }
-    );
-    if (data && data.length > 0) {
-      return data[0] as FoodRow;
+    const results = await searchFoodsUnified(term, 3, 0);
+    if (results.length > 0) {
+      return results[0];
     }
   }
   return null;
 }
 
-async function searchNevoMultiple(terms: string[], isDrink: boolean): Promise<FoodRow[]> {
+async function searchNevoMultiple(terms: string[], _isDrink: boolean): Promise<FoodRow[]> {
   for (const term of terms) {
-    const { data } = await supabase.rpc(
-      isDrink ? 'search_foods_by_type' : 'search_foods_ranked',
-      isDrink
-        ? { search_query: term, is_drink: true, page_size: 5, page_offset: 0 }
-        : { search_query: term, page_size: 5, page_offset: 0 }
-    );
-    if (data && data.length > 0) {
-      return data as FoodRow[];
+    const results = await searchFoodsUnified(term, 5, 0);
+    if (results.length > 0) {
+      return results;
     }
   }
   return [];
