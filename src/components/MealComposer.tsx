@@ -259,17 +259,11 @@ function FoodPicker({ onSelect, onBack }: { onSelect: (food: FoodRow, grams: num
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<FoodRow | null>(null);
   const [amount, setAmount] = useState(100);
-  const { foods: nevoResults, loading: nevoLoading } = useFoodSearch(query);
-  const { products: offResults, loading: offLoading } = useOFFSearch(query, false);
+  const { results: unifiedResults, loading } = useUnifiedSearch(query);
   const searchResults = useMemo(() => {
-    const seen = new Set(nevoResults.map(f => f.id));
-    const merged = [...nevoResults];
-    for (const off of offResults) {
-      if (!seen.has(off.id)) { seen.add(off.id); merged.push(off); }
-    }
-    return merged;
-  }, [nevoResults, offResults]);
-  const loading = nevoLoading || offLoading;
+    console.log('[MealComposer] Unified search results for query:', query, '→', unifiedResults.length, 'results', unifiedResults.map(r => `${r.display_name} (${r.result_type})`));
+    return unifiedResults.map(unifiedResultToFoodRow);
+  }, [unifiedResults, query]);
   const { foods: recentFoods } = useRecentFoods();
   const { foods: mostUsedFoods } = useMostUsedFoods();
 
