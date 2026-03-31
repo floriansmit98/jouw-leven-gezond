@@ -458,7 +458,7 @@ export default function FoodTracker() {
         )}
 
         {/* Today's individual entries with daily warnings */}
-        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-compose' && step !== 'meal-history' && (
+        {entries.length > 0 && step !== 'manual' && step !== 'barcode' && step !== 'meal-history' && (
           <div>
             <h2 className="mb-3 font-display text-lg font-semibold">Vandaag gegeten</h2>
 
