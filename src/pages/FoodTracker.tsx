@@ -38,7 +38,7 @@ interface DetectedFood {
   confirmed: boolean;
 }
 
-type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result' | 'meal-compose' | 'meal-history';
+type Step = 'capture' | 'analyzing' | 'confirm' | 'manual' | 'barcode' | 'barcode-result' | 'meal-history';
 
 export default function FoodTracker() {
   const { user } = useAuth();
