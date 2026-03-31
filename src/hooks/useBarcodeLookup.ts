@@ -117,13 +117,9 @@ export function useBarcodeLookup() {
 
       for (const term of searchTerms) {
         if (!term.trim()) continue;
-        const { data } = await supabase.rpc('search_foods_ranked', {
-          search_query: term,
-          page_size: 5,
-          page_offset: 0,
-        });
-        if (data && data.length > 0) {
-          nevoMatch = data[0] as FoodRow;
+        const results = await searchFoodsUnified(term, 5, 0);
+        if (results.length > 0) {
+          nevoMatch = results[0];
           break;
         }
       }
