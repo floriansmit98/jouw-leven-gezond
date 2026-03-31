@@ -134,16 +134,15 @@ export default function FoodTracker() {
   };
 
   // --- Add manual food directly (save immediately) ---
-  const addManualFoodDirect = async (food: FoodRow, amountGrams: number) => {
+  const addManualFoodDirect = async (food: FoodRow, amountGrams: number, mealType?: string) => {
     if (!user) return;
     setSaving(true);
     try {
       const factor = amountGrams / 100;
-      await addFoodEntryDB(user.id, food, factor);
-      toast.success(`${foodDisplayName(food)} toegevoegd!`);
+      await addFoodEntryDB(user.id, food, factor, mealType);
+      toast.success(`${foodDisplayName(food)} toegevoegd aan ${getMealTypeLabel(mealType)}!`);
       triggerInterstitial();
       refetch();
-      // If we came from confirm step (AI detection), go back there
       if (detectedFoods.length > 0) {
         setStep('confirm');
       } else {
