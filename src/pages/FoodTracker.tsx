@@ -440,14 +440,6 @@ export default function FoodTracker() {
 
         {/* Barcode steps disabled — scanner temporarily removed */}
 
-        {/* Step: Meal composer */}
-        {step === 'meal-compose' && (
-          <MealComposer
-            onSaved={() => { handleReset(); refetchAll(); }}
-            onCancel={() => setStep('capture')}
-          />
-        )}
-
         {/* Step: Meal history */}
         {step === 'meal-history' && (
           <MealHistoryPanel onBack={() => setStep('capture')} onRefresh={refetchAll} />
