@@ -249,7 +249,12 @@ export default function Report() {
 
         <Button onClick={handlePreview} disabled={generating} size="lg" className="w-full h-14 gap-2 text-base font-semibold">
           <FileText className="h-5 w-5" />
-          {generating ? 'Genereren...' : 'Rapport genereren (PDF)'}
+          {generating ? 'Genereren...' : 'Rapport bekijken'}
+        </Button>
+
+        <Button onClick={handleDownload} disabled={generating} variant="outline" size="lg" className="mt-3 w-full h-14 gap-2 text-base font-semibold">
+          <Download className="h-5 w-5" />
+          Downloaden (PDF)
         </Button>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
