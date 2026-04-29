@@ -27,7 +27,6 @@ import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type Me
 import MealCard from '@/components/MealCard';
 import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 import InlineAdBanner from '@/components/InlineAdBanner';
-import { useAdMobBanner } from '@/hooks/useAdMobBanner';
 
 interface DetectedFood {
   naam: string;
@@ -57,8 +56,6 @@ export default function FoodTracker() {
   const { isPremium } = usePremium();
   const { triggerInterstitial } = useInterstitialAd();
   const navigate = useNavigate();
-  // Mount native AdMob banner (top of screen) on Voeding page. No-op on web.
-  useAdMobBanner();
   const [step, setStep] = useState<Step>('capture');
   const [preview, setPreview] = useState<string | null>(null);
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
