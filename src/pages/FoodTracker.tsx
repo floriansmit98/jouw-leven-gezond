@@ -27,6 +27,7 @@ import { useTodayMeals, useFavoriteMeals, useRecentMeals, duplicateMeal, type Me
 import MealCard from '@/components/MealCard';
 import { useInterstitialAd } from '@/hooks/useInterstitialAd';
 import InlineAdBanner from '@/components/InlineAdBanner';
+import { useAdMobBanner } from '@/hooks/useAdMobBanner';
 
 interface DetectedFood {
   naam: string;
