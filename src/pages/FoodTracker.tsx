@@ -57,6 +57,8 @@ export default function FoodTracker() {
   const { isPremium } = usePremium();
   const { triggerInterstitial } = useInterstitialAd();
   const navigate = useNavigate();
+  // Mount native AdMob banner (top of screen) on Voeding page. No-op on web.
+  useAdMobBanner();
   const [step, setStep] = useState<Step>('capture');
   const [preview, setPreview] = useState<string | null>(null);
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
